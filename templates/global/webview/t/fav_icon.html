@@ -1,0 +1,9 @@
+{% load dv_extend %}{% if user.is_authenticated %}
+ {% is_favorite song user %}
+ {% if is_favorite %}
+  <img class="song_head" src="/static/lock.png" alt="Already Loved!"/>
+ {% else %}
+  <a href="{% url dv-add_fav song.id %}/"><img class="song_head" src="/static/heart_add.png" alt="Add Fave"/></a>
+ {% endif %}
+ </p>
+{% endif %}

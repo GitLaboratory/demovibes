@@ -1,0 +1,11 @@
+{% extends "base/base.html" %}
+{% block sidebar %}
+        <ul>
+            <li id="home"><a href="{% url dv-root %}">Home</a></li>
+            
+            <li id="top-played"><a href="{% url dv-top_played %}">Top Played Songs</a></li>
+            <li id="top-voted"><a href="{% url dv-top_voted %}">Top Voted Songs</a></li>
+            <li id="song-platform"><a href="{% url dv-song-platform %}">Song Platforms</a></li>
+            <li id="song-type"><a href="{% url dv-song-type %}">Song Types</a></li>
+        </ul>
+{% endblock %}

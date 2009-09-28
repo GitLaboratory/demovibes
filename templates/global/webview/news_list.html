@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+
+{% load dv_extend %}
+{% block main %}
+{% if object_list %}
+
+{% for news in object_list %}{% ifequal news.status "S" %}{# Sticky ones first! #}
+ <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ MEDIA_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span></h2>
+ {{ news.text|safe|bbcode }}
+{% endifequal %}{% endfor %}
+
+{% for news in object_list %}{% ifequal news.status "A" %}{# Then the rest. All active #}
+ <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ MEDIA_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span><span class="date" title="{{ news.added|date:"T" }}">{{ news.added|date:"G:i j.n.Y" }}</span></h2>
+ {{ news.text|safe|bbcode }}
+{% endifequal %}{% if user.is_authenticated %}{% ifequal news.status "L" %}{# Then the rest. Logged in filter #}
+ <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ MEDIA_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span><span class="date" title="{{ news.added|date:"T" }}">{{ news.added|date:"G:i j.n.Y" }}</span></h2>
+ {{ news.text|safe|bbcode }}
+{% endifequal %}{% endif %}{% endfor %}
+
+
+{% else %}
+<h2><img class="icon_header" src="{{ MEDIA_URL }}newspaper.png" alt="" />Missing News</h2>
+No news here! You should take a trip to the admin interface and add some news!
+{% endif %}
+{% endblock %}

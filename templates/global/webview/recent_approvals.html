@@ -1,0 +1,61 @@
+{% extends "base/base.html" %}
+
+{% block title %}Recent Song Approvals{% endblock %}
+
+{% block main %}
+ <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Recently Approved Songs</h2>
+Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
+
+ <table class="recent-approvals">
+ <tr>
+ <th>
+  Song Title
+ </th>
+ <th>
+  Artist
+ </th>
+ <th>
+  Approved
+ </th>
+ <th>
+  Uploaded By
+ </th>
+ <th>
+  Approved By
+ </th>
+ <th>
+  Status
+ </th>
+</tr>
+{% if songs %}
+    {% for song in songs %}
+        <tr>
+            <td>
+                <a href="{{ song.song.get_absolute_url }}">{{ song.song.title }}</a>
+            </td>
+            <td>
+                {% for artist in song.song.artists.all %}{% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+                {% for group in song.song.groups.all %}{% with group as G %}{% include "webview/t/group.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+            </td>
+            <td>
+                {{ song.approved|timesince }} ago
+            </td>
+            <td align="center">
+                {% with song.uploaded_by as U%}{% include "webview/t/user.html" %}{% endwith %}
+            </td>
+            <td align="center">
+                {% with song.approved_by as U%}{% include "webview/t/user.html" %}{% endwith %}
+            </td>
+            <td align="center">
+                <span name="a_queue_{{ song.song.id }}">{% with song.song as song %}{% include "webview/t/songlist_span_noauth.html" %}{% endwith %}</span>
+                {% with song.song as song %}{% include "webview/t/fav_icon.html" %}{% endwith %}
+            </td>
+        </tr>
+    {% endfor %}
+{% else %}
+   <tr><td>No Entries!!</td><td></td><td></td><td></td><td></td><td></td></tr>
+{% endif %}
+ </table>
+
+{% endblock %}
+

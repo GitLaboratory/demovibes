@@ -1,0 +1,2 @@
+{% load dv_extend %}{% for line in oneliner %}
+<p>{{ line.added|time:"H:i" }} {% with line.user as U%}{% include "webview/t/user.html" %}{% endwith %}</a>:<br />{{ line.message|force_escape|smileys|oneliner_mediaparse|bbcode_oneliner|dv_urlize|safe }}</p>{% endfor %}

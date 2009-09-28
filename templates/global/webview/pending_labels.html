@@ -1,0 +1,31 @@
+{% extends "base/base.html" %}
+
+{% block title %}Pending Label Approvals{% endblock %}
+
+{% block main %}
+{% load dv_extend %}<h2>Pending Group Approvals</h2>
+<p>The following labels have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.</p>
+<br>
+{% for label in labels.all %}
+    <table>
+    <tr>
+    <td valign="top">
+    {% if label.logo %}<img class="label_logo" src="{{ label.logo.url }}" alt="{{ label.name }}" align="left">{% else %}<img class="label_logo" src="/static/no_picture.png" height="100" alt="No Picture" align="left">{% endif %}
+    </td>
+    <td valign="top">
+    Label: {% with label as L %}{% include "webview/t/label.html" %}{% endwith %}<br>
+    {% if label.webpage %}Website: <a href="{{ label.webpage }}">{{ label.webpage }}</a><br>{% endif %}
+    {% if label.pouetid %}Pouet Link: <a href="http://www.pouet.net/groups.php?which={{ label.pouetid }}" target="_new"">Pouet Link</a><br>{% endif %}
+    {% if label.found_date %}Founding Date: {{ label.found_date|date:"F j, Y" }}<br>{% endif %}
+    {% if label.created_by %}Created By: {% with label.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}<br>{% endif %}
+   
+    {% if label.info %}{{ label.info|urlize|bbcode|linebreaks }}<br>{% endif %}
+
+    <a href="{% url dv-newlabels %}?label={{ label.id }}&status=A"><img src="/static/thumb_up.png" alt="Approve"> Approve</a> or <a href="{% url dv-newlabels %}?label={{ label.id }}&status=R"><img src="/static/thumb_down.png" alt="Reject"> Reject</a>
+    </td>
+    </tr>
+    </table>
+    <br>
+{% endfor %}
+<br>
+{% endblock %}

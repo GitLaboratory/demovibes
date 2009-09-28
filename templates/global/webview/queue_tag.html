@@ -1,0 +1,2 @@
+<a href="{{ song.get_absolute_url }}"><img src="/static/music.png" alt="song" border="0"> {{ song.title }}</a> by {% for artist in artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %} {% endfor %} 
+<span name="a_queue_{{ song.id }}">{% include "webview/t/songlist_span_noauth.html" %}</span>

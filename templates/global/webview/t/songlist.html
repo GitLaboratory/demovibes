@@ -1,0 +1,21 @@
+ <td>
+  <a href="{{ song.get_absolute_url }}">{{ song.title }}</a> 
+ </td>
+ <td>
+  {% for artist in song.artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+  {% for group in song.groups.all %}{% with group as G%}{% include "webview/t/group.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
+ </td>
+ <td align="center">
+  {{ song.length }}
+ </td>
+ <td align="center">
+  {{ song.get_status_display }}
+ </td>
+ <td>
+  <span name="a_queue_{{ song.id }}">
+   {% include "webview/t/songlist_span.html" %}
+  </span>
+ </td>
+ <td>
+  {{ song.rating|floatformat }}
+ </td>

@@ -1,0 +1,21 @@
+{% if now_playing.song %}
+ <a href="{{ now_playing.song.get_absolute_url }}">{{ now_playing }}</a> by{% for artist in now_playing.song.artists.all %} {% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br />
+
+ Requested By: {% with now_playing.requested_by as U%}{% include "webview/t/user.html" %}{% endwith %}<br>
+ {% ifnotequal now_playing.song.labels.count 0 %}
+  Production Labels: {% for label in now_playing.song.labels.all %}{% with label as L %}{% include "webview/t/label.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br>
+ {% endifnotequal %}
+ {% ifnotequal comps.count 0 %}
+  In Compilations: {% for comp in comps.all %}{% with comp as C %}{% include "webview/t/compilation.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br>
+ {% endifnotequal %}
+ {% if now_playing.song.pouetid %}
+  <a href="http://www.pouet.net/prod.php?which={{ now_playing.song.pouetid }}" target="_new">Pouet Link</a><br><br>
+ {% else %}
+  <br>
+ {% endif %}
+
+ Time Left: <span name="counter" sec="{{ now_playing.timeleft }}" inc="-1">{{ now_playing.song.length }}</span>
+ 
+{% else %}
+ No Song Playing!!
+{% endif %}
