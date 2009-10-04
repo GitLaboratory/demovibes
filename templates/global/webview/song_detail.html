@@ -43,6 +43,7 @@ Uploaded By: {% with object.uploader as U%}{% include "webview/t/user.html" %}{%
 
 Extra Resources:
 {% if object.pouetid %} <a href="http://www.pouet.net/prod.php?which={{object.pouetid}}" target="_new">[Pouet Link]</a>{% endif %}
+{% if object.wos_id %} <a href="http://www.worldofspectrum.org/infoseekid.cgi?id={{object.wos_id}}" target="_new">[World of Spectrum Link]</a>{% endif %}
 {% if object.zxdemo_id %} <a href="http://zxdemo.org/item.php?id={{object.zxdemo_id}}" target="_new">[ZXDemo Link]</a>{% endif %}
 {% if object.lemon_id %} <a href="http://www.lemon64.com/games/details.php?ID={{object.lemon_id}}" target="_new">[Lemon64 Link]</a>{% endif %}
 {% if object.projecttwosix_id %} <a href="http://project2612.org/details.php?id={{object.projecttwosix_id}}" target="_new">[Project2612 Link]</a>{% endif %}

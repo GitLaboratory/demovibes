@@ -32,7 +32,7 @@ Name: {{ comp.name }}<br>
 </td>
 <td class="compilation_description" valign="top">
 <b><i>Compilation Details For {{ comp.name }}:</i></b><br>
-{% if comp.info %}{{ comp.info|force_escape|bbcode|linebreaks|smileys }}<br>{% endif %}
+{% if comp.info %}<p><i>{{ comp.info|force_escape|bbcode|linebreaks|smileys }}</i></p><br>{% endif %}
 {% ifnotequal comp.prod_artists.count 0 %}
  <b><i>Compilation Artists: </i></b>
  {% for artist in comp.prod_artists.all %}

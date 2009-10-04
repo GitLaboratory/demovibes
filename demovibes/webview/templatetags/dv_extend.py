@@ -888,7 +888,8 @@ def smileys(value):
 	"""
 	smileys = settings.SMILEYS
 	for smiley in smileys:
-		value = value.replace(smiley[0], r'<img src="%s" alt="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[0]))
+	    # Smiley patch provided by Korkut. AAK
+	    value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" alt="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[0]), value)
 	return value
 
 @register.filter

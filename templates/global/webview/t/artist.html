@@ -1,12 +1,1 @@
-<img src="/static/user_green.png" />
-<a href="{{ A.get_absolute_url }}"
-   {% if A.alias_of %}
-    title="Alias of {{A.alias_of}}"
-   {% else %}
-    {% if A.aliases.all %}
-     title="Aliases : {% for alias in A.aliases.all %}{{ alias.handle }} {% endfor %}"
-    {% endif %}
-   {% endif %}
-   >
-    {{ A.handle }}{% if A.name %} ({{ A.name }}){% endif %}{% if A.home_country %}{% load dv_extend %} {{ A.home_country|flag|safe }}{% endif %}
-</a>
+<img src="/static/user_green.png" /> <a href="{{ A.get_absolute_url }}" {% if A.alias_of %}title="Alias of {{A.alias_of}}"{% else %}{% if A.aliases.all %}title="Aliases : {% for alias in A.aliases.all %}{{ alias.handle }} {% endfor %}"{% endif %}{% endif %}> {{ A.handle }}{% if A.name %} ({{ A.name }}){% endif %}{% if A.home_country %}{% load dv_extend %} {{ A.home_country|flag|safe }}{% endif %}</a>

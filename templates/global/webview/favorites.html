@@ -6,15 +6,10 @@
 <h2><img class="icon_header" src="{{ MEDIA_URL }}heart.png" alt="" />My Favourite Songs</h2>
 <table class="songlist">
 <tr>
- <th>
-  Song Title
- </th>
- <th>
-  Artist
- </th>
- <th>
-  Status
- </th>
+ <th>Song Title</th>
+ <th>Artist</th>
+ <th>Song Length</th>
+ <th>Status</th>
 </tr>
 {% for fav in songs %}{% with fav.song as song %}
 <tr class="{% cycle 'row1' 'row2' %}">

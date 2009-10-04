@@ -300,6 +300,7 @@ class Song(models.Model):
     title = models.CharField(verbose_name="* Song Name", help_text="The name of this song, as it should appear in the database", max_length=80, db_index = True)
     file = models.FileField(upload_to='media/music', verbose_name="File", help_text="Select an MP3 file to upload. The MP3 should be between 128 and 320Kbps, Stereo or Joint Stereo, with a Constant Bitrate.")
     pouetid = models.IntegerField(blank=True, null = True, help_text="Pouet number (which= portion) from Pouet.net")
+    wos_id = models.CharField(max_length=8, blank=True, null = True, verbose_name="W.O.S. ID", help_text="World of Spectrum ID Number (Spectrum) such as 0003478 (leading 0's are IMPORTANT!)")
     zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum)")
     projecttwosix_id = models.IntegerField(blank=True, null = True, verbose_name="Project2612 ID", help_text="Project2612 ID Number (Genesis / Megadrive)")
     hvsc_url = models.URLField(blank=True, verbose_name="HVSC Link", help_text="Link to HVSC SID file as a complete URL (C64)")

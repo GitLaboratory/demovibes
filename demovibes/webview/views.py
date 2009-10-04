@@ -259,6 +259,24 @@ def list_groups(request, letter):
         {'object_list' : groupic.object_list, 'page_range' : paginator.page_range, \
             'page' : page, 'letter' : letter, 'al': alphalist}, \
         context_instance=RequestContext(request))
+    
+def list_labels(request, letter):
+    """
+    List labels that start with a certain letter.
+    """
+    if not letter in alphalist or letter == '-':
+        letter = '#'
+    labels = Label.objects.filter(startswith=letter).filter(status="A")
+    paginator = Paginator(labels, settings.PAGINATE)
+    page = int(request.GET.get('page', '1'))
+    try:
+        labelic = paginator.page(page)
+    except (EmptyPage, InvalidPage):
+        labelic = paginator.page(paginator.num_pages)
+    return render_to_response('webview/label_list.html', \
+        {'object_list' : labelic.object_list, 'page_range' : paginator.page_range, \
+            'page' : page, 'letter' : letter, 'al': alphalist}, \
+        context_instance=RequestContext(request))
 
 def list_compilations(request, letter):
     """
@@ -538,7 +556,7 @@ def activate_artists(request):
         PrivateMessage.objects.create(sender = request.user, to = artist.created_by,\
          message = mail_tpl.render(c), subject = "Artist Request Status Changed To: %s" % stat)
 
-    artists =Artist.objects.filter(status = "U").order_by('handle')
+    artists =Artist.objects.filter(status = "U").order_by('last_updated')
     return render_to_response('webview/pending_artists.html', { 'artists': artists }, context_instance=RequestContext(request))
 
 @login_required
@@ -590,7 +608,7 @@ def activate_groups(request):
         PrivateMessage.objects.create(sender = request.user, to = group.created_by,\
          message = mail_tpl.render(c), subject = "Group Request Status Changed To: %s" % stat)
 
-    groups =Group.objects.filter(status = "U").order_by('name')
+    groups =Group.objects.filter(status = "U").order_by('last_updated')
     return render_to_response('webview/pending_groups.html', { 'groups': groups }, context_instance=RequestContext(request))
 
 @login_required
@@ -642,7 +660,7 @@ def activate_labels(request):
         PrivateMessage.objects.create(sender = request.user, to = this_label.created_by,\
          message = mail_tpl.render(c), subject = "Label Request Status Changed To: %s" % stat)
 
-    labels = Label.objects.filter(status = "U").order_by('name')
+    labels = Label.objects.filter(status = "U").order_by('last_updated')
     return render_to_response('webview/pending_labels.html', { 'labels': labels }, context_instance=RequestContext(request))
 
     

@@ -11,7 +11,7 @@ except ImportError:
 class UploadForm(forms.ModelForm):
     class Meta:
         model = Song
-        fields = ["title", "file", "pouetid", "zxdemo_id", "projecttwosix_id", "lemon_id", "hvsc_url", "remix_of_id", "groups", "labels", "info", "type", "platform"]
+        fields = ["title", "file", "pouetid", "wos_id", "zxdemo_id", "projecttwosix_id", "lemon_id", "hvsc_url", "remix_of_id", "groups", "labels", "info", "type", "platform"]
         
     def clean_file(self):
         data = self.cleaned_data['file']

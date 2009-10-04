@@ -19,7 +19,7 @@
     {% if group.found_date %}Founding Date: {{ group.found_date|date:"F j, Y" }}<br>{% endif %}
     {% if group.created_by %}Created By: {% with group.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}<br>{% endif %}
    
-    {% if group.info %}{{ group.info|urlize|bbcode|linebreaks }}<br>{% endif %}
+    {% if group.info %}<p><i>{{ group.info|urlize|bbcode|linebreaks }}</i></p>{% endif %}
 
     <a href="{% url dv-newgroups %}?group={{ group.id }}&status=A"><img src="/static/thumb_up.png" alt="Approve"> Approve</a> or <a href="{% url dv-newgroups %}?group={{ group.id }}&status=R"><img src="/static/thumb_down.png" alt="Reject"> Reject</a>
     </td>

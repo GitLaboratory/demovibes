@@ -21,7 +21,7 @@
         <h3>Infamous OneLiner</h3>
         {% if user.is_authenticated %}
         <form action="{% url dv-oneliner_submit %}" method="post" encoding="application/x-www-form-urlencoded"  onsubmit="ajaxpostform('{% url dv-ax-oneliner_submit %}',this,null,true); this.Line.value = ''; return false;" >
-            <input id="blah" name="Line" autocomplete="off" maxlength="256" onclick="tabreset()" onreset="tabreset();" onkeydown="return tabcomplete(this,event.keyCode);" value="LOAD *, 8, 1" onblur="tabreset();" onfocus="if (this.value == 'Oneliner') { this.value=''; }" /><input id="makeitso" type="submit" value="" />
+            <input id="blah" name="Line" autocomplete="off" maxlength="256" onclick="tabreset()" onreset="tabreset();" onkeydown="return tabcomplete(this,event.keyCode);" value="R: TAPE LOADING ERROR" onblur="tabreset();" onfocus="if (this.value == 'R: TAPE LOADING ERROR') { this.value=''; }" /><input id="makeitso" type="submit" value="" />
         </form>
         {% endif %}
         {% get_oneliner %}
@@ -76,8 +76,7 @@
         <div style="overflow:hidden">{% logo %}</div>
         {% block main %}{% endblock %}
         <span id="copyleft">
-            Powered by <a href="http://www.assembla.com/spaces/demovibes/">Demovibes</a><br />
-	    Made in the memory of Nectarine Demoscene Radio.
+            Powered by <a href="http://code.google.com/p/demovibes/">Demovibes</a><br>
         </span>
         <span id="copyright">
             layout: <a href="http://raina.daug.net/">raina</a>,

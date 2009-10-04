@@ -55,7 +55,7 @@ Location: {{ object.home_country|flag|safe }} {% if object.home_location %}{{ ob
 {% if object.info %}
 <br>Additional Information:<br>
 <p><i>{{ object.info|urlize|bbcode|linebreaks }}</i></p>
-{% endif %}
+{% endif %}<br>
 
 {% if object.webpage %}
 <br /><a href="{{ object.webpage }}" target="_new">Artist's Website</a><br />

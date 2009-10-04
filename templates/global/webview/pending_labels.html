@@ -3,7 +3,7 @@
 {% block title %}Pending Label Approvals{% endblock %}
 
 {% block main %}
-{% load dv_extend %}<h2>Pending Group Approvals</h2>
+{% load dv_extend %}<h2>Pending Label Approvals</h2>
 <p>The following labels have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.</p>
 <br>
 {% for label in labels.all %}
@@ -19,7 +19,7 @@
     {% if label.found_date %}Founding Date: {{ label.found_date|date:"F j, Y" }}<br>{% endif %}
     {% if label.created_by %}Created By: {% with label.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}<br>{% endif %}
    
-    {% if label.info %}{{ label.info|urlize|bbcode|linebreaks }}<br>{% endif %}
+    {% if label.info %}<p><i>{{ label.info|urlize|bbcode|linebreaks }}</i></p>{% endif %}
 
     <a href="{% url dv-newlabels %}?label={{ label.id }}&status=A"><img src="/static/thumb_up.png" alt="Approve"> Approve</a> or <a href="{% url dv-newlabels %}?label={{ label.id }}&status=R"><img src="/static/thumb_down.png" alt="Reject"> Reject</a>
     </td>

@@ -34,9 +34,16 @@ group_a_dict = {
 }
 
 """
-Shows ALL lables in the system
+Shows all active lables in the system
 """
 labels_all_dict = {
+    'queryset': Label.objects.filter(status="A"),
+}
+
+"""
+Queries pending labels, needs to be all or pending wont show
+"""
+labels_a_dict = {
     'queryset': Label.objects.all(),
 }
 
@@ -134,7 +141,8 @@ urlpatterns = patterns('',
     # Production label URL's (Labels/Producers Specific)
     url(r'^labels/$',                             'django.views.generic.list_detail.object_list', \
                 dict(labels_all_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-labels"),
-    url(r'^label/(?P<object_id>\d+)/$',            'django.views.generic.list_detail.object_detail',       labels_all_dict, name = "dv-label"),
+    url(r'^label/(?P<object_id>\d+)/$',            'django.views.generic.list_detail.object_detail',       labels_a_dict, name = "dv-label"),
+    url(r'^labels/(?P<letter>.)/$',               'demovibes.webview.views.list_labels', name = "dv-labels_letter"),
     url(r'^label/create/$',    'demovibes.webview.views.create_label', name = "dv-createlabel"),
     url(r'^new_labels/$',                      'demovibes.webview.views.activate_labels', name = "dv-newlabels"),
 )
