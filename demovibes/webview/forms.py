@@ -11,7 +11,7 @@ except ImportError:
 class UploadForm(forms.ModelForm):
     class Meta:
         model = Song
-        fields = ["title", "file", "pouetid", "wos_id", "zxdemo_id", "projecttwosix_id", "lemon_id", "hvsc_url", "remix_of_id", "groups", "labels", "info", "type", "platform"]
+        fields = ["title", "file", "pouetid", "wos_id", "zxdemo_id", "projecttwosix_id", "lemon_id", "hol_id", "hvsc_url", "remix_of_id", "groups", "labels", "info", "type", "platform"]
         
     def clean_file(self):
         data = self.cleaned_data['file']
@@ -30,7 +30,7 @@ class UploadForm(forms.ModelForm):
 class CreateArtistForm(forms.ModelForm):
     class Meta:
         model = Artist
-        fields = ["handle", "name", "dob", "home_country", "home_location", "last_fm_id", "info", "artist_pic", "webpage", "wiki_link", "groups", "labels"]
+        fields = ["handle", "name", "dob", "home_country", "home_location", "hol_id", "last_fm_id", "info", "artist_pic", "webpage", "wiki_link", "groups", "labels"]
 
     def clean_artist_pic(self):
         artist_pic = self.cleaned_data['artist_pic']
@@ -54,7 +54,7 @@ class CreateArtistForm(forms.ModelForm):
 class CreateLabelForm(forms.ModelForm):
     class Meta:
         model = Label
-        fields = ["name", "webpage", "wiki_link", "logo", "pouetid", "found_date", "cease_date", "info"]
+        fields = ["name", "webpage", "wiki_link", "logo", "pouetid", "hol_id", "found_date", "cease_date", "info"]
 
     def clean_logo(self):
         logo = self.cleaned_data['logo']
@@ -120,7 +120,7 @@ class ProfileForm(forms.ModelForm):
         
     class Meta:
         model = Userprofile
-        fields = ['infoline', 'visible_to', 'web_page', 'aol_id', 'yahoo_id', 'icq_id', 'country', 'location', 'avatar', 'info', 'fave_id', 'email_on_pm', 'pm_accepted_upload', 'paginate_favorites', 'theme', 'custom_css']
+        fields = ['infoline', 'visible_to', 'web_page', 'aol_id', 'yahoo_id', 'icq_id', 'hol_id', 'country', 'location', 'avatar', 'info', 'fave_id', 'email_on_pm', 'pm_accepted_upload', 'paginate_favorites', 'theme', 'custom_css']
         
 class FlashUploadForm(forms.ModelForm):
     class Meta:

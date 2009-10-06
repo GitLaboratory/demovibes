@@ -8,13 +8,14 @@
  {% ifnotequal comps.count 0 %}
   In Compilations: {% for comp in comps.all %}{% with comp as C %}{% include "webview/t/compilation.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br>
  {% endifnotequal %}
- {% if now_playing.song.pouetid %}
-  <a href="http://www.pouet.net/prod.php?which={{ now_playing.song.pouetid }}" target="_new">Pouet Link</a><br><br>
- {% else %}
-  <br>
- {% endif %}
+ {% if now_playing.song.pouetid %}<a href="http://www.pouet.net/prod.php?which={{ now_playing.song.pouetid }}" target="_new">[Pouet Link]</a> {% endif %}
+ {% if now_playing.song.hol_id %}<a href="http://hol.abime.net/{{ now_playing.song.hol_id }}" target="_new">[HOL Link]</a> {% endif %}
+ {% if now_playing.song.zxdemo_id %}<a href="http://zxdemo.org/item.php?id={{now_playing.song.zxdemo_id}}" target="_new">[ZXDemo]</a> {% endif %}
+ {% if now_playing.song.wos_id %}<a href="http://www.worldofspectrum.org/infoseekid.cgi?id={{now_playing.song.wos_id}}" target="_new">[World of Spectrum]</a> {% endif %}
+ {% if now_playing.song.lemon_id %}<a href="http://www.lemon64.com/games/details.php?ID={{now_playing.song.lemon_id}}" target="_new">[Lemon64]</a> {% endif %}
+ <br>
 
- Time Left: <span name="counter" sec="{{ now_playing.timeleft }}" inc="-1">{{ now_playing.song.length }}</span>
+ <p>Time Left: <span name="counter" sec="{{ now_playing.timeleft }}" inc="-1">{{ now_playing.song.length }}</span></p>
  
 {% else %}
  No Song Playing!!

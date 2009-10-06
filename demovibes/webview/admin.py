@@ -16,7 +16,7 @@ class SongAdmin(admin.ModelAdmin):
 	filter_horizontal = ['artists', 'groups', 'labels']
 	fieldsets = [
 		("General"		,{ 'fields' : ['title', 'remix_of_id', 'file', 'artists', 'groups', 'labels']}),
-		("Additional info"	,{ 'fields' : ['pouetid', 'wos_id', 'zxdemo_id', 'lemon_id', 'projecttwosix_id', 'hvsc_url', 'type', 'platform', 'status', 'info']}),
+		("Additional info"	,{ 'fields' : ['pouetid', 'wos_id', 'zxdemo_id', 'lemon_id', 'projecttwosix_id', 'hol_id', 'hvsc_url', 'type', 'platform', 'status', 'info']}),
 		("Technical stuff"	,{ 'fields' : ['song_length', 'bitrate','samplerate']}),
 	]
 	inlines = [DownloadInline]

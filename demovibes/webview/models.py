@@ -34,7 +34,7 @@ class Group(models.Model):
     group_logo = models.ImageField(help_text="Logo/Pic Of This Group", upload_to = 'media/groups', blank = True, null = True)
     info = models.TextField(blank = True, verbose_name="Group Info", help_text="Additional information on this group. No HTML.")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
-    pouetid = models.IntegerField(verbose_name="Pouet ID", help_text="If this group has a Pouet entry, enter the ID number here", blank=True, null = True)
+    pouetid = models.IntegerField(verbose_name="Pouet ID", help_text="If this group has a Pouet entry, enter the ID number here - See http://www.pouet.net", blank=True, null = True)
     found_date = models.DateField(verbose_name="Found Date", help_text="Date this group was formed (YYYY-MM-DD)", null=True, blank = True)
     created_by = models.ForeignKey(User,  null = True, blank = True, related_name="group_createdby")
     last_updated = models.DateTimeField(blank = True, null = True)
@@ -92,6 +92,7 @@ class Userprofile(models.Model):
     aol_id = models.CharField(blank = True, max_length = 40, verbose_name = "AOL IM", help_text="AOL IM ID, for people to contact you (optional)")
     yahoo_id = models.CharField(blank = True, max_length = 40, verbose_name = "Yahoo! ID", help_text="Yahoo! IM ID, for people to contact you (optional)")
     icq_id = models.CharField(blank = True, max_length = 40, verbose_name = "ICQ Number", help_text="ICQ Number for people to contact you (optional)")
+    hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="If you have a Hall of Light ID number (Amiga Developers) - See http://hol.abime.net")
     info = models.TextField(blank = True, verbose_name="Profile Info", help_text="Enter a little bit about yourself. No HTML. BBCode tags allowed")
     country = models.CharField(blank = True, max_length = 10, verbose_name = "Country code")
     location = models.CharField(blank = True, max_length=40, verbose_name="Hometown Location")
@@ -169,11 +170,12 @@ class Userprofile(models.Model):
 class Label(models.Model):
     name = models.CharField(max_length=40, unique = True, db_index = True, verbose_name="* Name", help_text="Name of this label, as you want it to appear on the site")
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Website for this label, if available")
-    wiki_link = models.URLField(blank=True, help_text="URL to wikipedia entry (if available)")
+    wiki_link = models.URLField(blank=True, help_text="Full URL to wikipedia entry (if available)")
     logo = models.ImageField(upload_to = 'media/labels', blank = True, null = True, verbose_name="Label Logo", help_text="Upload an image containing the logo for this label")
     info = models.TextField(blank = True, help_text="Additional information about this label. No HTML.")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
     pouetid = models.IntegerField(blank=True, null = True, verbose_name="Pouet ID", help_text="If this label has a pouet group entry, enter the ID here.")
+    hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="Hall of Light ID number (Amiga) - See http://hol.abime.net")
     found_date = models.DateField(help_text="Date label was formed (YYYY-MM-DD)", null=True, blank = True)
     cease_date = models.DateField(help_text="Date label was closed/went out of business (YYYY-MM-DD)", null=True, blank = True)
     created_by = models.ForeignKey(User,  null = True, blank = True, related_name="label_createdby")
@@ -216,6 +218,7 @@ class Artist(models.Model):
     home_country = models.CharField(blank = True, max_length = 10, verbose_name = "Country Code", help_text="Standard country code, such as gb, us, ru, se etc.")
     home_location = models.CharField(blank = True, max_length=40, verbose_name="Location", help_text="Hometown location, if known.")
     last_fm_id = models.CharField(blank = True, max_length = 32, verbose_name = "Last.fm ID", help_text="If this artist has a Last.FM account, specify the username portion here. Use + instead of Space. Example: Martin+Galway")
+    hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="Hall of Light Artist ID number (Amiga) - See http://hol.abime.net")
     groups = models.ManyToManyField(Group, null = True, blank = True, help_text="Select any known groups this artist is a member of.")
     labels = models.ManyToManyField(Label, null = True, blank = True, help_text="Select any known production labels associated with this artist.") # Production labels this artist has worked for
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
@@ -300,11 +303,12 @@ class Song(models.Model):
     title = models.CharField(verbose_name="* Song Name", help_text="The name of this song, as it should appear in the database", max_length=80, db_index = True)
     file = models.FileField(upload_to='media/music', verbose_name="File", help_text="Select an MP3 file to upload. The MP3 should be between 128 and 320Kbps, Stereo or Joint Stereo, with a Constant Bitrate.")
     pouetid = models.IntegerField(blank=True, null = True, help_text="Pouet number (which= portion) from Pouet.net")
-    wos_id = models.CharField(max_length=8, blank=True, null = True, verbose_name="W.O.S. ID", help_text="World of Spectrum ID Number (Spectrum) such as 0003478 (leading 0's are IMPORTANT!)")
-    zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum)")
-    projecttwosix_id = models.IntegerField(blank=True, null = True, verbose_name="Project2612 ID", help_text="Project2612 ID Number (Genesis / Megadrive)")
-    hvsc_url = models.URLField(blank=True, verbose_name="HVSC Link", help_text="Link to HVSC SID file as a complete URL (C64)")
-    lemon_id = models.IntegerField(blank=True, null = True, verbose_name="Lemon64 ID", help_text="Lemon64 Game ID (C64 Only)")
+    wos_id = models.CharField(max_length=8, blank=True, null = True, verbose_name="W.O.S. ID", help_text="World of Spectrum ID Number (Spectrum) such as 0003478 (leading 0's are IMPORTANT!) - See http://www.worldofspectrum.org")
+    zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum) - See http://www.zxdemo.org")
+    hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="Hall of Light ID number (Amiga) - See http://hol.abime.net")
+    projecttwosix_id = models.IntegerField(blank=True, null = True, verbose_name="Project2612 ID", help_text="Project2612 ID Number (Genesis / Megadrive) - See http://www.project2612.org")
+    hvsc_url = models.URLField(blank=True, verbose_name="HVSC Link", help_text="Link to HVSC SID file as a complete URL (C64) - See HVSC or mirror (such as www.andykellett.com/music")
+    lemon_id = models.IntegerField(blank=True, null = True, verbose_name="Lemon64 ID", help_text="Lemon64 Game ID (C64 Only) - See http://www.lemon64.com")
     added = models.DateTimeField(auto_now_add=True)
     info = models.TextField(blank = True, help_text="Additional Song information. BBCode tags are supported. No HTML.")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
@@ -488,8 +492,9 @@ class Compilation(models.Model):
     rel_date = models.DateField(help_text="Original Release Date", null=True, blank = True) # Original release date, we could also add re-release date though not necessary just yet!
     num_discs = models.IntegerField(help_text="If this is a media format like CD, you can specify the number of disks", blank=True, null = True) # Number of discs in the compilation
     pouet = models.IntegerField(help_text="Pouet ID for compilation", blank=True, null = True) # If the production has a pouet ID
-    zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum)")
-    projecttwosix_id = models.IntegerField(blank=True, null = True, verbose_name="Project2612 ID", help_text="Project2612 ID Number (Genesis / Megadrive)")
+    zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum) - See http://www.zxdemo.org")
+    hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="Hall of Light ID number (Amiga) - See http://hol.abime.net")
+    projecttwosix_id = models.IntegerField(blank=True, null = True, verbose_name="Project2612 ID", help_text="Project2612 ID Number (Genesis / Megadrive) - See http://www.project2612.org")
     running_time = models.IntegerField(help_text="Overall running time", blank = True, null = True) # Running time of the album/compilation
     date_added = models.DateTimeField(auto_now_add=True) # Date the compilation added to the DB
     created_by = models.ForeignKey(User, null = True, blank = True)
