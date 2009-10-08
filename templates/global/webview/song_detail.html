@@ -4,7 +4,7 @@
  
 {% block main %}
 
-<h2>
+{% load dv_extend %}<h2>
  <img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Song Information
 {% if user.is_staff %}
  [<a href="/admin/webview/song/{{ object.id }}/">Edit Info</a>] <em>Admin Preview:</em> {% with object as song %}{% include "webview/t/flash_playsong.html" %}{% endwith %}
@@ -44,11 +44,11 @@ Uploaded By: {% with object.uploader as U%}{% include "webview/t/user.html" %}{%
 Extra Resources:
 {% if object.pouetid %} <a href="http://www.pouet.net/prod.php?which={{object.pouetid}}" target="_new">[Pouet Link]</a>{% endif %}
 {% if object.hol_id %} <a href="http://hol.abime.net/{{ object.hol_id }}" target="_new">[HOL Link]</a>{% endif %}
-{% if object.wos_id %} <a href="http://www.worldofspectrum.org/infoseekid.cgi?id={{object.wos_id}}" target="_new">[World of Spectrum Link]</a>{% endif %}
+{% if object.wos_id %} <a href="http://www.worldofspectrum.org/infoseekid.cgi?id={{object.wos_id}}" target="_new">[WOS Link]</a>{% endif %}
 {% if object.zxdemo_id %} <a href="http://zxdemo.org/item.php?id={{object.zxdemo_id}}" target="_new">[ZXDemo Link]</a>{% endif %}
 {% if object.lemon_id %} <a href="http://www.lemon64.com/games/details.php?ID={{object.lemon_id}}" target="_new">[Lemon64 Link]</a>{% endif %}
 {% if object.projecttwosix_id %} <a href="http://project2612.org/details.php?id={{object.projecttwosix_id}}" target="_new">[Project2612 Link]</a>{% endif %}
-{% if object.hvsc_url %} <a href="{{ object.hvsc_url }}">[Download SID File]</a>{% endif %}
+{% if object.hvsc_url %} <a href="{{ object.hvsc_url }}">[SID File]</a>{% endif %}
 <br>
 
 <p>
@@ -61,7 +61,7 @@ Song Status: {{ object.get_status_display }}
 </p>
 
 {% if object.info %}
-<br />Additional Information:<br /><i>{{ object.info|urlize|linebreaks }}</i>
+<br />Additional Information:<br /><i>{{ object.info|urlize|bbcode|linebreaks }}</i>
 {% endif %}
 
 {% load dv_extend %}
@@ -80,7 +80,6 @@ Song Status: {{ object.get_status_display }}
 <p>
 This song has been played <a href="{{object.get_absolute_url}}queue_history">{{ object.times_played }}</a> times. <br>
 It was added {{ object.added|timesince }} ago.
-{% if object.remix_of_id %}<br>This song is a remix of: {% get_song_queuetag object.remix_of_id %}{% endif %}
 </p>
 
 {% if object.songdownload_set.all  %}
@@ -113,13 +112,15 @@ It was added {{ object.added|timesince }} ago.
 A total of {{ object.num_favorited }} users have this song on their favourites list.<br />
 
 <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Compilation / Remix Information</h2>
+{% if object.remix_of_id %}This song is a remix of: {% get_song_queuetag object.remix_of_id %}<br>{% endif %}
 {% ifnotequal comps.count 0 %}
-Appears In The Following Compilations:<br><br>
-{% for comp in comps.all %}{% with comp as C %}{% include "webview/t/compilation.html" %}{% endwith %}<br>{% endfor %}
+ <p><strong>This Song Is Listed In The Following Compilations:</strong><br><br>
+ {% for comp in comps.all %}{% with comp as C %}{% include "webview/t/compilation.html" %}{% endwith %}<br>{% endfor %}
+ </p>
 {% endifnotequal %}
 
 {% ifnotequal remix.count 0 %}
-<br>This song has been remixed as the following entries:<br><br>
+<br><strong>Remixes Based On This Song:</strong><br><br>
 {% for mix in remix.all %}{% get_song_queuetag mix.id %}<br>{% endfor %}
 {% endifnotequal %}
 
