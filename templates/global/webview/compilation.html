@@ -27,7 +27,7 @@ Name: {{ comp.name }}<br>
 {% if comp.bar_code %}UPC: {{ comp.bar_code }}<br>{% endif %}
 {% if comp.pouet %}Pouet Info: <a href="http://www.pouet.net/prod.php?which={{ comp.pouet }}" target="_new">Pouet Link</a><br>{% endif %}
 {% if comp.date_added %}<br>Added On: {{ comp.date_added|date:"F j, Y" }} <br>By: {% if comp.created_by %}{% with comp.created_by as U %}{% include "webview/t/user.html" %}{% endwith %}{% endif %}<br>{% endif %}
-{% if comp.status %}Status: {{ comp.get_status_display }}<br>{% endif %}
+
 </p>
 </td>
 <td class="compilation_description" valign="top">

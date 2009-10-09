@@ -12,7 +12,6 @@
 <br><strong>{{ object.name }}</strong><br>
 {% if object.found_date %}(Founded On: {{object.found_date|date:"F j, Y" }})<br>{% endif %}
 {% if object.cease_date %}Shutdown Date: {{ object.cease_date }}<br>{% endif %}
-Status: {{ object.get_status_display }}<br>
 
 Links:{% if object.webpage %} <a href="{{ object.webpage }}" target="_new">[Website]</a>{% endif %}
 {% if object.wiki_link %} <a href="{{ object.wiki_link }}" target="_new">[Wiki]</a>{% endif %}
