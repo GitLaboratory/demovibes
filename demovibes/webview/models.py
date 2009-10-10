@@ -372,9 +372,9 @@ class Song(models.Model):
                 self.bitrate = 0
                 self.samplerate = 0
             S = self.title[0].lower()
-            if not S in alphalist:
-                S = '#'
-            self.startswith = S
+        if not S in alphalist:
+            S = '#'
+        self.startswith = S
         return super(Song, self).save(force_insert, force_update)
 
     def artist(self):
@@ -557,7 +557,7 @@ class SongDownload(models.Model):
 class Queue(models.Model):
     song = models.ForeignKey(Song)
     requested = models.DateTimeField(auto_now_add=True, db_index = True)
-    played = models.BooleanField()
+    played = models.BooleanField(db_index = True)
     requested_by = models.ForeignKey(User)
     priority = models.BooleanField(default=False, db_index = True)
     playtime = models.DateTimeField(blank = True, null = True, db_index = True)

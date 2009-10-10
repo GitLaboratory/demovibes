@@ -91,7 +91,7 @@ def addqueue(request, song_id): # XXX Fix to POST
     except:
         return HttpResponseNotFound()
     song.queue_by(request.user)
-    return HttpResponseRedirect(reverse('dv-queue'))
+    return direct_to_template(request, template = "webview/song_queued.html")
 
 @login_required
 def addcomment(request, song_id):

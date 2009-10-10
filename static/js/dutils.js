@@ -10,7 +10,6 @@
 
 function requestsong(no) {
 	ajaxget(ajaxurl+'song/'+no+'/queue/');
-	return false;
 }
 
 // added support for multiple counter spans with arbitrary direction
