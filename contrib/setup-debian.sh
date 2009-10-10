@@ -41,6 +41,7 @@ ices="http://downloads.us.xiph.org/releases/ices/ices-0.4.tar.gz"
 
 curdir=$(pwd)
 dbname="demovibes"
+dbuser="demovibes"
 
 #Setting up various passwords
 random=$(dd if=/dev/urandom bs=30 count=1  2>/dev/null | base64 -w 0)
@@ -68,17 +69,17 @@ apt-get install -y $python $web $database $icecast $ices_compile
 
 echo -e "\n\n\nInstalling Django South from $south\n\n\n"
 wget $south
-tar -xzf south-0.5.tar.gz
+tar -xzf south-0.5.tar.gz > /dev/null
 rm south-0.5.tar.gz
 cd south
-python setup.py install
+python setup.py install > /dev/null
 cd ..
 rm -rf south
 
 
 echo -e "\n\n\nCreating database. Need to input database server root password\n\n\n"
-sql="CREATE DATABASE __DBNAME__; GRANT ALL ON demovibes.* TO demovibes@localhost IDENTIFIED BY '__PASS__';"
-echo $sql | sed -e "s!__PASS__!$dbpw!g" -e "s/__DBNAME__/$dbname/g" | mysql -u root -p
+sql="CREATE DATABASE __DBNAME__; GRANT ALL ON __DBNAME__.* TO __DBUSER__@localhost IDENTIFIED BY '__PASS__';"
+echo $sql | sed -e "s!__PASS__!$dbpw!g" -e "s/__DBNAME__/$dbname/g" -e "s/__DBUSER__/$dbuser/g" | mysql -u root -p
 
 
 echo -e "\n\n\nSetting up demovibes..\n\n\n"
@@ -110,9 +111,10 @@ cd ..
 
 cd ..
 cd demovibes
-sed -e "s!__PATH__!$curdir!g" -e "s!__PASS__!$dbpw!g" -e "s!__RANDOM__!$random!g" -e "s/__DBNAME__/$dbname/g" ../contrib/settings.py.example > settings.py
-./manage.py syncdb
-./manage.py migrate
+sed -e "s!__PATH__!$curdir!g" -e "s!__PASS__!$dbpw!g" -e "s!__RANDOM__!$random!g" -e "s/__DBNAME__/$dbname/g" -e "s/__DBUSER__/$dbuser/g" ../contrib/settings.py.example > settings.py
+python manage.py syncdb
+echo "Running DB migrate.."
+python manage.py migrate > django-migrate.log
 cd ..
 
 
@@ -146,13 +148,13 @@ a2ensite demovibes
 #
 # Then manually go into the ices-0.4 folder, run ./configure and in the list at the end, LAME support
 # Should be set to Yes. just make and bingo! AAK
-echo -e "\n\n\nInstalling ices0\n\n\n"
+echo -e "\n\n\nInstalling ices0 (some warnings are common)\n\n\n"
 wget $ices
 tar -xzf ices-0.4.tar.gz
 rm ices-0.4.tar.gz
 cd ices-0.4
-./configure --with-python
-make
+./configure --with-python > configure-log.txt
+make > make-log.txt
 cd ..
 
 sed -e "s!__PATH__!$curdir!g" -e "s!__URL__!$hostn!g" contrib/icecaster.sh > demovibes/icecaster.sh
