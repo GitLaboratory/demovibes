@@ -23,7 +23,6 @@ def get_latest_event():
     except:
         return 0
 
-
 def log_debug(area, text, level=1):
     settings_level = getattr(settings, 'DEBUGLEVEL', 0)
     settings_debug = getattr(settings, 'DEBUG')
@@ -34,6 +33,10 @@ def log_debug(area, text, level=1):
         F.close()
 
 
+def get_event_key(key):
+    event = get_latest_event()
+    return "%s--%s" % (key, event)
+    
 # Not perfect, borks if I add () to decorator (or arguments..)
 # Tried moving logic to call and def a wrapper there, but django somehow didn't like that
 #
@@ -44,7 +47,7 @@ class cache_output(object):
     def __init__(self, f):
         self.f = f
         self.n = f.__name__
-        self.s = 60*10 # default cache time in seconds
+        self.s = 60*5 # default cache time in seconds
         
     def __call__(self, *args, **kwargs):
         try:

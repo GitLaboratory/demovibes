@@ -1,5 +1,6 @@
 from demovibes.webview.models import *
-from demovibes.webview.common import cache_output, get_profile
+from demovibes.webview.common import cache_output, get_profile, log_debug
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -46,9 +47,12 @@ def queue(request):
 def oneliner_submit(request):
     if not request.user.is_authenticated():
         return HttpResponse("NoAuth")
-    message =  request.POST['Line'].strip()
+    message = request.POST['Line'].strip()
     if message != "":
         Oneliner.objects.create(user = request.user, message = message)
+        request.path = reverse('dv-ax-oneliner')
+        test = oneliner(request)
+        AjaxEvent.objects.create(event='oneliner')
     return HttpResponse("OK")
 
 @cache_output

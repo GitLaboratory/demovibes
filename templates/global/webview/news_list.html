@@ -1,7 +1,10 @@
 {% extends "base/base.html" %}
 
+{% load cache %}
 {% load dv_extend %}
+
 {% block main %}
+{% cache 600 mainnews%}
 {% if object_list %}
 
 {% for news in object_list %}{% ifequal news.status "S" %}{# Sticky ones first! #}
@@ -22,4 +25,5 @@
 <h2><img class="icon_header" src="{{ MEDIA_URL }}newspaper.png" alt="" />Missing News</h2>
 No news here! You should take a trip to the admin interface and add some news!
 {% endif %}
+{% endcache %}
 {% endblock %}

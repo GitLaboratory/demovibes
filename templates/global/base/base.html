@@ -1,16 +1,21 @@
-{% extends "base/base_skeleton.html" %}
+{% extends "base/base_skeleton.html" %}i
+
+{% load cache %}
 {% load dv_extend %}
+
 {% block content %}
     <div id="sidebar">
         <h3>Welcome, {% if user.is_authenticated %}{{ user }}{% else %}Visitor{% endif %}!</h3>
         {% block sidebar %}
         <ul>
             <li id="home"><a href="{% url dv-root %}">Home</a></li>
+	    <li></li>
             <li id="songs"><a href="{% url dv-songs %}">Songs</a></li>
             <li id="artists"><a href="{% url dv-artists %}">Artists</a></li>
             <li id="groups"><a href="{% url dv-groups %}">Groups</a></li>
 	    <li id="labels"><a href="{% url dv-labels %}">Labels</a></li>
             <li id="compilations"><a href="{% url dv-compilations %}">Compilations</a></li>
+	    <li></li>
             <li id="menuqueue"><a href="{% url dv-queue %}">Queue</a></li>
             <li id="search"><a href="{% url dv-search %}">Search</a></li>
             <li id="forum"><a href="{% url forum_index %}">Forum</a></li>
@@ -46,6 +51,7 @@
             <li id="menuqueue"><a href="{% url dv-uploads %}">Unapproved Uploads</a></li>
         {% endif %}
         {% if user.is_staff %}
+	    <li></li>
             <li id="unap-artists"><a href="{% url dv-newartists %}">Pending Artists</a></li>
             <li id="unap-groups"><a href="{% url dv-newgroups %}">Pending Groups</a></li>
 	    <li id="unap-labels"><a href="{% url dv-newlabels %}">Pending Labels</a></li>
@@ -59,13 +65,14 @@
         </div>
 
 <form style="margin-bottom: 5px"><input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onClick="window.open('{% url dv-play_stream %}','player','width=170,height=130,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')"> - <a href="{% url dv-streams %}">Streams</a></form>
-
-        {% get_sidebar_news %}
-        {% for sbnews in sidebarnews %}
-        <br />
-        <h3>{{ sbnews.title }}</h3>
-        {{ sbnews.text|safe }}
-        {% endfor %}
+	{% cache 3600 sidebarnews %}
+	    {% get_sidebar_news %}
+	    {% for sbnews in sidebarnews %}
+	    <br />
+	    <h3>{{ sbnews.title }}</h3>
+	    {{ sbnews.text|safe }}
+	    {% endfor %}
+	{% endcache %}
 
 
 

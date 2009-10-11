@@ -92,7 +92,7 @@ def addqueue(request, song_id): # XXX Fix to POST
         return HttpResponseNotFound()
     song.queue_by(request.user)
     return direct_to_template(request, template = "webview/song_queued.html")
-    
+
 @login_required
 def addcomment(request, song_id):
     """
@@ -407,6 +407,7 @@ def oneliner_submit(request):
         message =  request.POST['Line'].strip()
         if message != "":
             Oneliner.objects.create(user = request.user, message = message)
+            AjaxEvent.objects.create(event='oneliner')
     except:
         pass
     try:

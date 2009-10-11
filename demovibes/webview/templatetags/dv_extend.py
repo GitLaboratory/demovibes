@@ -1,6 +1,8 @@
 import re, textwrap
 from django import template
 from demovibes.webview.models import *
+from demovibes.webview.common import get_event_key
+from django.core.cache import cache
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.template import Context, Template
@@ -57,12 +59,17 @@ def current_song():
     """
     Returns the current song playing. Ties into right-panel on all views.
     """
-    try:
-        songname = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
-    except:
-        return "No Song!!"
-    T = get_template('webview/t/now_playing.html')
-    return T.render(Context({ 'now_playing' : songname }))
+    key = get_event_key('currentsong')
+    R = cache.get(key)
+    if not R:
+        try:
+            songname = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
+        except:
+            return "No Song!!"
+        T = get_template('webview/t/now_playing.html')
+        R = T.render(Context({ 'now_playing' : songname }))
+        cache.set(key, R, 300)
+    return R
 
 @register.simple_tag
 def ajaxevent():
@@ -76,13 +83,18 @@ def ajaxevent():
 
 @register.simple_tag
 def get_oneliner():
-	"""
-	Renders the oneliner html
-	"""
-	lines = getattr(settings, 'ONELINER', 10)
-	oneliner = Oneliner.objects.order_by('-id')[:lines]
-	T = get_template('webview/oneliner2.html')
-	return T.render(Context({'oneliner' : oneliner}))
+    """
+    Renders the oneliner html
+    """
+    key = get_event_key('currentsong')
+    R = cache.get(key)
+    if not R:
+        lines = getattr(settings, 'ONELINER', 10)
+        oneliner = Oneliner.objects.order_by('-id')[:lines]
+        T = get_template('webview/oneliner2.html')
+        R = T.render(Context({'oneliner' : oneliner}))
+        cache.set(key, R, 300)
+    return R
 
 @register.tag
 def get_post_count(parser, token):

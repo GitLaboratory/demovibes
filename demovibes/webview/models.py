@@ -10,6 +10,8 @@ from django.contrib.sites.models import Site
 from django.template import RequestContext, Context, loader
 from django.db.models.signals import post_save
 
+from demovibes.webview import ajax_views
+
 from managers import *
 
 # Create your models here.
@@ -671,7 +673,6 @@ class Oneliner(models.Model):
         ordering = ['-added']
 
     def save(self, force_insert=False, force_update=False):
-        AjaxEvent.objects.create(event='oneliner')
         return super(Oneliner, self).save(force_insert, force_update)
 
 class AjaxEvent(models.Model):
