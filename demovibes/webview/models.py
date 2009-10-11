@@ -371,12 +371,11 @@ class Song(models.Model):
                 self.song_length = 0
                 self.bitrate = 0
                 self.samplerate = 0
-
-            S = self.title[0].lower()
-            if not S in alphalist:
-                S = '#'
-            self.startswith = S
-            return super(Song, self).save(force_insert, force_update)
+        S = self.title[0].lower()
+        if not S in alphalist:
+            S = '#'
+        self.startswith = S
+        return super(Song, self).save(force_insert, force_update)
 
     def artist(self):
         """
