@@ -1,5 +1,5 @@
 from demovibes.webview.models import *
-from demovibes.webview.common import cache_output, get_profile, log_debug
+from demovibes.webview.common import *
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.http import HttpResponse
@@ -34,15 +34,11 @@ def nowplaying(request):
     song = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
     return render_to_response('webview/js/now_playing.html', { 'now_playing' : song },  context_instance=RequestContext(request))
 
-@cache_output
 def history(request):
-    history = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[1:21]
-    return render_to_response('webview/js/history.html', { 'history' : history })
+    return HttpResponse(get_history())
 
-@cache_output
 def queue(request):
-    queue = Queue.objects.select_related(depth=2).filter(played=False).order_by('id')
-    return render_to_response('webview/js/queue.html', { 'queue' : queue })
+    return HttpResponse(get_queue())
 
 def oneliner_submit(request):
     if not request.user.is_authenticated():
@@ -51,15 +47,12 @@ def oneliner_submit(request):
     if message != "":
         Oneliner.objects.create(user = request.user, message = message)
         request.path = reverse('dv-ax-oneliner')
-        test = oneliner(request)
+        f = get_oneliner(True)
         AjaxEvent.objects.create(event='oneliner')
     return HttpResponse("OK")
 
-@cache_output
 def oneliner(request):
-    lines = getattr(settings, 'ONELINER', 10)
-    oneliner = Oneliner.objects.select_related().order_by('-id')[:lines]
-    return render_to_response('webview/js/oneliner.html', { 'oneliner' : oneliner })
+    return HttpResponse(get_oneliner())
 
 def songupdate(request, song_id):
     song = Song.objects.get(id=song_id)

@@ -1,7 +1,7 @@
 import re, textwrap
 from django import template
 from demovibes.webview.models import *
-from demovibes.webview.common import get_event_key
+from demovibes.webview import common
 from django.core.cache import cache
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -59,16 +59,8 @@ def current_song():
     """
     Returns the current song playing. Ties into right-panel on all views.
     """
-    key = get_event_key('currentsong')
-    R = cache.get(key)
-    if not R:
-        try:
-            songname = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
-        except:
-            return "No Song!!"
-        T = get_template('webview/t/now_playing.html')
-        R = T.render(Context({ 'now_playing' : songname }))
-        cache.set(key, R, 300)
+    T = get_template('webview/t/now_playing.html')
+    R = T.render(Context({ 'now_playing' : songname }))
     return R
 
 @register.simple_tag
@@ -86,14 +78,9 @@ def get_oneliner():
     """
     Renders the oneliner html
     """
-    key = get_event_key('currentsong')
-    R = cache.get(key)
-    if not R:
-        lines = getattr(settings, 'ONELINER', 10)
-        oneliner = Oneliner.objects.order_by('-id')[:lines]
-        T = get_template('webview/oneliner2.html')
-        R = T.render(Context({'oneliner' : oneliner}))
-        cache.set(key, R, 300)
+    T = get_template('webview/oneliner2.html')
+    oneliner = common.get_oneliner()
+    R = T.render(Context({'oneliner' : oneliner}))
     return R
 
 @register.tag
@@ -243,9 +230,6 @@ class GetSongRatingStarsAvgNode(template.Node):
             user_vote = song.get_vote(user) # What did the user vote for this song?
             user_anon = False
 	    
-	# We can now get any compilation data that this song is a part of
-	comps = Compilation.objects.filter(songs__id = song.id)
-
         htmltxt = ""
         TempLine = ""
         
@@ -254,11 +238,7 @@ class GetSongRatingStarsAvgNode(template.Node):
         if(type(user_vote).__name__=='str'):
             user_vote = int(0) # Implicitly define this as int, so there is no confusion!
 
-        # Insert the currently playing song data! This is now moved to an exclusive
-        # Template that only this function has access to. Split into pieces for ease of inclusion
-        T = loader.get_template('webview/t/now_playing_song.html')
-        C = Context({ 'now_playing' : songtype, 'comps' : comps })
-        htmltxt = T.render(C)
+        htmltxt = common.get_now_playing()
 
         # Open the table
         htmltxt = htmltxt + '<span class="vote" name="vote/%d" onmouseout="voteshow(\'vote/%d\', %d);">' % ( song.id, song.id, user_vote )

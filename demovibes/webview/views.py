@@ -1,6 +1,6 @@
 from demovibes.webview.models import *
 from demovibes.webview.forms import *
-from demovibes.webview.common import get_profile, get_latest_event
+from demovibes.webview.common import *
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
@@ -128,12 +128,9 @@ def list_queue(request):
     """
     Display the current song, the next songs in queue, and the latest 20 songs in history.
     """
-    try :
-        now_playing = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
-    except IndexError:
-        now_playing = ""
-    history = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[1:21]
-    queue = Queue.objects.select_related(depth=2).filter(played=False).order_by('id')
+    now_playing = ""
+    history = get_history()
+    queue = get_queue()
     return render_to_response('webview/queue_list.html', \
         {'now_playing': now_playing, 'history': history, 'queue': queue}\
         , context_instance=RequestContext(request))

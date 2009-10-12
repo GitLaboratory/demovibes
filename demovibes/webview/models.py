@@ -9,8 +9,8 @@ from django.template.defaultfilters import striptags
 from django.contrib.sites.models import Site
 from django.template import RequestContext, Context, loader
 from django.db.models.signals import post_save
-
-from demovibes.webview import ajax_views
+from django.core.cache import cache
+#from demovibes.webview.common import get_oneliner, get_now_playing, get_queue, get_history
 
 from managers import *
 

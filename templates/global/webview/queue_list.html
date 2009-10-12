@@ -1,5 +1,7 @@
 {% extends "base/base.html" %}
 
+{% load dv_extend %}
+
 {% block title %}Queue list{% endblock %}
 
 {% block main %}
@@ -9,7 +11,7 @@ Currently Playing
 </h2>
 
 <div name="nowplaying">
-{% include "webview/t/now_playing.html" %}
+{% get_rating_stars_song_avg user %}
 </div>
 
 <h2>
@@ -18,7 +20,7 @@ Pending Queue List
 </h2>
 
 <div name="queue">
-{% include "webview/js/queue.html" %}
+{{ queue|safe }}
 </div>
 
 <h2>
@@ -27,7 +29,7 @@ Request History
 </h2>
 
 <div name="history">
- {% include "webview/js/history.html" %}
+{{ history|safe }}
 </div>
 
 {% endblock %}
