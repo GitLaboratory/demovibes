@@ -92,7 +92,7 @@ def log_debug(area, text, level=1):
 
 def get_event_key(key):
     event = get_latest_event()
-    return "%s.event %s" % (key, event)
+    return "%sevent%s" % (key, event)
     
 # Not perfect, borks if I add () to decorator (or arguments..)
 # Tried moving logic to call and def a wrapper there, but django somehow didn't like that
