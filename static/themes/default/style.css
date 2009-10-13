@@ -269,6 +269,7 @@ h3
 #songs		{background-image: url("/static/music.png");}
 #artists	{background-image: url("/static/user_green.png");}
 #compilations   {background-image: url("/static/recplay_ico.png");}
+#recent	        {background-image: url("/static/new.png");}
 #menuqueue	{background-image: url("/static/script.png");}
 #search		{background-image: url("/static/find.png");}
 #forum		{background-image: url("/static/user_comment.png");}
@@ -278,8 +279,8 @@ h3
 #login		{background-image: url("/static/door_in.png");}
 #admin		{background-image: url("/static/door.png");}
 #inbox		{background-image: url("/static/email.png");}
-#unap-artists           {background-image: url("/static/user_green.png");}
-#unap-groups            {background-image: url("/static/group.png");} 
+#unap-artists   {background-image: url("/static/user_green.png");}
+#unap-groups    {background-image: url("/static/group.png");} 
 #groups         {background-image: url("/static/group.png");} 
 
 
@@ -763,8 +764,4 @@ table.songlist tr.row2 td {
 /*	background-color: #e1e1e1; */
 	background-color: #ffe4ba;
 
-}
-
-#recent {
-	background-image: url("/static/new.png");
 }
