@@ -281,8 +281,9 @@ h3
 #inbox		{background-image: url("/static/email.png");}
 #unap-artists   {background-image: url("/static/user_green.png");}
 #unap-groups    {background-image: url("/static/group.png");} 
+#unap-labels    {background-image: url("/static/transmit_blue.png");}
 #groups         {background-image: url("/static/group.png");} 
-
+#labels		{background-image: url("/static/transmit_blue.png");}
 
 #forum, #favorites, #logout
 {
