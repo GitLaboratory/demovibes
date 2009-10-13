@@ -1,4 +1,4 @@
-{% extends "base/base_skeleton.html" %}i
+{% extends "base/base_skeleton.html" %}
 
 {% load cache %}
 {% load dv_extend %}
@@ -9,16 +9,16 @@
         {% block sidebar %}
         <ul>
             <li id="home"><a href="{% url dv-root %}">Home</a></li>
-	    <li></li>
+            <li id="forum"><a href="{% url forum_index %}">Forum</a></li>
             <li id="songs"><a href="{% url dv-songs %}">Songs</a></li>
             <li id="artists"><a href="{% url dv-artists %}">Artists</a></li>
             <li id="groups"><a href="{% url dv-groups %}">Groups</a></li>
 	    <li id="labels"><a href="{% url dv-labels %}">Labels</a></li>
             <li id="compilations"><a href="{% url dv-compilations %}">Compilations</a></li>
-	    <li></li>
+	    <li id="empty"></li>
             <li id="menuqueue"><a href="{% url dv-queue %}">Queue</a></li>
+	    <li id="empty"></li>
             <li id="search"><a href="{% url dv-search %}">Search</a></li>
-            <li id="forum"><a href="{% url forum_index %}">Forum</a></li>
             <li id="recent"><a href="{% url dv-recent %}">New Uploads</a></li>
         </ul>
         {% endblock %}
@@ -26,7 +26,7 @@
         <h3>Infamous OneLiner</h3>
         {% if user.is_authenticated %}
         <form action="{% url dv-oneliner_submit %}" method="post" encoding="application/x-www-form-urlencoded"  onsubmit="ajaxpostform('{% url dv-ax-oneliner_submit %}',this,null,true); this.Line.value = ''; return false;" >
-            <input id="blah" name="Line" autocomplete="off" maxlength="256" onclick="tabreset()" onreset="tabreset();" onkeydown="return tabcomplete(this,event.keyCode);" value="R: TAPE LOADING ERROR" onblur="tabreset();" onfocus="if (this.value == 'R: TAPE LOADING ERROR') { this.value=''; }" /><input id="makeitso" type="submit" value="" />
+            <input id="blah" name="Line" autocomplete="off" maxlength="256" onclick="tabreset()" onreset="tabreset();" onkeydown="return tabcomplete(this,event.keyCode);" value="GURU MEDITATION" onblur="tabreset();" onfocus="if (this.value == 'GURU MEDITATION') { this.value=''; }" /><input id="makeitso" type="submit" value="" />
         </form>
         {% endif %}
         {% get_oneliner %}
@@ -52,42 +52,47 @@
         {% endif %}
         {% if user.is_staff %}
 	    <li></li>
-            <li id="unap-artists"><a href="{% url dv-newartists %}">Pending Artists</a></li>
-            <li id="unap-groups"><a href="{% url dv-newgroups %}">Pending Groups</a></li>
+	    <li id="unap-artists"><a href="{% url dv-newartists %}">Pending Artists</a></li>
+	    <li id="unap-groups"><a href="{% url dv-newgroups %}">Pending Groups</a></li>
 	    <li id="unap-labels"><a href="{% url dv-newlabels %}">Pending Labels</a></li>
         {% endif %}
         </ul>
         <br />
         <h3>Currently Playing</h3>
         <div name="nowplaying">
-        {#% current_song %#}
-        {% get_rating_stars_song_avg user %}
+	    {#% current_song %#}
+	    <div align="center">
+		{% get_rating_stars_song_avg user %}
+	    </div>
         </div>
 
-<form style="margin-bottom: 5px"><input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onClick="window.open('{% url dv-play_stream %}','player','width=170,height=130,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')"> - <a href="{% url dv-streams %}">Streams</a></form>
-	{% cache 3600 sidebarnews %}
-	    {% get_sidebar_news %}
-	    {% for sbnews in sidebarnews %}
-	    <br />
-	    <h3>{{ sbnews.title }}</h3>
-	    {{ sbnews.text|safe }}
-	    {% endfor %}
-	{% endcache %}
-
-
+	<form>
+	    <hr style="width: 80%; background-color: #000; height: 1px; border: 0px;" />
+	    <input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onClick="window.open('{% url dv-play_stream %}','player','width=170,height=130,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')"> - <a href="{% url dv-streams %}">Streams</a></form>
+		{% cache 3600 sidebarnews %}
+		    {% get_sidebar_news %}
+			{% for sbnews in sidebarnews %}
+			    <br />
+			    <h3>{{ sbnews.title }}</h3>
+			    {{ sbnews.text|safe }}
+		    {% endfor %}
+		{% endcache %}
 
     </div>
 
     <div id="main">
-        <h1>{% site_name %}</h1>
-        <div style="overflow:hidden">{% logo %}</div>
-        {% block main %}{% endblock %}
-        <span id="copyleft">
-            Powered by <a href="http://code.google.com/p/demovibes/">Demovibes</a><br>
-        </span>
-        <span id="copyright">
-            layout: <a href="http://raina.daug.net/">raina</a>,
-            icons: <a href="http://www.famfamfam.com/"><span style="color: #f15;">fam</span><span style="color: #1cf;">fam</span><span style="color: #bf3;">fam</span></a>
-        </span>
+	<h1>{% site_name %}</h1>
+	<div style="overflow:hidden">{% logo %}</div>
+	<div style="overflow:hidden" id="maincontent">
+	    {% block main %}{% endblock %}
+	</div>
+	<div id="footer">
+	    <span id="copyleft">
+		Powered by <a href="http://code.google.com/p/demovibes/">Demovibes</a><br />
+	    </span>
+	    <span id="copyright">
+		layout: <a href="http://raina.daug.net/">raina</a>,
+		icons: <a href="http://www.famfamfam.com/"><span style="color: #f15;">fam</span><span style="color: #1cf;">fam</span><span style="color: #bf3;">fam</span></a>
+	    </span>
     </div>
 {% endblock %}
