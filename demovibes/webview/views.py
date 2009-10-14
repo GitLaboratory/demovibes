@@ -90,7 +90,8 @@ def addqueue(request, song_id): # XXX Fix to POST
         song = Song.objects.get(id=song_id)
     except:
         return HttpResponseNotFound()
-    song.queue_by(request.user)
+    #song.queue_by(request.user)
+    queue_song(song, request.user)
     return direct_to_template(request, template = "webview/song_queued.html")
 
 @login_required

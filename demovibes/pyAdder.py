@@ -7,7 +7,7 @@ import settings
 setup_environ(settings)
 from webview.models import *
 from django.contrib.auth.models import User
-
+from webview import common
 from string import *
 
 enc = sys.getdefaultencoding()
@@ -73,11 +73,12 @@ def ices_get_next ():
     if timestamp:
         delta = datetime.datetime.now() - timestamp
         if delta < timedelta(seconds=3):
-	        time.sleep(3)
-	        print "ERROR : Song '%s' borked for some reason!" % meta
+            time.sleep(3)
+        print "ERROR : Song '%s' borked for some reason!" % meta
     timestamp = datetime.datetime.now()
 
-    song = findQueued()
+    song = findQueued()
+
     meta = "%s - %s" % (song.artist(), song.title)
     print "Now playing", song.file.path.encode(enc)
     try:
@@ -107,14 +108,16 @@ def getRandom():
     rand = random.randint(0,songs-1)
     song = Song.active.all()[rand]
     C = 0
-    # Try to find a good song that is not locked. Will try up to 50 times.
+    # Try to find a good song that is not locked. Will try up to 10 times.
     while not isGoodSong(song) and C < 10:
        print "Random ", C
        rand = random.randint(0,songs-1)
        song = Song.active.all()[rand]
        C += 1
-    Q = Queue(song=song, played = True, requested_by=djUser)
-    Q.save()
+    #Q = Queue(song=song, played = True, requested_by=djUser)
+    #Q.save()
+    Q = common.queue_song(song, djUser, False, True)
+    common.play_queued(Q)
     return song
 
 def JingleTime():
@@ -140,8 +143,7 @@ def findQueued():
             return jingle
     if songs:
         song = songs[0]
-        song.played = True
-        song.save()
+        common.play_queued(song)
         return song.song
     else:
         return getRandom()

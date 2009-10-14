@@ -1,13 +1,94 @@
 import time
-from webview.models import Queue, Oneliner, Userprofile, Compilation, AjaxEvent
+from webview.models import Queue, Oneliner, Userprofile, Compilation, AjaxEvent, Song, User
 from django.conf import settings
 from django.core.cache import cache
 from django.shortcuts import render_to_response
 from django.template import Context, Template
 from django.template.loader import get_template
+from django.conf import settings
+import datetime
+
+
+    #def queue_by(self, user, force = False):
+    #    result = True
+    #    Queue.objects.lock(Song, User, AjaxEvent)
+    #    if not force:
+    #        requests = Queue.objects.filter(played=False, requested_by = user).count()
+    #        if requests >= settings.SONGS_IN_QUEUE:
+    #            AjaxEvent.objects.create(event='eval:alert("You have reached your queue limit. Wait for the songs to play.");', \
+    #                user = user)
+    #            result = False
+    #        if self.is_locked():
+    #            result = False
+    #    if result:
+    #        Q = Queue(song=self, requested_by=user, played = False)
+    #        Q.save()
+    #        AjaxEvent.objects.create(event='a_queue_%i' % self.id)
+    #    Queue.objects.unlock()
+    #    return result
+
+    #if self.played:
+    #     played = self.song.times_played
+    #     played += 1
+    #     self.song.times_played = played
+    #     self.song.save()
+    #     self.time_played=datetime.datetime.now()
+    #     AjaxEvent.objects.create(event="nowplaying")
+    # if not self.id:
+    #     sl = settings.SONG_LOCK_TIME
+    #     time = datetime.timedelta(hours = sl['hours'], days = sl['days'], minutes = sl['minutes'])
+    #     self.song.locked_until = datetime.datetime.now() + time
+    #     self.song.save()
+    #     self.eta = self.get_eta()
+    # AjaxEvent.objects.create(event="history")
+    # AjaxEvent.objects.create(event='queue')
+
+def play_queued(queue):
+    queue.song.times_played = queue.song.times_played + 1
+    queue.song.save()
+    queue.time_played=datetime.datetime.now()
+    queue.played = True
+    queue.save()
+    temp = get_now_playing(True)
+    temp = get_history(True)
+    temp = get_queue(True)
+    AjaxEvent.objects.create(event="queue")
+    AjaxEvent.objects.create(event="history")
+    AjaxEvent.objects.create(event="nowplaying")
+    
+    
+# This function should both make cake, and eat it
+def queue_song(song, user, event = True, force = False):
+    sl = settings.SONG_LOCK_TIME
+    Q = False
+    time = datetime.timedelta(hours = sl['hours'], days = sl['days'], minutes = sl['minutes'])
+    result = True
+    if not force:
+        Queue.objects.lock(Song, User, AjaxEvent)
+        requests = Queue.objects.filter(played=False, requested_by = user).count()
+        if requests >= settings.SONGS_IN_QUEUE:
+            AjaxEvent.objects.create(event='eval:alert("You have reached your queue limit. Wait for the songs to play.");', user = user)
+            result = False
+        if result and song.is_locked():
+            result = False
+    if result:
+        song.locked_until = datetime.datetime.now() + time
+        song.save()
+        Q = Queue(song=song, requested_by=user, played = False)
+        Q.save()
+    Queue.objects.unlock()
+    if result:
+        Q.eta = Q.get_eta()
+        Q.save()
+        AjaxEvent.objects.create(event='a_queue_%i' % song.id)
+        if event:
+            bla = get_queue(True) # generate new queue cached object
+            AjaxEvent.objects.create(event='queue')
+    return Q
+
 
 def get_now_playing(create_new=True):
-    key = get_event_key("nnowplaying") # Change to non-event type key later, when Queue access system have been fixed
+    key = "nnowplaying" # Change to non-event type key later, when Queue access system have been fixed
     R = cache.get(key)
     if not R or create_new:
         try:
@@ -23,7 +104,7 @@ def get_now_playing(create_new=True):
     return R
 
 def get_history(create_new=False):
-    key = get_event_key("nhistory") # Change to non-event type key later, when Queue access system have been fixed
+    key = "nhistory" # Change to non-event type key later, when Queue access system have been fixed
     log_debug("History", "Key : %s" % key)
     R = cache.get(key)
     if not R or create_new:
@@ -49,7 +130,7 @@ def get_oneliner(create_new=False):
     return R
 
 def get_queue(create_new=False):
-    key = get_event_key("nqueue") # Change to non-event type key later, when Queue access system have been fixed
+    key = "nqueue" # Change to non-event type key later, when Queue access system have been fixed
     R = cache.get(key)
     if not R or create_new:
         queue = Queue.objects.select_related(depth=2).filter(played=False).order_by('id')
