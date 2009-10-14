@@ -5,7 +5,7 @@
 {% load cache %}
 
 {% block main %}
-{% cache 3600 userfavorites %}
+{% cache 3600 userfavorites favuser.username %}
 <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />
 {{ favuser.username }}'s Favourite Songs</h2>
 {% with favuser as U%}{% include "webview/t/user.html" %}{% endwith %} Has The Following Favourite Songs:
