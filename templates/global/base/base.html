@@ -83,8 +83,8 @@
     </div>
 
     <div id="main">
-	<h1>{% site_name %}</h1>
-	<div style="overflow:hidden">{% logo %}</div>
+	{% cache 60 logoblock %}<h1>{% site_name %}</h1>
+	<div style="overflow:hidden">{% logo %}</div>{% endcache %}
 	<div style="overflow:hidden" id="maincontent">
 	    {% block main %}{% endblock %}
 	</div>

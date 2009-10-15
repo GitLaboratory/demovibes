@@ -107,7 +107,10 @@ MEDIA_URL = '/static/'
 ADMIN_MEDIA_PREFIX = '/media/'
 
 # Please set a backend here
-CACHE_BACKEND = 'locmem:///'
+# We recommend memcached.
+# If that's not avaliable we recommend file or database cache,
+# because locmem can't always be trusted to have a consistent cache
+CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '__RANDOM__'

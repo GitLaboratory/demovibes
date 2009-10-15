@@ -33,6 +33,7 @@ read hostn
 database="mysql-server"
 web="libapache2-mod-wsgi apache2"
 python="python-imaging python-django python-flup python-pymad python-setuptools"
+memcache="python-memcache memcached"
 icecast="icecast2"
 ices_compile="build-essential python-dev libshout3-dev"
 
@@ -62,9 +63,9 @@ then
 fi
 
 
-echo -e "\n\n\nInstalling packages $python $web $database $icecast $ices_compile \n\n\n"
+echo -e "\n\n\nInstalling packages $python $web $database $icecast $ices_compile $memcache \n\n\n"
 #apt-get update
-apt-get install -y $python $web $database $icecast $ices_compile
+apt-get install -y $python $web $database $icecast $ices_compile $memcache
 
 
 echo -e "\n\n\nInstalling Django South from $south\n\n\n"
