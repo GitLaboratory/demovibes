@@ -74,7 +74,7 @@ def ices_get_next ():
         delta = datetime.datetime.now() - timestamp
         if delta < timedelta(seconds=3):
             time.sleep(3)
-        print "ERROR : Song '%s' borked for some reason!" % meta
+            print "ERROR : Song '%s' borked for some reason!" % meta
     timestamp = datetime.datetime.now()
 
     song = findQueued()
