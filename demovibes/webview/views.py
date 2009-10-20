@@ -725,7 +725,7 @@ def set_rating_autovote(request, song_id, user_rating):
     Set a user's rating on a song. From 0 to 5
     """
     int_vote = int(user_rating)
-    if int_vote <= 5 and int_vote >= 0:
+    if int_vote <= 5 and int_vote > 0:
         S = Song.objects.get(id = song_id)
         S.set_vote(int_vote, request.user)
         AjaxEvent.objects.create(event="nowplaying")
