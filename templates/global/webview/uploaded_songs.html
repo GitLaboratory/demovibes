@@ -5,7 +5,6 @@
 {% load cache %}
 
 {% block main %}
-{% cache 1800 newuploads %}
 <h2><img class="icon_header" src="{{ MEDIA_URL }}script.png" alt="" />Uploaded Songs</h2>
 <p>The following songs are currently pending review and approval:</p>
 <br>
@@ -38,5 +37,4 @@
 </tr>
 {% endfor %}
 </table>
-{% endcache %}
 {% endblock %}
