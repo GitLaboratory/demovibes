@@ -10,7 +10,8 @@
 {% if object.artist_pic %}<img class="artist_logo" src="{{ object.artist_pic.url }}" alt="{{ object.handle }}" align="left">{% else %}<img class="artist_logo" src="/static/no_artist_pic.png" alt="No Picture" align="left">{% endif %}
 </td>
 <td class="artist_information" valign="top">
-<strong>{{ object.handle }}</strong><br />
+<strong>{{ object.handle }}</strong> {% if object.is_deceased %}<img src="/static/deceased.png" class="countryflag" alt="Deceased {% if object.deceased_date %}[On {{ object.deceased_date|date:"F j, Y" }}]{% endif %}">{% endif %}
+<br />
 
 {% if object.link_to_user %}
  <a href="/demovibes/user/{{ object.link_to_user.username }}/">View Artist's User Page</a><br />
@@ -36,7 +37,11 @@
 Location: {{ object.home_country|flag|safe }} {% if object.home_location %}{{ object.home_location }}{% endif %}<br>
 
 {% if object.dob %}
- Born : {{ object.dob|date:"F j, Y" }}<br />
+ Date Of Birth : {{ object.dob|date:"F j, Y" }}<br />
+{% endif %}
+
+{% if object.is_deceased %}
+Date Of Death: {{ object.deceased_date|date:"F j, Y" }}<br />
 {% endif %}
 
 {% if object.last_fm_id %}

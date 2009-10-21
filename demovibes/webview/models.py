@@ -213,6 +213,8 @@ class Artist(models.Model):
     name = models.CharField(max_length=64, blank = True, verbose_name="Name", help_text="Artist name (First and Last)")
     handle = models.CharField(max_length=64, unique = True, db_index = True, verbose_name="* Handle", help_text="Artist handle/nickname. If no handle is used, place their real name here (and not in the above real name position) to avoid duplication")
     dob = models.DateField(help_text="Date of Birth (YYYY-MM-DD)", null=True, blank = True)
+    is_deceased = models.BooleanField(default=False, verbose_name = "Deceased?", help_text="Has this artist passed away? Check if this has happened.")
+    deceased_date = models.DateField(help_text="Date of Passing (YYYY-MM-DD)", null=True, blank = True, verbose_name="Date Of Death")
     artist_pic = models.ImageField(verbose_name="Picture", help_text="Insert a picture of this artist.", upload_to = 'media/artists', blank = True, null = True)
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Website for this artist. Must exist on the web.")
     wiki_link = models.URLField(blank=True, help_text="URL to Wikipedia entry (if available)")
