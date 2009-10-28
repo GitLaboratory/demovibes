@@ -421,15 +421,27 @@ def list_favorites(request):
     """
     user = request.user
     songs = Favorite.objects.filter(user=user)
-    paginator = Paginator(songs, settings.PAGINATE)
-    page = int(request.GET.get('page', '1'))
+
     try:
-        songlist = paginator.page(page)
-    except (EmptyPage, InvalidPage):
-        songlist = paginator.page(paginator.num_pages)
-    return render_to_response('webview/favorites.html', \
-      {'songs': songlist.object_list, 'page' : page, 'page_range' : paginator.page_range}, \
-      context_instance=RequestContext(request))
+        user_profile = Userprofile.objects.get(user = user)
+        use_pages = user_profile.paginate_favorites
+    except:
+        # In the event it bails, revert to pages hehe
+        use_pages = True
+
+    if(use_pages):
+        paginator = Paginator(songs, settings.PAGINATE)
+        page = int(request.GET.get('page', '1'))
+        try:
+            songlist = paginator.page(page)
+        except (EmptyPage, InvalidPage):
+            songlist = paginator.page(paginator.num_pages)
+        return render_to_response('webview/favorites.html', \
+          {'songs': songlist.object_list, 'page' : page, 'page_range' : paginator.page_range}, \
+          context_instance=RequestContext(request)) 
+    
+    # Attempt to list all faves at once!
+    return render_to_response('webview/favorites.html', { 'songs': songs }, context_instance=RequestContext(request)) 
 
 @login_required
 def del_favorite(request, id): # XXX Fix to POST
