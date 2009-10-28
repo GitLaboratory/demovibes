@@ -100,7 +100,7 @@ def get_now_playing(create_new=True):
         T = get_template('webview/t/now_playing_song.html')
         C = Context({ 'now_playing' : songtype, 'comps' : comps })
         R = T.render(C)   
-        cache.set(key, R, 600)
+        cache.set(key, R, 300)
     return R
 
 def get_history(create_new=False):
@@ -114,7 +114,7 @@ def get_history(create_new=False):
         C = Context({ 'history' : history })
         R = T.render(C)
         #R = render_to_response('webview/js/history.html', { 'history' : history })
-        cache.set(key, R, 600)
+        cache.set(key, R, 300)
     return R
 
 def get_oneliner(create_new=False):
@@ -138,7 +138,7 @@ def get_queue(create_new=False):
         C = Context({ 'queue' : queue })
         R = T.render(C)
         #R = render_to_response('webview/js/queue.html', )
-        cache.set(key, R, 600)
+        cache.set(key, R, 300)
     return R
 
 def get_profile(user):
