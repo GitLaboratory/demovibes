@@ -323,7 +323,7 @@ class Song(models.Model):
     rating_votes = models.IntegerField(default = 0)
     num_favorited = models.IntegerField(default = 0)
     rating = models.FloatField(blank = True, null = True)
-    release_date = models.DateTimeField(blank = True, null = True, verbose_name="Release Date", help_text="Release date (YYYY-MM-DD - Ex. 1986-05-26)")
+    release_date = models.DateField(blank = True, null = True, verbose_name="Release Date", help_text="Release date (YYYY-MM-DD - Ex. 1986-05-26)")
     STATUS_CHOICES = (
             ('A', 'Active'),
             ('J', 'Jingle'),
