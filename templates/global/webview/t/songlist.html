@@ -1,5 +1,5 @@
  <td>
-  <a href="{{ song.get_absolute_url }}">{{ song.title }}</a> 
+  <a href="{{ song.get_absolute_url }}">{{ song.title }}</a> {% if song.platform.symbol %}<img src="{{ song.platform.symbol.url }}">{% endif %}
  </td>
  <td>
   {% for artist in song.artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}

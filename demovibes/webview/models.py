@@ -284,6 +284,8 @@ class SongType(models.Model):
 class SongPlatform(models.Model):
     title = models.CharField(max_length=64, unique = True)
     description = models.TextField()
+    symbol = models.ImageField(upload_to = 'media/platform/symbol', blank = True, null = True)
+    image = models.ImageField(upload_to = 'media/platform/image', blank = True, null = True)
 
     def __unicode__(self):
         return self.title
@@ -571,25 +573,6 @@ class Queue(models.Model):
     
     def __unicode__(self):
         return self.song.title
-
-    #def save(self, force_insert=False, force_update=False, old_save=True):
-    #    if old_save:
-    #        if self.played:
-    #            played = self.song.times_played
-    #            played += 1
-    #            self.song.times_played = played
-    #            self.song.save()
-    #            self.time_played=datetime.datetime.now()
-    #            AjaxEvent.objects.create(event="nowplaying")
-    #        if not self.id:
-    #            sl = settings.SONG_LOCK_TIME
-    #            time = datetime.timedelta(hours = sl['hours'], days = sl['days'], minutes = sl['minutes'])
-    #            self.song.locked_until = datetime.datetime.now() + time
-    #            self.song.save()
-    #            self.eta = self.get_eta()
-    #        AjaxEvent.objects.create(event="history")
-    #        AjaxEvent.objects.create(event='queue')
-    #    return super(Queue, self).save(force_insert, force_update)
 
     def timeleft(self):
         if self.song.song_length == None or not self.played:
