@@ -57,7 +57,7 @@ Song Length: {{ object.length }}<br>
 Song Status: {{ object.get_status_display }}
 {% if object.bitrate %}<br />Song Bitrate: {{ object.bitrate }} kbps{% endif %}
 {% if object.type %}<br />Song Source: {{ object.type }}{% endif %}
-{% if object.platform %}<br />Song Platform: {{ object.platform }}{% endif %}
+{% if object.platform %}<br />Song Platform: <a href="{{ object.platform.get_absolute_url }}">{{ object.platform }}</a>{% endif %}
 </p>
 
 {% if object.info %}

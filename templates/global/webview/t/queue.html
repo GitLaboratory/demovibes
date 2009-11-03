@@ -1,6 +1,6 @@
 <tr class="{% cycle 'row1' 'row2' %}">
  <td align="left">
-  {% if req.priority %}*{% endif %}<a href="{{ req.song.get_absolute_url }}">{{ req.song.title }}</a>
+  {% if req.priority %}*{% endif %}{% with req.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
  </td>
  <td align="left">
   {% for artist in req.song.artists.all %}

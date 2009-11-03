@@ -1,0 +1,10 @@
+{% extends "base/base.html" %}
+
+{% block title %}Platforms{% endblock %}
+
+{% block main %}
+<h2>Song platforms</h2>
+{% for p in object_list %}
+<a href="{{ p.get_absolute_url }}">{{p.title}}</a> ({{ p.song_set.count }})<br />
+{% endfor%}
+{% endblock %}
