@@ -1,3 +1,5 @@
+ {% load cache %}
+ {% cache 600 "song_row" song.id %}
  <td>
   {% include "webview/t/songname.html" %}
  </td>
@@ -12,10 +14,11 @@
   {{ song.get_status_display }}
  </td>
  <td>
+  {{ song.rating|floatformat }}
+ </td>
+ {% endcache %}
+ <td>
   <span name="a_queue_{{ song.id }}">
    {% include "webview/t/songlist_span.html" %}
   </span>
- </td>
- <td>
-  {{ song.rating|floatformat }}
  </td>
