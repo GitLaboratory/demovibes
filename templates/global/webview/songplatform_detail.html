@@ -3,10 +3,12 @@
 {% block title %}Platform {{ object.title }}{% endblock %}
 
 {% block main %}
-<h2>Platform {{ object.title }}</h2>
+<h2><img class="icon_header" src="{{ MEDIA_URL }}script.png" alt="" />Platform {{ object.title }}</h2>
 {% if object.image %}<img src="{{ object.image.url }}">{% endif %}
 {{object.description|linebreaks}}
-<h2>Songs</h2>
+
+
+<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Songs</h2>
 
 <table class="songlist">
 <tr>
