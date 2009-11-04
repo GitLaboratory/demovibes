@@ -12,14 +12,14 @@ oneliner_dict = {
 }
 
 artist_dict = {
-        'queryset': Artist.objects.filter(status="A"),
+    'queryset': Artist.objects.filter(status="A"),
 }
 
 """
 Access any artist object.
 """
 artist_a_dict = {
-        'queryset': Artist.objects.all(),
+    'queryset': Artist.objects.all(),
 }
 
 group_dict = {
@@ -63,16 +63,20 @@ streams_dict = {
     'template_name' : "webview/streams.html"
 }
 
+platforms = {
+    'queryset' : SongPlatform.objects.all(),
+}
 
 urlpatterns = patterns('',
     # First, some generic 'site' areas commonly found on any site
     url(r'^about/$',                              'demovibes.webview.views.site_about', name = "dv-about"),
-    url(r'^faq/$',                              'demovibes.webview.views.site_faq', name = "dv-faq"),
+    url(r'^faq/$',                                'demovibes.webview.views.site_faq', name = "dv-faq"),
     url(r'^links/$',                              'demovibes.webview.views.site_links', name = "dv-links"),
 
     url(r'^inbox/$',                               'demovibes.webview.views.inbox', name = "dv-inbox"),
     url(r'^inbox/(?P<pm_id>\d+)/$',                'demovibes.webview.views.read_pm', name = "dv-read_pm"),
     url(r'^inbox/send/$',                          'demovibes.webview.views.send_pm', name = "dv-send_pm"),
+    
     url(r'^play/$',                                'django.views.generic.simple.direct_to_template', \
                 { 'template':'webview/radioplay.html'}, name = "dv-play_stream"),
     url(r'^$',                                     'django.views.generic.list_detail.object_list',     news_dict, name = "dv-root"),
@@ -82,21 +86,28 @@ urlpatterns = patterns('',
                 dict(oneliner_dict, paginate_by=settings.PAGINATE), name = "dv-oneliner"),
     url(r'^search/$',                              'demovibes.webview.views.search', name = "dv-search"),
     url(r'^recent/$',                              'demovibes.webview.views.show_approvals', name = "dv-recent"),
+    url(r'^platform/(?P<object_id>\d+)/$',         'django.views.generic.list_detail.object_detail', platforms, name = "dv-platform"),
+    url(r'^platforms/$',                           'django.views.generic.list_detail.object_list', platforms, name = "dv-platforms"),
+    
+    #Song views
     url(r'^songs/$',                               'django.views.generic.list_detail.object_list', \
                 dict(song_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-songs"),
-    url(r'^artists/$',                             'django.views.generic.list_detail.object_list', \
-                dict(artist_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-artists"),
-    url(r'^artists/(?P<letter>.)/$',               'demovibes.webview.views.list_artists', name = "dv-artists_letter"),
+    url(r'^songs/(?P<letter>.)/$',                 'demovibes.webview.views.list_songs', name = "dv-songs_letter"),
+    url(r'^song/(?P<song_id>\d+)/$',             'demovibes.webview.views.list_song',   name = "dv-song"),
+    url(r'^song/(?P<song_id>\d+)/comments/$',      'demovibes.webview.views.list_song_comments', name = "dv-song_comment"),
+    url(r'^song/(?P<song_id>\d+)/votes/$',         'demovibes.webview.views.list_song_votes', name = "dv-song_votes"),
+    url(r'^song/(?P<song_id>\d+)/queue_history/$', 'demovibes.webview.views.list_song_history', name = "dv-song_history"),
+    
     url(r'^groups/$',                             'django.views.generic.list_detail.object_list', \
                 dict(group_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-groups"),
     url(r'^groups/(?P<letter>.)/$',               'demovibes.webview.views.list_groups', name = "dv-groups_letter"),
-    url(r'^songs/(?P<letter>.)/$',                 'demovibes.webview.views.list_songs', name = "dv-songs_letter"),
-    #url(r'^song/(?P<object_id>\d+)/$',             'django.views.generic.list_detail.object_detail',   song_dict, name = "dv-song"),
-    url(r'^song/(?P<song_id>\d+)/$',             'demovibes.webview.views.list_song',   name = "dv-song"),
+    url(r'^group/(?P<object_id>\d+)/$',            'django.views.generic.list_detail.object_detail',       group_a_dict, name = "dv-group"),
+
+    url(r'^artists/$',                             'django.views.generic.list_detail.object_list', \
+            dict(artist_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-artists"),
+    url(r'^artists/(?P<letter>.)/$',               'demovibes.webview.views.list_artists', name = "dv-artists_letter"),
     url(r'^artist/(?P<object_id>\d+)/$',           'django.views.generic.list_detail.object_detail',       artist_a_dict, name = "dv-artist"),
     url(r'^artist/(?P<artist_id>\d+)/upload/$',    'demovibes.webview.views.upload_song', name = "dv-upload"),
-    #url(r'^groups/$',                              'django.views.generic.list_detail.object_list',     group_dict, name = "dv-groups"),
-    url(r'^group/(?P<object_id>\d+)/$',            'django.views.generic.list_detail.object_detail',       group_a_dict, name = "dv-group"),
 
     # New voting system, works differently so contains its own views. This is for URL voting. A
     # Vote can be passed via URL, such as a 3rd party app, in the form of:
@@ -111,9 +122,6 @@ urlpatterns = patterns('',
                 dict(comp_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-compilations"),
      url(r'^compilations/(?P<letter>.)/$',               'demovibes.webview.views.list_compilations', name = "dv-compilations_letter"),
 
-    url(r'^song/(?P<song_id>\d+)/comments/$',      'demovibes.webview.views.list_song_comments', name = "dv-song_comment"),
-    url(r'^song/(?P<song_id>\d+)/votes/$',         'demovibes.webview.views.list_song_votes', name = "dv-song_votes"),
-    url(r'^song/(?P<song_id>\d+)/queue_history/$', 'demovibes.webview.views.list_song_history', name = "dv-song_history"),
     url(r'^user/$',                                'demovibes.webview.views.my_profile', name = "dv-my_profile"),
     url(r'^online/$',                              'demovibes.webview.views.users_online', name = "dv-users_online"),
     url(r'^user/(?P<user>\w+)/$',                  'demovibes.webview.views.view_profile', name = "dv-profile"),
@@ -133,16 +141,16 @@ urlpatterns = patterns('',
     url(r'^compilation/(?P<comp_id>\d+)/$',             'demovibes.webview.views.view_compilation',       name = "dv-compilation"),
 
     # Creation URL's for users to make new stuff
-    url(r'^artist/create/$',    'demovibes.webview.views.create_artist', name = "dv-createartist"),
+    url(r'^artist/create/$',                    'demovibes.webview.views.create_artist', name = "dv-createartist"),
     url(r'^new_artists/$',                      'demovibes.webview.views.activate_artists', name = "dv-newartists"),
-    url(r'^group/create/$',    'demovibes.webview.views.create_group', name = "dv-creategroup"),
-    url(r'^new_groups/$',                      'demovibes.webview.views.activate_groups', name = "dv-newgroups"),
+    url(r'^group/create/$',                     'demovibes.webview.views.create_group', name = "dv-creategroup"),
+    url(r'^new_groups/$',                       'demovibes.webview.views.activate_groups', name = "dv-newgroups"),
     
     # Production label URL's (Labels/Producers Specific)
     url(r'^labels/$',                             'django.views.generic.list_detail.object_list', \
                 dict(labels_all_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-labels"),
     url(r'^label/(?P<object_id>\d+)/$',            'django.views.generic.list_detail.object_detail',       labels_a_dict, name = "dv-label"),
     url(r'^labels/(?P<letter>.)/$',               'demovibes.webview.views.list_labels', name = "dv-labels_letter"),
-    url(r'^label/create/$',    'demovibes.webview.views.create_label', name = "dv-createlabel"),
+    url(r'^label/create/$',                    'demovibes.webview.views.create_label', name = "dv-createlabel"),
     url(r'^new_labels/$',                      'demovibes.webview.views.activate_labels', name = "dv-newlabels"),
 )

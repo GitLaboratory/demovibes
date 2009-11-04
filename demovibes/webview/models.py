@@ -289,6 +289,13 @@ class SongPlatform(models.Model):
 
     def __unicode__(self):
         return self.title
+    
+    class Meta:
+        ordering = ['title']
+        
+    @models.permalink
+    def get_absolute_url(self):
+        return ("dv-platform", [str(self.id)])
 
 class Logo(models.Model):
     file = models.FileField(upload_to = 'media/logos')
