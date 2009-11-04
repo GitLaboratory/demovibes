@@ -3,7 +3,8 @@
 {% block title %}Users online{% endblock %}
 
 {% block main %}
-<h2>Users seen the last 10 minutes</h2>
+<h2>Users seen the last 5 minutes</h2>
+There {{ userlist.count|pluralize:"is,are" }} a total of {{ userlist.count }} user{{ userlist.count|pluralize }} online now.
 <table>
     <tr>
         <th>User</th>

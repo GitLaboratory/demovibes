@@ -697,8 +697,8 @@ def save_flash(request):
 
 
 def users_online(request):
-    timefrom = datetime.datetime.now() - datetime.timedelta(minutes=10)
-    userlist = Userprofile.objects.filter(last_activity__gt=timefrom)
+    timefrom = datetime.datetime.now() - datetime.timedelta(minutes=5)
+    userlist = Userprofile.objects.filter(last_activity__gt=timefrom).order_by('user__username')
     return render_to_response('webview/online_users.html', {'userlist' : userlist}, context_instance=RequestContext(request))
     
 @login_required
