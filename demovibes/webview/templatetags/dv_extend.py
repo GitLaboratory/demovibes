@@ -255,10 +255,10 @@ class GetSongRatingStarsAvgNode(template.Node):
     
             if(count > user_vote):
                 # Represent stars AFTER the current rated star
-                TempLine = TempLine + '<img src="/static/star-white.png" alt="%d Star" border="0" name="vote/%d/%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-white.png" title="%d Star" border="0" name="vote/%d/%d">' % ( count, song.id, count )
             else:
                 # This represents a star already under/up to the rating
-                TempLine = TempLine + '<img src="/static/star-red.png" alt="%d Star" border="0" name="vote/%d/%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-red.png" title="%d Star" border="0" name="vote/%d/%d">' % ( count, song.id, count )
         
             if(user_anon == False):
                 TempLine = TempLine + '</a>'
@@ -279,7 +279,7 @@ class GetSongRatingStarsAvgNode(template.Node):
             htmltxt = htmltxt + '<td>%s</td>' % (FavIconTxt)
 
         # Add a link to voting history
-        htmltxt = htmltxt + '<td><a href="/demovibes/song/%d/votes/"><img src="/static/script.png" alt="History"></a></td>' % (song.id)
+        htmltxt = htmltxt + '<td><a href="/demovibes/song/%d/votes/"><img class="song_head" src="/static/script.png" title="Voting History"></a></td>' % (song.id)
 
         # Close off the rest of the table/span
         htmltxt = htmltxt + '</tr>'

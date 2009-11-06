@@ -68,11 +68,11 @@ Song Status: {{ object.get_status_display }}
 
 {% if user.is_authenticated %}
  {% is_favorite object user %}
- <p>{% if object.is_locked %}<i>Song is currently locked for queuing. It will be available for request in {{ object.locked_until|timeuntil }}</i>{% else %}<a href="{{ object.get_absolute_url }}queue/"><img class="song_head" src="{{ MEDIA_URL }}add.png" /> Add To Queue</a>{% endif %}<br />
+ <p>{% if object.is_locked %}<img class="song_head" src="/static/lock.png" title="Song Locked"> <i>Song is currently locked for queuing. It will be available for request in {{ object.locked_until|timeuntil }}</i>{% else %}<img class="song_head" src="{{ MEDIA_URL }}add.png" title="Add To Queue!" /> <a href="{{ object.get_absolute_url }}queue/">Add To Queue</a>{% endif %}<br />
  {% if is_favorite %}
-  <img class="song_head" src="{{ MEDIA_URL }}heart.png" /> Already In Your Favourites List!
+  <img class="song_head" src="{{ MEDIA_URL }}heart.png" title="Already Loved!" /> Already In Your Favourites List!
  {% else %}
-  <a href="{% url dv-add_fav object.id %}/"><img class="song_head" src="{{ MEDIA_URL }}heart_add.png" /> Add To Favorites</a>
+  <img class="song_head" src="{{ MEDIA_URL }}heart_add.png" title="Add To Faves" /> <a href="{% url dv-add_fav object.id %}/">Add To Favorites</a>
  {% endif %}
  </p>
 {% endif %}
