@@ -447,7 +447,14 @@ def bb_song(hit):
     except:
         return "[song]%s[/song]" % songid
 
-    return '<a href="%s"><img src="%smusic.png" alt="song" border="0"> %s</a>' % (song.get_absolute_url(), settings.MEDIA_URL, song.title)
+    # Use the existing Songname template already present in code
+    t = loader.get_template('webview/t/songname.html')
+    c = Context({
+        'song' : song,
+    })
+
+    result = '<img src="/static/music.png" alt="song" border="0"> ' + t.render(c)
+    return result
 
 def bb_flag(hit):
     """
