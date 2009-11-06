@@ -201,14 +201,17 @@ def search(request):
             artists = Artist.objects.filter(handle__search = searchterm)|Artist.objects.filter(name__search = searchterm)[:result_limit]
             groups = Group.objects.filter(name__search = searchterm)[:result_limit]
             compilations = Compilation.objects.filter(name__search = searchterm)[:result_limit]
+            labels = Label.objects.filter(name__search = searchterm)[:result_limit]
         else:
             users = User.objects.filter(username__icontains = searchterm)[:result_limit]
             songs = Song.objects.select_related(depth=1).filter(title__icontains = searchterm)[:result_limit]
             artists = Artist.objects.filter(handle__icontains = searchterm)|Artist.objects.filter(name__icontains = searchterm)[:result_limit]
             groups = Group.objects.filter(name__icontains = searchterm)[:result_limit]
             compilations = Compilation.objects.filter(name__icontains = searchterm)[:result_limit]
+            labels = Label.objects.filter(name__icontains = searchterm)[:result_limit]
+
         return render_to_response('webview/search.html', \
-            { 'songs' : songs, 'artists' : artists, 'groups' : groups, 'users' : users, 'compilations' : compilations }, \
+            { 'songs' : songs, 'artists' : artists, 'groups' : groups, 'users' : users, 'compilations' : compilations, 'labels' : labels }, \
             context_instance=RequestContext(request))
     return render_to_response('webview/search.html', {}, context_instance=RequestContext(request))
 
