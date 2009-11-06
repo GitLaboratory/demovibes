@@ -6,7 +6,7 @@
 <h2><img class="icon_header" src="/static/sound.png" alt="" />Song Platforms</h2>
 {% for p in object_list %}
  {% ifnotequal p.song_set.count 0 %}
-  <a href="{{ p.get_absolute_url }}">{{p.title}}</a> ({{ p.song_set.count }} Songs)<br />
+  {% if p.symbol %}<img src="{{ p.symbol.url }}" title="{{ p.title }}"> {% endif %}<a href="{{ p.get_absolute_url }}">{{p.title}}</a> ({{ p.song_set.count }} Songs)<br />
  {% endifnotequal %}
 {% endfor%}
 {% endblock %}
