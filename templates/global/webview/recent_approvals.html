@@ -20,7 +20,7 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
     {% for song in songs %}
         <tr>
             <td>
-                <a href="{{ song.song.get_absolute_url }}">{{ song.song.title }}</a>
+                {% with song.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
             </td>
             <td>
                 {% for artist in song.song.artists.all %}{% with artist as A %}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
