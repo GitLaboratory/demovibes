@@ -267,6 +267,7 @@ h3
 
 #home 		{background-image: url("/static/house.png");}
 #songs		{background-image: url("/static/music.png");}
+#song-platform		{background-image: url("/static/sound.png");}
 #artists	{background-image: url("/static/user_green.png");}
 #compilations   {background-image: url("/static/recplay_ico.png");}
 #recent	        {background-image: url("/static/new.png");}

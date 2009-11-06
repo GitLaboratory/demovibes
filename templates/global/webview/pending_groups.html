@@ -3,7 +3,7 @@
 {% block title %}Pending Group Approvals{% endblock %}
 
 {% block main %}
-{% load dv_extend %}<h2>Pending Group Approvals</h2>
+{% load dv_extend %}<h2><img class="icon_header" src="/static/group.png" alt="" />Pending Group Approvals</h2>
 <p>The following groups have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.</p>
 <br>
 {% for group in groups.all %}

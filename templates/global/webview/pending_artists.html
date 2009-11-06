@@ -3,7 +3,7 @@
 {% block title %}Pending Artist Approvals{% endblock %}
 
 {% block main %}
-{% load dv_extend %}<h2>Pending Artist Approvals</h2>
+{% load dv_extend %}<h2><img class="icon_header" src="/static/user_green.png" alt="" />Pending Artist Approvals</h2>
 <p>The following artists have their status as 'Uploaded'. Moderators should verify the information for each entry to make sure it's ok.</p>
 <br>
 {% for artist in artists.all %}

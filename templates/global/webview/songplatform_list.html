@@ -3,8 +3,10 @@
 {% block title %}Platforms{% endblock %}
 
 {% block main %}
-<h2>Song platforms</h2>
+<h2><img class="icon_header" src="/static/sound.png" alt="" />Song Platforms</h2>
 {% for p in object_list %}
-<a href="{{ p.get_absolute_url }}">{{p.title}}</a> ({{ p.song_set.count }})<br />
+ {% ifnotequal p.song_set.count 0 %}
+  <a href="{{ p.get_absolute_url }}">{{p.title}}</a> ({{ p.song_set.count }} Songs)<br />
+ {% endifnotequal %}
 {% endfor%}
 {% endblock %}
