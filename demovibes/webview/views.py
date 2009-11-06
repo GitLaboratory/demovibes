@@ -510,10 +510,17 @@ def activate_upload(request):
         })
         song.save()
 
-        # Only add if song is approved!
+        # Only add if song is approved! Modified to check to see if song exists first!
+        # There is probbably a better way of doing this crude check! AAK
         if(status == 'A'):
-            Q = SongApprovals(song=song, approved_by=request.user, uploaded_by=song.uploader)
-            Q.save()
+            try:
+                # If the song entry exists, we shouldn't care
+                exist = SongApprovals.objects.get(song = song)
+
+            except:
+                # Should throw when the song isn't found in the DB
+                Q = SongApprovals(song=song, approved_by=request.user, uploaded_by=song.uploader)
+                Q.save()
         
         if song.uploader.get_profile().pm_accepted_upload and status == 'A' or status == 'R':
             PrivateMessage.objects.create(sender = request.user, to = song.uploader,\

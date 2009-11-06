@@ -8,24 +8,13 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
 
  <table class="recent-approvals">
  <tr>
- <th>
-  Song Title
- </th>
- <th>
-  Artist
- </th>
- <th>
-  Approved
- </th>
- <th>
-  Uploaded By
- </th>
- <th>
-  Approved By
- </th>
- <th>
-  Status
- </th>
+  <th>Song Title</th>
+  <th>Artist</th>
+  <th>Approved</th>
+  <th>Uploaded By</th>
+  <th>Approved By</th>
+  <th>Length</th>
+  <th>Status</th>
 </tr>
 {% if songs %}
     {% for song in songs %}
@@ -45,6 +34,9 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
             </td>
             <td align="center">
                 {% with song.approved_by as U%}{% include "webview/t/user.html" %}{% endwith %}
+            </td>
+            <td align="center">
+                {{ song.song.length }}
             </td>
             <td align="center">
                 <span name="a_queue_{{ song.song.id }}">{% with song.song as song %}{% include "webview/t/songlist_span_noauth.html" %}{% endwith %}</span>
