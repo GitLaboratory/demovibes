@@ -1,5 +1,5 @@
 {% if now_playing.song %}
- <a href="{{ now_playing.song.get_absolute_url }}">{{ now_playing }}</a> by{% for artist in now_playing.song.artists.all %} {% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br />
+ <img src="/static/music.png" alt="song" border="0"> {% with now_playing.song as song %}{% include "webview/t/songname.html" %}{% endwith %} by{% for artist in now_playing.song.artists.all %} {% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}<br />
 
  Requested By: {% with now_playing.requested_by as U%}{% include "webview/t/user.html" %}{% endwith %}<br>
  {% ifnotequal now_playing.song.labels.count 0 %}
