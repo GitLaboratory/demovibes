@@ -4,13 +4,10 @@
 
 {% block main %}
 <h2><img class="icon_header" src="{{ MEDIA_URL }}heart.png" alt="" />My Favourite Songs</h2>
-<table class="songlist">
-<tr>
- <th>Song Title</th>
- <th>Artist</th>
- <th>Song Length</th>
- <th>Status</th>
-</tr>
+{% spaceless %}
+
+{% include "webview/t/songheader.html" %}
+
 {% for fav in songs %}{% with fav.song as song %}
 <tr class="{% cycle 'row1' 'row2' %}">
  {% include "webview/t/songlist.html" %}
@@ -23,8 +20,11 @@
 {% endwith %}{% endfor %}
 </table>
 <br />
+
 {% for p in page_range %}
 {% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% url dv-favorites %}?page={{ p }}">{{ p }}</a> {% endifequal %}
 {% endfor %}
+
+{% endspaceless %}
 
 {% endblock %}

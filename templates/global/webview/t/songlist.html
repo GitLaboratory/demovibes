@@ -1,4 +1,4 @@
- {% load cache %}
+ {% load cache %}{% spaceless %}
  {% cache 600 "song_row" song.id %}
  <td>
   {% include "webview/t/songname.html" %}
@@ -14,11 +14,11 @@
   {{ song.get_status_display }}
  </td>
  <td>
-  {{ song.rating|floatformat }}
+  {{ song.rating|floatformat:1 }}
  </td>
  {% endcache %}
  <td>
   <span name="a_queue_{{ song.id }}">
    {% include "webview/t/songlist_span.html" %}
   </span>
- </td>
+ </td>{% endspaceless %}
