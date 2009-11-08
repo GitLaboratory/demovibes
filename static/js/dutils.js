@@ -9,7 +9,7 @@
 //
 
 function requestsong(no) {
-	ajaxget(ajaxurl+'song/'+no+'/queue/');
+	$.get(ajaxurl+'song/'+no+'/queue/?'+ajaxeventid);
 }
 
 // added support for multiple counter spans with arbitrary direction
@@ -83,7 +83,7 @@ function voteshow(id,value)
 {
     for (i=1;i<=5;i++)
     {
-        var objs=ajaxfindobjs(id+'/'+i);
+        var objs=$("#"+id+'-'+i);
         for (var j=0;j<objs.length;j++)
         {
             var obj=objs[j];

@@ -241,29 +241,29 @@ class GetSongRatingStarsAvgNode(template.Node):
         htmltxt = common.get_now_playing()
 
         # Open the table
-        htmltxt = htmltxt + '<span class="vote" name="vote/%d" onmouseout="voteshow(\'vote/%d\', %d);">' % ( song.id, song.id, user_vote )
+        htmltxt = htmltxt + '<span class="vote" name="vote-%d" onmouseout="voteshow(\'vote-%d\', %d);">' % ( song.id, song.id, user_vote )
 
-        htmltxt = htmltxt + '<table>'
+        htmltxt = htmltxt + "<table>\n"
         htmltxt = htmltxt + '<tr>'
 
         for count in range(1, 6):
             DiffVal = (count - user_vote) # Pre-calc rating difference
-            TempLine = '<td align="center" onmouseover="voteshow(\'vote/%d\', %d);" onmouseout="voteshow(\'vote/%d\', %d);">' % (song.id, count, song.id, user_vote)
+            TempLine = '<td align="center" onmouseover="voteshow(\'vote-%d\', %d);" onmouseout="voteshow(\'vote-%d\', %d);">' % (song.id, count, song.id, user_vote)
 
             if(user_anon == False):
                 TempLine = TempLine + '<a href="/demovibes/song/%d/vote/%d/">' % ( song.id, count )
     
             if(count > user_vote):
                 # Represent stars AFTER the current rated star
-                TempLine = TempLine + '<img src="/static/star-white.png" title="%d Star" border="0" name="vote/%d/%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-white.png" title="%d Star" border="0" name="vote-%d-%d">' % ( count, song.id, count )
             else:
                 # This represents a star already under/up to the rating
-                TempLine = TempLine + '<img src="/static/star-red.png" title="%d Star" border="0" name="vote/%d/%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-red.png" title="%d Star" border="0" name="vote-%d-%d">' % ( count, song.id, count )
         
             if(user_anon == False):
                 TempLine = TempLine + '</a>'
 
-            TempLine = TempLine + '</td>' # Close the column
+            TempLine = TempLine + "</td>\n" # Close the column
 
             # Add this to the final text string
             htmltxt = htmltxt + TempLine
@@ -709,6 +709,7 @@ def bbcode(value):
         (r'\[email=(.+?)\](.+?)\[/email\]', r'<a href="mailto:\1">\2</a>'),
         (r'\[img\](.+?)\[/img\]', r'<img src="\1" alt="" \>'),
         (r'\[img=(.+?)\](.+?)\[/img\]', r'<a href="\1" target="_new"><b>\2</b><br><img src="\1" alt="" \></a>'),
+        
         (r'\[b\](.+?)\[/b\]', r'<strong>\1</strong>'),
         (r'\[i\](.+?)\[/i\]', r'<i>\1</i>'),
         (r'\[u\](.+?)\[/u\]', r'<u>\1</u>'),
@@ -719,6 +720,9 @@ def bbcode(value):
         (r'\[code\](.+?)\[/code\]', r'<tt class="bbcode">\1</tt>'),
         (r'\[big\](.+?)\[/big\]', r'<big>\1</big>'),
         (r'\[small\](.+?)\[/small\]', r'<small>\1</small>'),
+        (r'\[size=(.+?)\](.+?)\[/size\]', bb_size),
+        (r'\[pre\](.+?)\[/pre\]', r'<pre class="bbpre">\1</pre>'),
+        
         (r'\[red\](.+?)\[/red\]', r'<font color="red">\1</font>'),
         (r'\[green\](.+?)\[/green\]', r'<font color="green">\1</font>'),
         (r'\[blue\](.+?)\[/blue\]', r'<font color="blue">\1</font>'),
@@ -735,11 +739,11 @@ def bbcode(value):
         (r'\[white\](.+?)\[/white\]', r'<font color="white">\1</font>'),
         (r'\[yellow\](.+?)\[/yellow\]', r'<font color="yellow">\1</font>'),
         (r'\[color=#(.+?)\](.+?)\[/color\]', r'<font color="#\1">\2</font>'),
+        
         (r'\[table\](.+?)\[/table\]', r'<table class="bbtable">\1</table>'),
         (r'\[th\](.+?)\[/th\]', r'<th>\1</th>'),
         (r'\[td\](.+?)\[/td\]', r'<td>\1</td>'),
         (r'\[tr\](.+?)\[/tr\]', r'<tr>\1</tr>'),
-        (r'\[size=(.+?)\](.+?)\[/size\]', bb_size),
         
         # Demovibes specific BB tags
         (r'\[user\](.+?)\[/user\]', bb_user),
@@ -756,7 +760,7 @@ def bbcode(value):
         (r'\[compilation\](\d+?)\[/compilation\]', bb_compilation),
         (r'\[album\](.+?)\[/album\]', bb_compilation_name),
         (r'\[compilation\](.+?)\[/compilation\]', bb_compilation_name),
-	(r'\[label\](\d+?)\[/label\]', bb_label),
+        (r'\[label\](\d+?)\[/label\]', bb_label),
         (r'\[label\](.+?)\[/label\]', bb_labelname),
         
         # Experimental BBCode tags
