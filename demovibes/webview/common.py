@@ -6,42 +6,8 @@ from django.shortcuts import render_to_response
 from django.template import Context, Template
 from django.template.loader import get_template
 from django.conf import settings
+import logging
 import datetime
-
-
-    #def queue_by(self, user, force = False):
-    #    result = True
-    #    Queue.objects.lock(Song, User, AjaxEvent)
-    #    if not force:
-    #        requests = Queue.objects.filter(played=False, requested_by = user).count()
-    #        if requests >= settings.SONGS_IN_QUEUE:
-    #            AjaxEvent.objects.create(event='eval:alert("You have reached your queue limit. Wait for the songs to play.");', \
-    #                user = user)
-    #            result = False
-    #        if self.is_locked():
-    #            result = False
-    #    if result:
-    #        Q = Queue(song=self, requested_by=user, played = False)
-    #        Q.save()
-    #        AjaxEvent.objects.create(event='a_queue_%i' % self.id)
-    #    Queue.objects.unlock()
-    #    return result
-
-    #if self.played:
-    #     played = self.song.times_played
-    #     played += 1
-    #     self.song.times_played = played
-    #     self.song.save()
-    #     self.time_played=datetime.datetime.now()
-    #     AjaxEvent.objects.create(event="nowplaying")
-    # if not self.id:
-    #     sl = settings.SONG_LOCK_TIME
-    #     time = datetime.timedelta(hours = sl['hours'], days = sl['days'], minutes = sl['minutes'])
-    #     self.song.locked_until = datetime.datetime.now() + time
-    #     self.song.save()
-    #     self.eta = self.get_eta()
-    # AjaxEvent.objects.create(event="history")
-    # AjaxEvent.objects.create(event='queue')
 
 def play_queued(queue):
     queue.song.times_played = queue.song.times_played + 1
@@ -88,11 +54,12 @@ def queue_song(song, user, event = True, force = False):
 
 
 def get_now_playing(create_new=True):
+    logging.debug("Getting now playing")
     key = "nnowplaying" # Change to non-event type key later, when Queue access system have been fixed
     R = cache.get(key)
     if not R or create_new:
         try:
-            songtype = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
+            songtype = Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
             song = songtype.song
         except:
             return ""
@@ -101,44 +68,52 @@ def get_now_playing(create_new=True):
         C = Context({ 'now_playing' : songtype, 'comps' : comps })
         R = T.render(C)   
         cache.set(key, R, 300)
+        logging.debug("Now playing generated")
     return R
 
 def get_history(create_new=False):
     key = "nhistory" # Change to non-event type key later, when Queue access system have been fixed
-    log_debug("History", "Key : %s" % key)
+    logging.debug("Getting history cache")
     R = cache.get(key)
     if not R or create_new:
-        log_debug("History", "No key match")
-        history = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[1:21]
+        logging.info("No existing cache for history, making new one")
+        history = Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[1:21]
         T = get_template('webview/js/history.html')
         C = Context({ 'history' : history })
         R = T.render(C)
         #R = render_to_response('webview/js/history.html', { 'history' : history })
         cache.set(key, R, 300)
+        logging.debug("Cache generated")
     return R
 
 def get_oneliner(create_new=False):
     key = "noneliner"
+    logging.debug("Getting oneliner cache")
     R = cache.get(key)
     if not R or create_new:
+        logging.info("No existing cache for oneliner, making new one")
         lines = getattr(settings, 'ONELINER', 10)
-        oneliner = Oneliner.objects.select_related().order_by('-id')[:lines]
+        oneliner = Oneliner.objects.select_related(depth=2).order_by('-id')[:lines]
         T = get_template('webview/js/oneliner.html')
         C = Context({ 'oneliner' : oneliner })
         R = T.render(C)
         cache.set(key, R, 600)
+        logging.debug("Cache generated")
     return R
 
 def get_queue(create_new=False):
     key = "nqueue" # Change to non-event type key later, when Queue access system have been fixed
+    logging.debug("Getting cache for queue")
     R = cache.get(key)
     if not R or create_new:
+        logging.info("No existing cache for queue, making new one")
         queue = Queue.objects.select_related(depth=2).filter(played=False).order_by('id')
         T = get_template('webview/js/queue.html')
         C = Context({ 'queue' : queue })
         R = T.render(C)
         #R = render_to_response('webview/js/queue.html', )
         cache.set(key, R, 300)
+        logging.debug("Cache generated")
     return R
 
 def get_profile(user):
@@ -158,7 +133,6 @@ def get_latest_event():
     try:
         return AjaxEvent.objects.order_by('-id')[0].id
     except:
-        log_debug("get_latest_event", "Could not get event")
         return 0
 
 def log_debug(area, text, level=1):
@@ -189,11 +163,9 @@ class cache_output(object):
         
     def __call__(self, *args, **kwargs):
         try:
-            log_debug("Cache", "Starting caching function", 2)
             try:
                 path = args[0].path
             except:
-                log_debug("Cache","Error, no path")
                 path = self.n
             try:
                 event = args[0].GET['event']
@@ -202,10 +174,8 @@ class cache_output(object):
             key = "%s.%s" % (path, event)
             value = cache.get(key)
             if not value:
-                log_debug("Cache", "Could not find cache for key '%s'" % key)
                 value = self.f(*args, **kwargs)
                 cache.set(key, value, self.s)
         except:
-            log_debug("Cache", "Error, could not check cache!")
             value = self.f(*args, **kwargs)
         return value

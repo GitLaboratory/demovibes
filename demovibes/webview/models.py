@@ -4,7 +4,8 @@ import datetime
 from django.conf import settings
 from django.core.mail import EmailMessage
 #from django.core.urlresolvers import reverse
-import mad
+import mad, logging
+from django.core.cache import cache
 from django.template.defaultfilters import striptags
 from django.contrib.sites.models import Site
 from django.template import RequestContext, Context, loader
@@ -413,10 +414,18 @@ class Song(models.Model):
         
         Note: This works on when it was queued, not played.
         """
-        Q = Queue.objects.filter(song=self).order_by('-id')
-        if not Q:
-            return "Never"
-        return Q[0].requested
+        logging.debug("Getting last queued time for song %s" % self.id)
+        key = "songlastplayed_%s" % self.id
+        c = cache.get(key)
+        if not c:
+            logging.debug("No cache for last queued, finding")
+            Q = Queue.objects.filter(song=self).order_by('-id')[:1]
+            if not Q:
+                c = "Never"
+            else:
+                c = Q[0].requested
+            cache.set(key, c, 5)
+        return c
 
     def is_locked(self):
         """
