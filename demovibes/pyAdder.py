@@ -14,6 +14,8 @@ enc = sys.getdefaultencoding()
 fsenc = sys.getfilesystemencoding()
 
 dj_username = "djrandom"
+twitter_username = ""
+twitter_password = ""
 
 try:
     djUser = User.objects.get(username = dj_username)
@@ -69,6 +71,8 @@ def ices_shutdown ():
 def ices_get_next ():
     global meta
     global timestamp
+    global twitter_username
+    global twitter_password
 
     if timestamp:
         delta = datetime.datetime.now() - timestamp
@@ -81,6 +85,7 @@ def ices_get_next ():
 
     meta = "%s - %s" % (song.artist(), song.title)
     print "Now playing", song.file.path.encode(enc)
+    execfile("tweet.py -u twitter_username -p twitter_password -t \"Now playing: %s - %s\"") % (song.artist(), song.title)
     try:
         song.file.path.encode(enc)
     except:
