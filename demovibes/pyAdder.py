@@ -87,7 +87,8 @@ def ices_get_next ():
     meta = "%s - %s" % (song.artist(), song.title)
     print "Now playing", song.file.path.encode(enc)
     twitter_message = "Now playing: %s - %s" % (song.artist(), song.title)
-    tweet(twitter_username,twitter_password,twitter_message)
+    if len(twitter_username) > 0:
+	tweet(twitter_username,twitter_password,twitter_message)
     try:
         song.file.path.encode(enc)
     except:
