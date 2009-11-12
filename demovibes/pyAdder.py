@@ -15,8 +15,8 @@ enc = sys.getdefaultencoding()
 fsenc = sys.getfilesystemencoding()
 
 dj_username = "djrandom"
-twitter_username = ""
-twitter_password = ""
+twitter_username = getattr(settings, 'TWITTER_USERNAME', False)
+twitter_password = getattr(settings, 'TWITTER_PASSWORD', False)
 
 try:
     djUser = User.objects.get(username = dj_username)
@@ -87,7 +87,7 @@ def ices_get_next ():
     meta = "%s - %s" % (song.artist(), song.title)
     print "Now playing", song.file.path.encode(enc)
     twitter_message = "Now playing: %s - %s" % (song.artist(), song.title)
-    if len(twitter_username) > 0:
+    if twitter_username and twitter_password:
 	tweet(twitter_username,twitter_password,twitter_message)
     try:
         song.file.path.encode(enc)
