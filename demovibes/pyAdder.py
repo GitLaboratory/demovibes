@@ -1,6 +1,7 @@
 import sys, random, os
 from datetime import datetime, timedelta
 import time
+from os import popen
 
 from django.core.management import setup_environ
 import settings
@@ -85,7 +86,8 @@ def ices_get_next ():
 
     meta = "%s - %s" % (song.artist(), song.title)
     print "Now playing", song.file.path.encode(enc)
-    execfile("tweet.py -u twitter_username -p twitter_password -t \"Now playing: %s - %s\"") % (song.artist(), song.title)
+    twitter_message = "Now playing: %s - %s" % (song.artist(), song.title)
+    tweet(twitter_username,twitter_password,twitter_message)
     try:
         song.file.path.encode(enc)
     except:
@@ -159,3 +161,10 @@ def findQueued():
 def ices_get_metadata ():
         #return 'Artist - Title (Label, Year)'
         return meta.encode(enc, 'replace')
+
+# function to update twitter with currently playing song
+def tweet(user, password, message):
+	if len(message) < 140:
+		url = 'http://twitter.com/statuses/update.xml'
+		curl = 'curl -s -u %s:%s -d status="%s" %s' % (user,password,message,url)
+		pipe=popen(curl, 'r')
