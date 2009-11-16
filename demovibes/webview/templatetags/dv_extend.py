@@ -255,10 +255,10 @@ class GetSongRatingStarsAvgNode(template.Node):
     
             if(count > user_vote):
                 # Represent stars AFTER the current rated star
-                TempLine = TempLine + '<img src="/static/star-white.png" title="%d Star" border="0" name="vote-%d-%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-white.png" title="%d Star" border="0" id="vote-%d-%d">' % ( count, song.id, count )
             else:
                 # This represents a star already under/up to the rating
-                TempLine = TempLine + '<img src="/static/star-red.png" title="%d Star" border="0" name="vote-%d-%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-red.png" title="%d Star" border="0" id="vote-%d-%d">' % ( count, song.id, count )
         
             if(user_anon == False):
                 TempLine = TempLine + '</a>'
