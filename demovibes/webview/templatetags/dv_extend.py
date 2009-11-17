@@ -531,34 +531,62 @@ def bb_groupname(hit):
         # This is normally thrown when the group is invalid. Return the original result,
         # Only we add an icon to indicate an invalid group.
         return '<img src="/static/user_error.png" alt="user" border="0"> %s' % (group)
-	
+
 def bb_label(hit):
     """
     Insert a production label by it's ID number
     """
     try:
-	labelid = hit.group(1)
-	label = Label.objects.get(id=labelid)
-	T = loader.get_template('webview/t/label.html')
-	C = Context({ 'L' : label })
-	return T.render(C)
+        labelid = hit.group(1)
+        label = Label.objects.get(id=labelid)
+        T = loader.get_template('webview/t/label.html')
+        C = Context({ 'L' : label })
+        return T.render(C)
     except:
-	# Usually thrown if the ID is invalid or doesn't exist
-	return '[label]%s[/label]' % (labelid)
-	
+        # Usually thrown if the ID is invalid or doesn't exist
+        return '[label]%s[/label]' % (labelid)
+
 def bb_labelname(hit):
     """
     Identify a production label by it's real name, using the template system.
     """
     try:
-	real_name = hit.group(1)
-	L = Label.objects.get(name=real_name)
-	T = loader.get_template('webview/t/label.html')
-	C = Context({ 'L' : L })
-	return T.render(C)
+        real_name = hit.group(1)
+        L = Label.objects.get(name=real_name)
+        T = loader.get_template('webview/t/label.html')
+        C = Context({ 'L' : L })
+        return T.render(C)
     except:
-	# This will throw if the requested label is spelt incorrectly, or doesnt exist
-	return '<img src="/static/transmit.png" alt="Invalid Label" border="0"> %s' % (real_name)
+        # This will throw if the requested label is spelt incorrectly, or doesnt exist
+        return '<img src="/static/transmit.png" alt="Invalid Label" border="0"> %s' % (real_name)
+
+def bb_platform(hit):
+    """
+    Insert a platform by it's ID number
+    """
+    try:
+        plat_id = hit.group(1)
+        platform = SongPlatform.objects.get(id=plat_id)
+        T = loader.get_template('webview/t/platformname.html')
+        C = Context({ 'P' : platform })
+        return T.render(C)
+    except:
+        # Usually thrown if the ID is invalid or doesn't exist
+        return '[platform]%s[/platform]' % (plat_id)
+
+def bb_platformname(hit):
+    """
+    Identify a platform by it's real name
+    """
+    try:
+        plat_name = hit.group(1)
+        P = SongPlatform.objects.get(title=plat_name)
+        T = loader.get_template('webview/t/platformname.html')
+        C = Context({ 'P' : P })
+        return T.render(C)
+    except:
+        # This will throw if the requested platform is spelt incorrectly, or doesnt exist
+        return '[platform]%s[/platform]' % (plat_name)
 
 def bb_thread(hit):
     """
@@ -762,6 +790,8 @@ def bbcode(value):
         (r'\[compilation\](.+?)\[/compilation\]', bb_compilation_name),
         (r'\[label\](\d+?)\[/label\]', bb_label),
         (r'\[label\](.+?)\[/label\]', bb_labelname),
+        (r'\[platform\](\d+?)\[/platform\]', bb_platform),
+        (r'\[platform\](.+?)\[/platform\]', bb_platformname),
         
         # Experimental BBCode tags
         (r'\[youtube\](.+?)\[/youtube\]', bb_youtube),
@@ -867,8 +897,10 @@ def bbcode_oneliner(value):
         (r'\[compilation\](\d+?)\[/compilation\]', bb_compilation),
         (r'\[album\](.+?)\[/album\]', bb_compilation_name),
         (r'\[compilation\](.+?)\[/compilation\]', bb_compilation_name),
-	(r'\[label\](\d+?)\[/label\]', bb_label),
+        (r'\[label\](\d+?)\[/label\]', bb_label),
         (r'\[label\](.+?)\[/label\]', bb_labelname),
+        (r'\[platform\](\d+?)\[/platform\]', bb_platform),
+        (r'\[platform\](.+?)\[/platform\]', bb_platformname),
       ]
 
     for bbset in bbdata:

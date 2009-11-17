@@ -12,7 +12,7 @@
 {% endif %}
 </h2>
 
-<strong>{{ object.title }}</strong>
+<img src="/static/music.png" alt="song" border="0"> {% with object as song %}{% include "webview/t/songname.html" %}{% endwith %}
 
 <p>
 Author: 
@@ -57,7 +57,7 @@ Song Length: {{ object.length }}<br>
 Song Status: {{ object.get_status_display }}
 {% if object.bitrate %}<br />Song Bitrate: {{ object.bitrate }} kbps{% endif %}
 {% if object.type %}<br />Song Source: {{ object.type }}{% endif %}
-{% if object.platform %}<br />Song Platform: <a href="{{ object.platform.get_absolute_url }}">{{ object.platform }}</a>{% endif %}
+{% if object.platform %}<br />Song Platform: {% with object.platform as P %}{% include "webview/t/platformname.html" %}{% endwith %}{% endif %}
 </p>
 
 {% if object.info %}
