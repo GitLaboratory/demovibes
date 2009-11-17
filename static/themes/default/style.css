@@ -432,6 +432,12 @@ p.pmtitle {
     margin: 0px 4px;
 }
 
+.platform_icon
+{
+    vertical-align: middle;
+    margin-left: 3px;
+}
+
 .icon_header
 {
 	padding: 1ex;
