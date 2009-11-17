@@ -52,7 +52,7 @@ Name: {{ comp.name }}<br>
 {% ifnotequal comp.songs.count 0 %}
  <b><i>Songs In This Production ({{ comp.songs.count }} Total):</i></b><br><br>
  {% for song in comp.songs.all %}
-  <a href="{{ song.get_absolute_url }}">{{ song.title }}</a> by {% for artist in song.artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %} {% endfor %}
+  {% include "webview/t/songname.html" %} by {% for artist in song.artists.all %}{% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %} {% endfor %}
   <span name="a_queue_{{ song.id }}">{% include "webview/t/songlist_span_noauth.html" %}</span><br>
  {% endfor %}
 {% endifnotequal %}<br>

@@ -20,7 +20,7 @@
 {% for song in songs %}
 <tr>
  <td>
-  <a href="{{ song.get_absolute_url }}">{{ song }}</a>
+  {% include "webview/t/songname.html" %}
  </td>
  <td align="center">
   {{ song.length }}
