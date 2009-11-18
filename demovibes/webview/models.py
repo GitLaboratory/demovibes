@@ -340,6 +340,7 @@ class Song(models.Model):
             ('I', 'Inactive'),
             ('V', 'Not verified'),
             ('D', 'Dupe'),
+            ('E', 'Reported'),
             ('U', 'Uploaded'),
             ('N', 'Needs Re-Encoding'), # Requested by Arab. AAK
             ('C', 'Removed By Request'), # If we are asked to remove a track. AAK
