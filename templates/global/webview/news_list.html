@@ -13,10 +13,10 @@
 {% endifequal %}{% endfor %}
 
 {% for news in object_list %}{% ifequal news.status "A" %}{# Then the rest. All active #}
- <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ MEDIA_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span><span class="date" title="{{ news.added|date:"T" }}">{{ news.added|date:"G:i j.n.Y" }}</span></h2>
+ <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ MEDIA_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span><span class="date">{{ news.added|date:"P - F j, Y (T)" }}</span></h2>
  {{ news.text|safe|bbcode }}
 {% endifequal %}{% if user.is_authenticated %}{% ifequal news.status "L" %}{# Then the rest. Logged in filter #}
- <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ MEDIA_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span><span class="date" title="{{ news.added|date:"T" }}">{{ news.added|date:"G:i j.n.Y" }}</span></h2>
+ <h2><img class="icon_header" src="{% if news.icon %}{{ news.icon }}{% else %}{{ MEDIA_URL }}newspaper.png{% endif %}" alt="" /><span class="headline"> {{ news.title }}</span><span class="date">{{ news.added|date:"P - F j, Y (T)" }}</span></h2>
  {{ news.text|safe|bbcode }}
 {% endifequal %}{% endif %}{% endfor %}
 
