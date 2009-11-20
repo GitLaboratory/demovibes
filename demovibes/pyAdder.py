@@ -1,6 +1,7 @@
 import sys, random, os
 from datetime import datetime, timedelta
 import time
+import bitly
 from os import popen
 
 from django.core.management import setup_environ
@@ -8,6 +9,7 @@ import settings
 setup_environ(settings)
 from webview.models import *
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 from webview import common
 from string import *
 
@@ -17,6 +19,12 @@ fsenc = sys.getfilesystemencoding()
 dj_username = "djrandom"
 twitter_username = getattr(settings, 'TWITTER_USERNAME', False)
 twitter_password = getattr(settings, 'TWITTER_PASSWORD', False)
+
+# Attempt to get Bit.ly details. Bit.ly is a free service that provides detailed
+# Tracking to your tweets. Register for free at http://www.bit.ly and add the
+# Username and Key (from the Account page) to your settings.py file.
+bitly_username = getattr(settings, 'BITLY_USERNAME', False)
+bitly_key = getattr(settings, 'BITLY_API_KEY', False)
 
 try:
     djUser = User.objects.get(username = dj_username)
@@ -31,7 +39,7 @@ timestamp = None
 jt_count = 0
 jt_timelast = datetime.datetime.now()
 jt_max = timedelta(minutes = 30)
-jt_min = timedelta(minutes = 20)
+ijt_min = timedelta(minutes = 20)
 
 #Good song weighting
 # N is "No votes / fewer than 5 votes"
@@ -86,9 +94,33 @@ def ices_get_next ():
 
     meta = "%s - %s" % (song.artist(), song.title)
     print "Now playing", song.file.path.encode(enc)
-    twitter_message = "Now playing: %s - %s" % (song.artist(), song.title)
+
+    # Here we will attempt to construct a full URL to the song. This gets the
+    # URL, without the tariling slash.
+    current_site = Site.objects.get_current()
+    protocol = getattr(settings, 'MY_SITE_PROTOCOL', 'http')
+    port     = getattr(settings, 'MY_SITE_PORT', '')
+    url = '%s://%s' % (protocol, current_site.domain)
+    if port:
+        url += ':%s' % port
+
+    # Now to add the song portion of the link to the end of it
+    url += song.get_absolute_url()
+    print "Full URL To Song URL: ", url
+
+    # Generate simplified Twitter message
+    twitter_message = "Now Playing: %s - %s" % (song.artist(), song.title)
+
+    # Append the Bit.Ly shortened URL, only if it's active
+    if bitly_username and bitly_key:
+        api = bitly.Api(login='cvgm', apikey='R_239abe1a4eda9a5622ee04bc855c988f')
+        short_url = api.shorten(url)
+        twitter_message += ' - %s' % short_url
+
     if twitter_username and twitter_password:
-	tweet(twitter_username,twitter_password,twitter_message)
+        print "Tweeting: ", twitter_message
+        tweet(twitter_username,twitter_password,twitter_message)
+
     try:
         song.file.path.encode(enc)
     except:
