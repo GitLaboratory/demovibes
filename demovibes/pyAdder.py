@@ -197,7 +197,10 @@ def ices_get_metadata ():
 
 # function to update twitter with currently playing song
 def tweet(user, password, message):
-	if len(message) < 140:
-		url = 'http://twitter.com/statuses/update.xml'
-		curl = 'curl -s -u %s:%s -d status="%s" %s' % (user,password,message,url)
-		pipe=popen(curl, 'r')
+    if len(message) < 140:
+        url = 'http://twitter.com/statuses/update.xml'
+        curl = 'curl -s -u %s:%s -d status="%s" %s' % (user,password,message,url)
+        try:
+            pipe=popen(curl, 'r')
+        except:
+            print "Failed To Tweet:", message
