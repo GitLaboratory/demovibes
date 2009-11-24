@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 import datetime
 from django.conf import settings
-from settings import MEDIA_ROOT
 from django.core.mail import EmailMessage
 #from django.core.urlresolvers import reverse
 import mad, logging
@@ -11,7 +10,7 @@ from django.template.defaultfilters import striptags
 from django.contrib.sites.models import Site
 from django.template import RequestContext, Context, loader
 from django.db.models.signals import post_save
-#from demovibes.webview.common import get_oneliner, get_now_playing, get_queue, get_history
+#from demovibes.webview.common import get_oneliner, get_now_playing, get_queue, get_history
 
 from managers import *
 
@@ -34,7 +33,7 @@ class Group(models.Model):
     name = models.CharField(max_length=30, unique = True, db_index = True, verbose_name="* Name", help_text="The name of this group as you want it to appear.")
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Add the website address for this group, if one exists.")
     wiki_link = models.URLField(blank=True, help_text="URL to wikipedia entry (if available)")
-    group_logo = models.ImageField(help_text="Logo/Pic Of This Group", upload_to = MEDIA_ROOT+'/groups', blank = True, null = True)
+    group_logo = models.ImageField(help_text="Logo/Pic Of This Group", upload_to = 'media/groups', blank = True, null = True)
     info = models.TextField(blank = True, verbose_name="Group Info", help_text="Additional information on this group. No HTML.")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
     pouetid = models.IntegerField(verbose_name="Pouet ID", help_text="If this group has a Pouet entry, enter the ID number here - See http://www.pouet.net", blank=True, null = True)
@@ -81,7 +80,7 @@ class GroupVote(models.Model):
 class Theme(models.Model):
     title = models.CharField(max_length = 20)
     description = models.TextField(blank=True)
-    preview = models.ImageField(upload_to=MEDIA_ROOT+'/theme_preview', blank = True, null = True)
+    preview = models.ImageField(upload_to='media/theme_preview', blank = True, null = True)
     css = models.CharField(max_length=120)
     
     def __unicode__(self):
@@ -99,7 +98,7 @@ class Userprofile(models.Model):
     info = models.TextField(blank = True, verbose_name="Profile Info", help_text="Enter a little bit about yourself. No HTML. BBCode tags allowed")
     country = models.CharField(blank = True, max_length = 10, verbose_name = "Country code")
     location = models.CharField(blank = True, max_length=40, verbose_name="Hometown Location")
-    avatar = models.ImageField(upload_to = MEDIA_ROOT+'/avatars', blank = True, null = True)
+    avatar = models.ImageField(upload_to = 'media/avatars', blank = True, null = True)
     token = models.CharField(blank = True, max_length=32)
     infoline = models.CharField(blank = True, max_length = 50)
     VISIBLE_TO = (
@@ -174,7 +173,7 @@ class Label(models.Model):
     name = models.CharField(max_length=40, unique = True, db_index = True, verbose_name="* Name", help_text="Name of this label, as you want it to appear on the site")
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Website for this label, if available")
     wiki_link = models.URLField(blank=True, help_text="Full URL to wikipedia entry (if available)")
-    logo = models.ImageField(upload_to = MEDIA_ROOT+'/labels', blank = True, null = True, verbose_name="Label Logo", help_text="Upload an image containing the logo for this label")
+    logo = models.ImageField(upload_to = 'media/labels', blank = True, null = True, verbose_name="Label Logo", help_text="Upload an image containing the logo for this label")
     info = models.TextField(blank = True, help_text="Additional information about this label. No HTML.")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
     pouetid = models.IntegerField(blank=True, null = True, verbose_name="Pouet ID", help_text="If this label has a pouet group entry, enter the ID here.")
@@ -217,7 +216,7 @@ class Artist(models.Model):
     dob = models.DateField(help_text="Date of Birth (YYYY-MM-DD)", null=True, blank = True)
     is_deceased = models.BooleanField(default=False, verbose_name = "Deceased?", help_text="Has this artist passed away? Check if this has happened.")
     deceased_date = models.DateField(help_text="Date of Passing (YYYY-MM-DD)", null=True, blank = True, verbose_name="Date Of Death")
-    artist_pic = models.ImageField(verbose_name="Picture", help_text="Insert a picture of this artist.", upload_to = MEDIA_ROOT+'/artists', blank = True, null = True)
+    artist_pic = models.ImageField(verbose_name="Picture", help_text="Insert a picture of this artist.", upload_to = 'media/artists', blank = True, null = True)
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Website for this artist. Must exist on the web.")
     wiki_link = models.URLField(blank=True, help_text="URL to Wikipedia entry (if available)")
     home_country = models.CharField(blank = True, max_length = 10, verbose_name = "Country Code", help_text="Standard country code, such as gb, us, ru, se etc.")
@@ -286,8 +285,8 @@ class SongType(models.Model):
 class SongPlatform(models.Model):
     title = models.CharField(max_length=64, unique = True)
     description = models.TextField()
-    symbol = models.ImageField(upload_to = MEDIA_ROOT+'/platform/symbol', blank = True, null = True)
-    image = models.ImageField(upload_to = MEDIA_ROOT+'/platform/image', blank = True, null = True)
+    symbol = models.ImageField(upload_to = 'media/platform/symbol', blank = True, null = True)
+    image = models.ImageField(upload_to = 'media/platform/image', blank = True, null = True)
 
     def __unicode__(self):
         return self.title
@@ -300,7 +299,7 @@ class SongPlatform(models.Model):
         return ("dv-platform", [str(self.id)])
 
 class Logo(models.Model):
-    file = models.FileField(upload_to = MEDIA_ROOT+'/logos')
+    file = models.FileField(upload_to = 'media/logos')
     active = models.BooleanField(default=True, db_index=True)
     creator = models.CharField(max_length=60)
     description = models.TextField(blank = True)
@@ -315,7 +314,7 @@ class Song(models.Model):
     groups = models.ManyToManyField(Group, null = True, blank = True)
     labels = models.ManyToManyField(Label, null = True, blank = True) # Production labels
     title = models.CharField(verbose_name="* Song Name", help_text="The name of this song, as it should appear in the database", max_length=80, db_index = True)
-    file = models.FileField(upload_to = MEDIA_ROOT+'/music', verbose_name="File", help_text="Select an MP3 file to upload. The MP3 should be between 128 and 320Kbps, Stereo or Joint Stereo, with a Constant Bitrate.")
+    file = models.FileField(upload_to='media/music', verbose_name="File", help_text="Select an MP3 file to upload. The MP3 should be between 128 and 320Kbps, Stereo or Joint Stereo, with a Constant Bitrate.")
     pouetid = models.IntegerField(blank=True, null = True, help_text="Pouet number (which= portion) from Pouet.net")
     wos_id = models.CharField(max_length=8, blank=True, null = True, verbose_name="W.O.S. ID", help_text="World of Spectrum ID Number (Spectrum) such as 0003478 (leading 0's are IMPORTANT!) - See http://www.worldofspectrum.org")
     zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum) - See http://www.zxdemo.org")
@@ -343,7 +342,6 @@ class Song(models.Model):
             ('D', 'Dupe'),
             ('E', 'Reported'),
             ('U', 'Uploaded'),
-            ('E', 'Reported'),
             ('N', 'Needs Re-Encoding'), # Requested by Arab. AAK
             ('C', 'Removed By Request'), # If we are asked to remove a track. AAK
             ('R', 'Rejected')
@@ -506,7 +504,7 @@ class Compilation(models.Model):
     prod_artists = models.ManyToManyField(Artist, verbose_name="Production Artists", help_text="Artists associated with the production of this compilation (not necessarily the same as the tracks)", null = True, blank = True) # Internal artists involved in the production
     info = models.TextField(help_text="Description, as you want it to appear on the site. BBCode tags supported. No HTML.", blank = True) # Info page, which will be a simple textbox entry such as a description field
     prod_notes = models.TextField(help_text="Production notes, from the author/group/artists specific to the making of this compilation", blank = True) # Personalized production notes
-    cover_art = models.ImageField(help_text="Album Cover/Screenshot", upload_to = MEDIA_ROOT+'/compilations', blank = True, null = True) # Album Artwork
+    cover_art = models.ImageField(help_text="Album Cover/Screenshot", upload_to = 'media/compilations', blank = True, null = True) # Album Artwork
     details_page = models.URLField(help_text="External link to info page about the compilation", blank = True) # Link to external website about the compilation, such as demoparty page
     purchase_page = models.URLField(help_text="If this is a commercial product, you can provide a 'Buy Now' link here", blank = True) # If commercial CD, link to purchase the album
     youtube_link = models.URLField(help_text="Link to Youtube/Google Video Link (external)", blank = True) # Link to a video of the production
