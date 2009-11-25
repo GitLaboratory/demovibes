@@ -382,9 +382,12 @@ class Song(models.Model):
                 self.bitrate = bitrate
                 self.samplerate = samplerate
             except:
-                self.song_length = 0
-                self.bitrate = 0
-                self.samplerate = 0
+                # This causes the record to not contain anything until the
+                # 'Not Set' bug is fixed. The result; Admins can Edit/Save
+                # Song faster to re-set song time. AAK.
+                self.song_length = None
+                self.bitrate = None
+                self.samplerate = None
         S = self.title[0].lower()
         if not S in alphalist:
             S = '#'
