@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import time
 import bitly
 from os import popen
-
+import logging, logging.config
 from django.core.management import setup_environ
 import settings
 setup_environ(settings)
@@ -13,10 +13,17 @@ from django.contrib.sites.models import Site
 from webview import common
 from string import *
 
+try:
+    logging.config.fileConfig("logging.conf")
+except:
+    logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(name)-8s %(levelname)-8s %(message)s")
+Log = logging.getLogger("pyAdder")
+
 enc = sys.getdefaultencoding()
 fsenc = sys.getfilesystemencoding()
 
-dj_username = "djrandom"
+dj_username = getattr(settings, 'DJ_USERNAME', "djrandom")
+max_length = getattr(settings, 'DJ_MAX_LENGTH', None)
 twitter_username = getattr(settings, 'TWITTER_USERNAME', False)
 twitter_password = getattr(settings, 'TWITTER_PASSWORD', False)
 
@@ -34,6 +41,14 @@ except:
 
 meta = None
 timestamp = None
+
+# Here we will attempt to construct the base url for the site.
+current_site = Site.objects.get_current()
+protocol = getattr(settings, 'MY_SITE_PROTOCOL', 'http')
+port     = getattr(settings, 'MY_SITE_PORT', '')
+base_url = '%s://%s' % (protocol, current_site.domain)
+if port:
+    base_url += ':%s' % port
 
 # Jingles variable setup
 jt_count = 0
@@ -68,11 +83,13 @@ Weight = {
 # Should return 1 if ok, and 0 if something went wrong.
 
 def ices_init ():
+        Log.debug("Ices initiating")
         return 1
 
 # Function called to shutdown your python enviroment.
 # Return 1 if ok, 0 if something went wrong.
 def ices_shutdown ():
+        Log.debug("Ices shutting down")
         return 1
 
 # Function called to get the next filename to stream.
@@ -87,47 +104,44 @@ def ices_get_next ():
         delta = datetime.datetime.now() - timestamp
         if delta < timedelta(seconds=3):
             time.sleep(3)
-            print "ERROR : Song '%s' borked for some reason!" % meta
+            Log.critical("ERROR : Song '%s' borked for some reason!" % meta)
     timestamp = datetime.datetime.now()
-
+    Log.debug("Finding a new song for ices")
     song = findQueued()
 
     meta = "%s - %s" % (song.artist(), song.title)
-    print "Now playing", song.file.path.encode(enc)
-
-    # Here we will attempt to construct a full URL to the song. This gets the
-    # URL, without the tariling slash.
-    current_site = Site.objects.get_current()
-    protocol = getattr(settings, 'MY_SITE_PROTOCOL', 'http')
-    port     = getattr(settings, 'MY_SITE_PORT', '')
-    url = '%s://%s' % (protocol, current_site.domain)
-    if port:
-        url += ':%s' % port
+    Log.debug("Now playing \"%s\" [ID %s]" % (song.title, song.id))
 
     # Now to add the song portion of the link to the end of it
-    url += song.get_absolute_url()
-    print "Full URL To Song URL: ", url
 
     # Generate simplified Twitter message
     twitter_message = "Now Playing: %s - %s" % (song.artist(), song.title)
 
     # Append the Bit.Ly shortened URL, only if it's active
     if bitly_username and bitly_key:
+        url = base_url + song.get_absolute_url()
+        Log.debug("Bitly : Full URL To Song URL: %s" % url)
         api = bitly.Api(login='cvgm', apikey='R_239abe1a4eda9a5622ee04bc855c988f')
         short_url = api.shorten(url)
         twitter_message += ' - %s' % short_url
 
     if twitter_username and twitter_password:
-        print "Tweeting: ", twitter_message
+        Log.debug("Tweeting: %s" % twitter_message)
         tweet(twitter_username,twitter_password,twitter_message)
 
     try:
-        song.file.path.encode(enc)
+        filepath = song.file.path.encode(enc)
     except:
         filepath = song.file.path.encode(fsenc, 'ignore')
-    return song.file.path.encode(fsenc, 'ignore')
+    Log.debug("Giving ices path %s" % filepath)
+    return filepath
 
 def isGoodSong(song):
+    """Check if song is a good song to play
+
+    Checks if song is locked, and if that voteclass of songs have been played recently.
+    Returns true or false
+    """
     if song.is_locked() :
         return False
     global Weight
@@ -144,18 +158,19 @@ def isGoodSong(song):
     return False
 
 def getRandom():
-    songs = Song.active.count()
+    query = max_length and Song.active.filter(song_length__lt = max_length) or Song.active.all()
+    songs = query.count()
     rand = random.randint(0,songs-1)
-    song = Song.active.all()[rand]
+    song = query[rand]
     C = 0
+    Log.debug("Trying to find a random song")
     # Try to find a good song that is not locked. Will try up to 10 times.
     while not isGoodSong(song) and C < 10:
-       print "Random ", C
+       Log.debug("Random %s - song : %s [%s]" % (C, song.title, song.id))
        rand = random.randint(0,songs-1)
-       song = Song.active.all()[rand]
+       song = query[rand]
        C += 1
-    #Q = Queue(song=song, played = True, requested_by=djUser)
-    #Q.save()
+    Log.debug("Using song %s (%s)" % (song.title, song.id))
     Q = common.queue_song(song, djUser, False, True)
     common.play_queued(Q)
     return song
@@ -168,7 +183,7 @@ def JingleTime():
             jt_count = 0
             jt_timelast = datetime.datetime.now()
             S = Song.objects.filter(status='J').order_by('?')[0]
-            print "JingleTime!"
+            Log.debug("JingleTime! ID %s" % S.id)
             return S
     jt_count += 1
     return False
@@ -193,6 +208,7 @@ def findQueued():
 # return null to indicate that the file comment should be used.
 def ices_get_metadata ():
         #return 'Artist - Title (Label, Year)'
+        Log.debug("Ices asked for metadata, giving %s" % meta.encode(enc, 'replace'))
         return meta.encode(enc, 'replace')
 
 # function to update twitter with currently playing song
@@ -203,4 +219,4 @@ def tweet(user, password, message):
         try:
             pipe=popen(curl, 'r')
         except:
-            print "Failed To Tweet:", message
+            Log.warning("Failed To Tweet: %s"% message)

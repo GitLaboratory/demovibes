@@ -19,16 +19,6 @@ from managers import *
 #Used for artist / song listing
 alphalist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '-']
 
-def create_profile(sender, **kwargs):
-    if "created" in kwargs:
-        if kwargs["created"]:
-            try:
-                profile = Userprofile(user = kwargs["instance"])
-                profile.save()
-            except:
-                pass
-post_save.connect(create_profile, sender=User)
-      
 class Group(models.Model):
     name = models.CharField(max_length=30, unique = True, db_index = True, verbose_name="* Name", help_text="The name of this group as you want it to appear.")
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Add the website address for this group, if one exists.")
@@ -388,6 +378,10 @@ class Song(models.Model):
                 self.song_length = None
                 self.bitrate = None
                 self.samplerate = None
+            try:
+                del mf
+            except:
+                pass
         S = self.title[0].lower()
         if not S in alphalist:
             S = '#'
@@ -779,3 +773,23 @@ class CountryList(models.Model):
     
     class Meta:
         ordering = ['name']
+
+def create_profile(sender, **kwargs):
+    if kwargs["created"]:
+        try:
+            profile = Userprofile(user = kwargs["instance"])
+            profile.save()
+        except:
+            pass
+post_save.connect(create_profile, sender=User)
+
+def set_song_values(sender, **kwargs):
+    if kwargs["created"]:
+        song = kwargs["instance"]
+        mf = mad.MadFile(song.file.path)
+        song.song_length = mf.total_time() / 1000
+        song.bitrate = mf.bitrate() / 1000
+        song.samplerate = mf.samplerate()
+        song.save()
+        del mf
+post_save.connect(set_song_values, sender = Song)

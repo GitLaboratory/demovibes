@@ -7,11 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.conf import settings
-from djangologging.decorators import suppress_logging_output
 from django.db.models import Q
 import time, datetime
 
-@suppress_logging_output
 def monitor(request, event_id):
     if request.user.is_authenticated():
         P = get_profile(request.user)
@@ -32,20 +30,16 @@ def monitor(request, event_id):
     return HttpResponse("")
 
 #This might need to be uncached later on, if per-user info is sent.
-@suppress_logging_output
 def nowplaying(request):
     song = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
     return render_to_response('webview/js/now_playing.html', { 'now_playing' : song },  context_instance=RequestContext(request))
 
-@suppress_logging_output
 def history(request):
     return HttpResponse(get_history())
 
-@suppress_logging_output
 def queue(request):
     return HttpResponse(get_queue())
 
-@suppress_logging_output
 def oneliner_submit(request):
     if not request.user.is_authenticated():
         return HttpResponse("NoAuth")
@@ -57,11 +51,9 @@ def oneliner_submit(request):
         AjaxEvent.objects.create(event='oneliner')
     return HttpResponse("OK")
 
-@suppress_logging_output
 def oneliner(request):
     return HttpResponse(get_oneliner())
 
-@suppress_logging_output
 def songupdate(request, song_id):
     song = Song.objects.get(id=song_id)
     return render_to_response('webview/js/generic.html', { 
@@ -70,7 +62,6 @@ def songupdate(request, song_id):
         'template' : 'webview/t/songlist_span.html',
         },  context_instance=RequestContext(request))
 
-@suppress_logging_output
 def words(request, prefix): 
     extrawords=['boobies','boobietrap','nectarine']; 
     words= [a.username+"" for a in User.objects.filter(username__istartswith=prefix)];

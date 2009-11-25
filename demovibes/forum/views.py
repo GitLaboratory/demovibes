@@ -4,6 +4,7 @@ and posts, adding new threads, and adding replies.
 """
 
 from forum.models import Forum,Thread,Post,Subscription
+from forum.forms import ThreadForm, ReplyForm, EditForm
 from datetime import datetime
 from django.shortcuts import get_object_or_404, render_to_response
 from django.http import Http404, HttpResponse, HttpResponseRedirect, HttpResponseServerError, HttpResponseForbidden
@@ -16,22 +17,43 @@ from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator, EmptyPage, InvalidPage
 
-def edit(request, post_id):
-	P = get_object_or_404(Post, id=post_id)
-	t = P.thread
-	if request.user != P.author:
-		return HttpResponseRedirect(t.get_absolute_url())
-	if request.method == 'POST':
-		P.body = request.POST['Content'] 
-		P.save()
-		return HttpResponseRedirect(t.get_absolute_url())
-	return render_to_response('forum/post_edit.html',
-		RequestContext(request, {
-			'content' : P.body
-		}))
+def forum_email_notification(post):
+    try:
+        mail_subject = settings.FORUM_MAIL_PREFIX 
+    except AttributeError:
+        mail_subject = '[Forum]'
+    try:
+        mail_from = settings.FORUM_MAIL_FROM
+    except AttributeError:
+        mail_from = settings.DEFAULT_FROM_EMAIL
+    mail_tpl = loader.get_template('forum/notify.txt')
+    c = Context({
+        'body': wordwrap(striptags(post.body), 72),
+        'site' : Site.objects.get_current(),
+        'thread': post.thread,
+        })
+    email = EmailMessage(
+            subject=mail_subject+' '+striptags(post.thread.title),
+            body=mail_tpl.render(c),
+            from_email=mail_from,
+            to=[mail_from],
+            bcc=[s.author.email for s in post.thread.subscription_set.all()])
+    email.send(fail_silently=True)
 
-def get_post_count(request):
-    return 88
+def edit(request, post_id):
+    P = get_object_or_404(Post, id=post_id)
+    t = P.thread
+    if request.user != P.author:
+        return HttpResponseRedirect(t.get_absolute_url())
+    if request.method == 'POST':
+        edit_form = EditForm(request.POST, instance=P)
+        if edit_form.is_valid():
+            edit_form.save()
+            return HttpResponseRedirect(t.get_absolute_url())
+    else:
+        edit_form = EditForm(instance=P)
+    return render_to_response('forum/post_edit.html',
+        RequestContext(request, {'edit_form' : edit_form}))
 
 def forum(request, slug):
     """
@@ -40,13 +62,32 @@ def forum(request, slug):
     most recent post.
     """
     f = get_object_or_404(Forum, slug=slug)
-    t = f.thread_set.all()
 
     # If the user is not authorized to view the thread, then redirect
     if f.is_private and request.user.is_staff != True:
          return HttpResponseRedirect('/forum')
-
+    
+    # Process new thread form if data was sent
+    if request.method == 'POST':
+        if not request.user.is_authenticated():
+            return HttpResponseServerError()
+        thread_form = ThreadForm(request.POST)
+        if thread_form.is_valid():
+            new_thread = thread_form.save(commit = False)
+            new_thread.forum = f
+            new_thread.save()
+            Post.objects.create(thread=new_thread, author=request.user,
+               	body=thread_form.cleaned_data['body'],
+                time=datetime.now())
+            if (thread_form.cleaned_data['subscribe'] == True):
+                Subscription.objects.create(author=request.user,
+                    thread=new_thread)
+            return HttpResponseRedirect(new_thread.get_absolute_url())
+    else:
+        thread_form = ThreadForm()
+        
     # Pagination
+    t = f.thread_set.all()
     paginator = Paginator(t, settings.FORUM_PAGINATE)
     page = int(request.GET.get('page', 1))
     try:
@@ -60,6 +101,7 @@ def forum(request, slug):
             'threads': threads.object_list,
             'page_range': paginator.page_range,
             'page': page,
+            'thread_form': thread_form
         }))
 
 def thread(request, thread):
@@ -71,10 +113,32 @@ def thread(request, thread):
     p = t.post_set.all().order_by('time')
     s = t.subscription_set.filter(author=request.user)
 
-   # If the user is not authorized to view, we redirect them
+    # If the user is not authorized to view, we redirect them
     if t.forum.is_private and request.user.is_staff != True:
          return HttpResponseRedirect('/forum')
 
+    # Process reply form if it was sent
+    if (request.method == 'POST'):
+        if not request.user.is_authenticated() or t.closed:
+            return HttpResponseServerError()
+        reply_form = ReplyForm(request.POST)
+        if reply_form.is_valid():
+            new_post = reply_form.save(commit = False)
+            new_post.author = request.user
+            new_post.thread = t
+            new_post.time=datetime.now()
+            new_post.save()
+            # Change subscription
+            if reply_form.cleaned_data['subscribe']:
+                Subscription.objects.get_or_create(thread=t,
+                    author=request.user)
+            else:
+                Subscription.objects.delete(thread=t, author=request.user)
+            # Send email
+            forum_email_notification(new_post)
+            return HttpResponseRedirect(new_post.get_absolute_url())
+    else:
+        reply_form = ReplyForm(initial={'subscribe': s})
 
     # Pagination
     paginator = Paginator(p, settings.FORUM_PAGINATE)
@@ -94,104 +158,8 @@ def thread(request, thread):
             'posts': posts.object_list,
 	    'page_range': paginator.page_range,
             'page': page,
-            'subscription': s,
+            'reply_form': reply_form
         }))
-
-def reply(request, thread):
-    """
-    If a thread isn't closed, and the user is logged in, post a reply
-    to a thread. Note we don't have "nested" replies at this stage.
-    """
-    if not request.user.is_authenticated():
-        return HttpResponseServerError()
-    t = get_object_or_404(Thread, pk=thread)
-    if t.closed:
-        return HttpResponseServerError()
-    body = request.POST.get('body', False)
-    p = Post(
-        thread=t, 
-        author=request.user,
-        body=body,
-        time=datetime.now(),
-        )
-    p.save()
-
-    sub = Subscription.objects.filter(thread=t, author=request.user)
-    if request.POST.get('subscribe',False):
-        if not sub:
-            s = Subscription(
-                author=request.user,
-                thread=t
-                )
-            s.save()
-    else:
-        if sub:
-            sub.delete()
-
-    # Subscriptions are updated now send mail to all the authors subscribed in
-    # this thread.
-    mail_subject = ''
-    try:
-        mail_subject = settings.FORUM_MAIL_PREFIX 
-    except AttributeError:
-        mail_subject = '[Forum]'
-
-    mail_from = ''
-    try:
-        mail_from = settings.FORUM_MAIL_FROM
-    except AttributeError:
-        mail_from = settings.DEFAULT_FROM_EMAIL
-
-    mail_tpl = loader.get_template('forum/notify.txt')
-    c = Context({
-        'body': wordwrap(striptags(body), 72),
-        'site' : Site.objects.get_current(),
-        'thread': t,
-        })
-
-    #email = EmailMessage('Hello', 'Body goes here', 'from@example.com',
-    #            ['to1@example.com', 'to2@example.com'], ['bcc@example.com'],
-    #                        headers = {'Reply-To': 'another@example.com'})
-    email = EmailMessage(
-            subject=mail_subject+' '+striptags(t.title),
-            body= mail_tpl.render(c),
-            from_email=mail_from,
-            to=[mail_from],
-            bcc=[s.author.email for s in t.subscription_set.all()],)
-    email.send(fail_silently=True)
-
-    return HttpResponseRedirect(p.get_absolute_url())
-
-def newthread(request, forum):
-    """
-    Rudimentary post function - this should probably use 
-    newforms, although not sure how that goes when we're updating 
-    two models.
-
-    Only allows a user to post if they're logged in.
-    """
-    if not request.user.is_authenticated():
-        return HttpResponseServerError()
-    f = get_object_or_404(Forum, slug=forum)
-    t = Thread(
-        forum=f,
-        title=request.POST.get('title'),
-    )
-    t.save()
-    p = Post(
-        thread=t,
-        author=request.user,
-        body=request.POST.get('body'),
-        time=datetime.now(),
-    )
-    p.save()
-    if request.POST.get('subscribe',False):
-        s = Subscription(
-            author=request.user,
-            thread=t
-            )
-        s.save()
-    return HttpResponseRedirect(t.get_absolute_url())
 
 def updatesubs(request):
     """

@@ -772,7 +772,7 @@ def set_rating(request, song_id):
             R = int(request.POST['Rating'])
         except:
              return HttpResponseRedirect(reverse('dv-song', args=[song_id]))
-        if R <= 5 and R >= 0:
+        if R <= 5 and R >= 1:
             S = Song.objects.get(id = song_id)
             S.set_vote(R, request.user)
     return HttpResponseRedirect(S.get_absolute_url())

@@ -204,14 +204,14 @@ class Post(models.Model):
     time = models.DateTimeField(_("Time"), blank=True, null=True)
     edited = models.DateTimeField(blank = True, null = True)
 
-    def save(self):
+    def save(self, force_insert = False, force_update = False):
         new_post = False
         if not self.id:
             self.time = datetime.datetime.now()
         else:
             self.edited = datetime.datetime.now()
             
-        super(Post, self).save()
+        super(Post, self).save(force_insert, force_update)
 
         t = self.thread
         t.latest_post_time = t.post_set.latest('time').time
