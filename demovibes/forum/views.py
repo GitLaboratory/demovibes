@@ -133,7 +133,7 @@ def thread(request, thread):
                 Subscription.objects.get_or_create(thread=t,
                     author=request.user)
             else:
-                Subscription.objects.delete(thread=t, author=request.user)
+                Subscription.objects.filter(thread=t, author=request.user).delete()
             # Send email
             forum_email_notification(new_post)
             return HttpResponseRedirect(new_post.get_absolute_url())
