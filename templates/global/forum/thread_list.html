@@ -62,30 +62,33 @@ Pages : {% for p in page_range %}
 
 <h2><img class="icon_header" src="{{ MEDIA_URL }}page_white_edit.png" alt="" />Start A New Forum Topic</h2>
 {% if user.is_authenticated %}
-<form method='post' action='new/'>
+<form method='post' action='.'>
 	<table id="newThread">
 		<tr>
 			<td class="label">
-				<label for='title'>Subject:</label>
+				{{ thread_form.title.label_tag }}
 			</td>
 			<td>
-				<input type='text' name='title' maxlength='100' />
+				{{ thread_form.title }}
+                {{ thread_form.title.errors }}
 			</td>
 		</tr>
 		<tr>
 			<td class="label">
-				<label for='body'>Message:</label>
+				{{ thread_from.body.label_tag }}
 			</td>
 			<td>
-				<textarea name='body' rows='12' cols='80' class="input"></textarea>
+				{{ thread_form.body }}
+                {{ thread_form.body.errors }}
 			</td class="label">
 		</tr>
 		<tr>
 			<td class="label">
-				<label for='subscribe'>Receive updates via email:</label>
+				{{ thread_form.subscribe.label_tag }}
 			</td>
 			<td>
-				<input type='checkbox' name='subscribe' />
+				{{ thread_form.subscribe }}
+                {{ thread_form.subscribe.errors }}
 			</td>
 		</tr>
 		<tr>

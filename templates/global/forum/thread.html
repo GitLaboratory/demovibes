@@ -54,11 +54,14 @@
 <p>Sorry, this thread is closed. No further comments are permitted.</p>
 {% else %}
 {% if user.is_authenticated %}
-<form method='post' action='reply/'>
+<form method='post' action='.'>
 <p><label>Posting As</label> <span>{{ user.username }}</span></p>
-<p><label for='id_body'>Your Message</label>
-<textarea name='body' rows='12' cols='80' id='id_body' class="input"></textarea></p>
-<p><label for='id_subscribe'>Receive updates via email:</label><input type='checkbox' id='id_subscribe' name='subscribe' {% if subscription %}checked{% endif %}/></p>
+<p> {{ reply_form.body.label_tag }}
+{{ reply_form.body }}
+{{ reply_form.body.errors }}</p>
+<p>{{ reply_form.subscribe.label_tag }}
+{{ reply_form.subscribe }}
+{{ reply_form.subscribe.errors }}</p>
 <input type='submit' value='Submit' />
 </form>
 {% else %}

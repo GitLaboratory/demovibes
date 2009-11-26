@@ -9,7 +9,8 @@
 {% block forumcontent %}
 <h2>Edit post</h2>
 <form method="post" action=".">
-<textarea name='Content' rows='20' cols='60' class="input" >{{ content }}</textarea><br />
+{{ edit_form.body }}
+{{ edit_form.body.errors }}<br />
 <input type='submit' value='Update'/>
 </form>
 {% endblock %}
