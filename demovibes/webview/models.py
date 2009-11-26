@@ -85,6 +85,7 @@ class Userprofile(models.Model):
     yahoo_id = models.CharField(blank = True, max_length = 40, verbose_name = "Yahoo! ID", help_text="Yahoo! IM ID, for people to contact you (optional)")
     icq_id = models.CharField(blank = True, max_length = 40, verbose_name = "ICQ Number", help_text="ICQ Number for people to contact you (optional)")
     hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="If you have a Hall of Light ID number (Amiga Developers) - See http://hol.abime.net")
+    twitter_id = models.CharField(blank = True, max_length = 32, verbose_name = "Twitter ID", help_text="Enter your Twitter account name, without the Twitter URL (optional)")
     info = models.TextField(blank = True, verbose_name="Profile Info", help_text="Enter a little bit about yourself. No HTML. BBCode tags allowed")
     country = models.CharField(blank = True, max_length = 10, verbose_name = "Country code")
     location = models.CharField(blank = True, max_length=40, verbose_name="Hometown Location")
@@ -212,6 +213,7 @@ class Artist(models.Model):
     home_country = models.CharField(blank = True, max_length = 10, verbose_name = "Country Code", help_text="Standard country code, such as gb, us, ru, se etc.")
     home_location = models.CharField(blank = True, max_length=40, verbose_name="Location", help_text="Hometown location, if known.")
     last_fm_id = models.CharField(blank = True, max_length = 32, verbose_name = "Last.fm ID", help_text="If this artist has a Last.FM account, specify the username portion here. Use + instead of Space. Example: Martin+Galway")
+    twitter_id = models.CharField(blank = True, max_length = 32, verbose_name = "Twitter ID", help_text="Enter the Twitter account name of the artist, if known (without the Twitter URL)")
     hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="Hall of Light Artist ID number (Amiga) - See http://hol.abime.net")
     groups = models.ManyToManyField(Group, null = True, blank = True, help_text="Select any known groups this artist is a member of.")
     labels = models.ManyToManyField(Label, null = True, blank = True, help_text="Select any known production labels associated with this artist.") # Production labels this artist has worked for
@@ -332,6 +334,7 @@ class Song(models.Model):
             ('D', 'Dupe'),
             ('E', 'Reported'),
             ('U', 'Uploaded'),
+            ('M', 'Moved'), # Moved to CVGM/Necta (Depending on content, see [thread]286[/thread] on Necta)
             ('N', 'Needs Re-Encoding'), # Requested by Arab. AAK
             ('C', 'Removed By Request'), # If we are asked to remove a track. AAK
             ('R', 'Rejected')
@@ -342,6 +345,8 @@ class Song(models.Model):
     bitrate = models.IntegerField(blank = True, null = True)
     samplerate = models.IntegerField(blank = True, null = True)
     remix_of_id = models.IntegerField(blank = True, null = True, verbose_name = "Mix SongID", help_text="Song number (such as: 252) of the original song this is mixed from.")
+    cvgm_id = models.IntegerField(blank = True, null = True, verbose_name = "CVGM SongID", help_text="SongID on CVGM (Link will be provided)")
+    necta_id = models.IntegerField(blank = True, null = True, verbose_name = "Necta SongID", help_text="SongID on Nectarine (Link will be provided)")
 
     objects = models.Manager()
     active = ActiveSongManager()

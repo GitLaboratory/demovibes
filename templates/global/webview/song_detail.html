@@ -12,7 +12,7 @@
 {% endif %}
 </h2>
 
-<img src="/static/music.png" alt="song" border="0"> {% with object as song %}{% include "webview/t/songname.html" %}{% endwith %}
+{% with object as song %}{% include "webview/t/songname.html" %}{% endwith %}
 
 <p>
 Author: 
