@@ -13,10 +13,10 @@ from django.contrib.sites.models import Site
 from webview import common
 from string import *
 
-try:
+if os.path.exists("logging.conf"):
     logging.config.fileConfig("logging.conf")
-except:
-    logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(name)-8s %(levelname)-8s %(message)s")
+else:
+    logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(name)-8s %(levelname)-8s %(message)s")
 Log = logging.getLogger("pyAdder")
 
 enc = sys.getdefaultencoding()
@@ -36,7 +36,7 @@ bitly_key = getattr(settings, 'BITLY_API_KEY', False)
 try:
     djUser = User.objects.get(username = dj_username)
 except:
-    print "ERROR : User '%s' does not exist! Please create that user or change user in pyAdder. Can not start!" % dj_username
+    Log.critical("User '%s' does not exist! Please create that user or change user in pyAdder. Can not start!" % dj_username)
     sys.exit(1)
 
 meta = None
@@ -104,7 +104,7 @@ def ices_get_next ():
         delta = datetime.datetime.now() - timestamp
         if delta < timedelta(seconds=3):
             time.sleep(3)
-            Log.critical("ERROR : Song '%s' borked for some reason!" % meta)
+            Log.warning("Song '%s' borked for some reason!" % meta)
     timestamp = datetime.datetime.now()
     Log.debug("Finding a new song for ices")
     song = findQueued()
@@ -126,7 +126,7 @@ def ices_get_next ():
             short_url = api.shorten(url)
             twitter_message += ' - %s' % short_url
         except:
-            pass
+            Log.warning("Bit.ly failed to shorten url!")
 
     if twitter_username and twitter_password:
         Log.debug("Tweeting: %s" % twitter_message)
