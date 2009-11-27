@@ -121,7 +121,7 @@ def ices_get_next ():
     if bitly_username and bitly_key:
         url = base_url + song.get_absolute_url()
         Log.debug("Bitly : Full URL To Song URL: %s" % url)
-        api = bitly.Api(login='cvgm', apikey='R_239abe1a4eda9a5622ee04bc855c988f')
+        api = bitly.Api(login=bitly_username, apikey=bitly_key)
         short_url = api.shorten(url)
         twitter_message += ' - %s' % short_url
 
