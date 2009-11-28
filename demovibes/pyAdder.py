@@ -54,7 +54,7 @@ if port:
 jt_count = 0
 jt_timelast = datetime.datetime.now()
 jt_max = timedelta(minutes = 30)
-ijt_min = timedelta(minutes = 20)
+jt_min = timedelta(minutes = 20)
 
 #Good song weighting
 # N is "No votes / fewer than 5 votes"
