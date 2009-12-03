@@ -119,12 +119,6 @@ def site_faq(request):
     """
     return render_to_response('webview/site-faq.html', { }, context_instance=RequestContext(request))
 
-def site_links(request):
-    """
-    Support for a generic links
-    """
-    return render_to_response('webview/site-links.html', { }, context_instance=RequestContext(request))
-
 def list_queue(request):
     """
     Display the current song, the next songs in queue, and the latest 20 songs in history.
@@ -776,3 +770,69 @@ def set_rating(request, song_id):
             S = Song.objects.get(id = song_id)
             S.set_vote(R, request.user)
     return HttpResponseRedirect(S.get_absolute_url())
+
+def link_category(request, slug):
+    """
+    View all links associated with a specific link category slug
+    """
+    link_cat = get_object_or_404(LinkCategory, id_slug = slug)
+    
+    # Query for each set; Easier to work with templates this way
+    link_data_txt = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=link_cat) # See what linkage data we have
+    #link_data_ban = Link.objects.filter(status="A").filter(link_type="B").filter(url_cat=link_cat)
+    #link_data_but = Link.objects.filter(status="A").filter(link_type="U").filter(url_cat=link_cat)
+    
+    return render_to_response('webview/links_category.html', \
+            {'links_txt' : link_data_txt, 'cat' : link_cat}, \
+            context_instance=RequestContext(request))
+
+@login_required
+def link_create(request):
+    """
+    User submitted links appear using this form for moderators to approve. Once sent, they are directed to
+    A generic 'Thanks' page.
+    """
+    if request.method == 'POST':
+        l = Link(submitted_by = request.user, status = 'P')
+        form = CreateLinkForm(request.POST, request.FILES, instance = l)
+        if form.is_valid():
+            new_link = form.save(commit=False)
+            new_link.save()
+            form.save_m2m()
+            return render_to_response('webview/link_added.html') # Redirect to 'Thanks!' screen!
+    else:
+        form = CreateLinkForm()
+    return render_to_response('webview/create_link.html', { 'form' : form }, context_instance=RequestContext(request))
+
+@permission_required('webview.change_link')
+def activate_links(request):
+    """
+    Show all currently pending links in the system. Only the l33t may access.
+    """
+    if "link" in request.GET and "status" in request.GET:
+        linkid = int(request.GET['link'])
+        status = request.GET['status']
+        this_link = Link.objects.get(id=linkid)
+
+        if status == 'A':
+            this_link.status = "A"
+            this_link.approved_by = request.user
+        if status == 'R':
+            this_link.status = "R"
+            this_link.approved_by = request.user
+
+        # Save this to the DB
+        this_link.save()
+
+    #links = Link.objects.filter(status = "P")
+    links_txt = Link.objects.filter(status="P").filter(link_type="T")
+    #links_but = Link.objects.filter(status="P").filter(link_type="U")
+    #links_ban = Link.objects.filter(status="P").filter(link_type="B")
+    return render_to_response('webview/pending_links.html', { 'text_links' : links_txt }, context_instance=RequestContext(request))
+
+def site_links(request):
+    """
+    Show all active links for this site
+    """
+    link_cats = LinkCategory.objects.all() # All categories in the system
+    return render_to_response('webview/site-links.html', { 'link_cats' : link_cats }, context_instance=RequestContext(request))

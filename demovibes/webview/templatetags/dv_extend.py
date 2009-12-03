@@ -24,19 +24,54 @@ def site_url():
 
 @register.tag
 def get_rating_stars_song_avg(parser, token):
-	"""
-	Attempt to get a rating for the tong, in formatted stars. Value is based
-	From average vote value, and code will ater star shapes. Makes use of the
-	GetSongRatingStarsAvgNode() class.
-	"""
+    """
+    Attempt to get a rating for the tong, in formatted stars. Value is based
+    From average vote value, and code will ater star shapes. Makes use of the
+    GetSongRatingStarsAvgNode() class.
+    """
+    try:
+	tag_name, username = token.split_contents()
+    except ValueError:
+	raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
 
-	try:
-		tag_name, username = token.split_contents()
-	except ValueError:
-		raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
+    # Send this out for processing. Don't come back without pizza! hehe
+    return GetSongRatingStarsAvgNode(username)
 
-	# Send this out for processing. Don't come back without pizza! hehe
-	return GetSongRatingStarsAvgNode(username)
+@register.tag
+def get_text_links(parser, token):
+    """
+    Can be called from any template. Will insert all text links for the specified category
+    ID number into the current page. Tried to make as much of this a template as possible.
+    This will also insert a header object for the category, if links exist.
+    """
+    try:
+	tag_name, slugname = token.split_contents()
+    except ValueError:
+	raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
+	
+    return GetTextLinkEntries(slugname)
+
+@register.tag
+def count_text_links(parser, token):
+    """
+    Counts the number of links in the specified link category slug
+    """
+    try:
+	tag_name, slugname = token.split_contents()
+    except ValueError:
+	raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
+	
+    return CountTextLinkEntries(slugname)
+    
+def get_banner_links(parser, token):
+    """
+    """
+    return
+
+def get_button_links(parser, token):
+    """
+    """
+    return
 
 @register.simple_tag
 def logo():
@@ -52,7 +87,7 @@ def logo():
     except:
         logo = "%slogos/default.png" % settings.MEDIA_URL
         alt = "Demovibes"
-    return '<img id="logo" src="%s" alt="%s" />' % (logo, alt)
+    return '<img id="logo" src="%s" title="%s" />' % (logo, alt)
 
 @register.simple_tag
 def current_song():
@@ -222,21 +257,28 @@ class GetSongRatingStarsAvgNode(template.Node):
             vote_count = 0
 
         # Detect if this user is anonymous
-        if(type(user).__name__=='AnonymousUser'):
-            # Anonymous users never have a vote, and can be identified later without DB call
-            user_vote = 0
+	try:
+            if(type(user).__name__=='AnonymousUser'):
+                # Anonymous users never have a vote, and can be identified later without DB call
+                user_vote = 0
+                user_anon = True
+            else:
+                user_vote = song.get_vote(user) # What did the user vote for this song?
+                user_anon = False
+	except:
+	    user_vote = 0
             user_anon = True
-        else:
-            user_vote = song.get_vote(user) # What did the user vote for this song?
-            user_anon = False
 	    
         htmltxt = ""
         TempLine = ""
         
-		# This fixes an issue where UserVote doesnt actually exist yet. I have generated this
-		# Error several times on the dev server. This fixes the problem.
-        if(type(user_vote).__name__=='str'):
-            user_vote = int(0) # Implicitly define this as int, so there is no confusion!
+	# This fixes an issue where UserVote doesnt actually exist yet. I have generated this
+	# Error several times on the dev server. This fixes the problem.
+	try:
+            if(type(user_vote).__name__=='str'):
+                user_vote = int(0) # Implicitly define this as int, so there is no confusion!
+	except:
+	    user_vote = int(0); # Throws an exception in some odd situations
 
         htmltxt = common.get_now_playing()
 
@@ -294,6 +336,69 @@ class GetSongRatingStarsAvgNode(template.Node):
 
         # Return the newly computed images html string
         return htmltxt
+
+"""
+Simple tag to suck all text link entries out of the system for the specified
+Category slug. Should work in any template.
+"""
+class GetTextLinkEntries(template.Node):
+    def __init__(self, slugname):
+        self.slugname = slugname
+
+    def render(self, context):
+	try:
+	    # Look for the identifiying slug
+	    slug = template.resolve_variable(self.slugname, context)
+	    slug_id = LinkCategory.objects.get(id_slug = slug)
+	except:
+	    # No matching slug was found!
+	    return None
+	
+	# We have a slug; Now to see if it has any links
+	try:
+	    site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
+	    
+	    # Filter out categories which have no links in them!
+	    if len(site_links) == 0:
+		return " " # Prevents 'None' from being displayed
+	    
+	    # We got the goods, let's go with it!
+	    T = loader.get_template('webview/t/link_category_header.html')
+	    C = Context({ 'LC' : slug_id })
+	    header = T.render(C)
+	    
+	    T = loader.get_template('webview/links_text_all.html')
+	    C = Context({ 'text_links' : site_links })
+	    return header + T.render(C)
+	except:
+	    # Something borked!
+	    return None
+
+"""
+Count the number of links in the specified category slug.
+"""
+class CountTextLinkEntries(template.Node):
+    def __init__(self, slugname):
+        self.slugname = slugname
+
+    def render(self, context):
+	try:
+	    # Look for the identifiying slug
+	    slug = template.resolve_variable(self.slugname, context)
+	    slug_id = LinkCategory.objects.get(id_slug = slug)
+	except:
+	    # No matching slug was found!
+	    return 0
+	
+	# We have a slug; Now to see if it has any links
+	try:
+	    site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
+	except:
+	    # No links, or something borked!
+	    return 0
+	
+	# We got the goods, let's go with it!
+        return len(site_links)
 
 class GetCss(template.Node):
     def __init__(self, user):

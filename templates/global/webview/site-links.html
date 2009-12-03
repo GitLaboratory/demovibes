@@ -1,13 +1,18 @@
 {% extends "base/base.html" %}
+{% load cache %}
 
 {% block title %}Site Links{% endblock %}
 
 {% block main %}
-<h2><img class="icon_header" src="{{ MEDIA_URL }}email.png" alt="" />Site Links</h2>
-Demovibes Links:<br>
+{% cache 300 mainlinks %}
+{% load dv_extend %}<h2><img class="icon_header" src="/static/link.png" alt="" />Site Links</h2>
+As part of our ongoing discovery of musician/music related websites, we are pround to present this list of links for you to explore.
+{% if link_cats %}
+ {% for cat in link_cats.all %}
+  {% get_text_links cat.id_slug %}
+ {% endfor %}
+{% endif %}<br>
 <br>
-<a href="http://code.google.com/p/demovibes" target="_new">Demovibes On Google Code</a> - The Demovibes project on Assembla.<br>
-<a href="http://www.demovibes.org/" target="_new">Demovibes Collective</a> - The demovibes collective.<br>
-<a href="http://www.pouet.net" target="_new">Pouet</a> - Get info on all the latest demoscene releases.
-<br>
+Know of a great link that belongs here? <a href="{% url dv-createlink %}">Send Us Your Link!</a><br>
+{% endcache %}
 {% endblock %}

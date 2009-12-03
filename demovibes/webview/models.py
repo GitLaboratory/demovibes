@@ -10,6 +10,7 @@ from django.template.defaultfilters import striptags
 from django.contrib.sites.models import Site
 from django.template import RequestContext, Context, loader
 from django.db.models.signals import post_save
+from django.utils.translation import ugettext_lazy as _
 #from demovibes.webview.common import get_oneliner, get_now_playing, get_queue, get_history
 
 from managers import *
@@ -778,6 +779,62 @@ class CountryList(models.Model):
     
     class Meta:
         ordering = ['name']
+        
+class LinkCategory(models.Model):
+    name = models.CharField(max_length=60, verbose_name="Category Name", help_text="Display Name of this category, as you want to see it on the links page")  # Visible name of the link category
+    id_slug = models.SlugField(_("Slug"), help_text="Category slug. Must be unique, and only contain letters, numbers and symbols (No Spaces)")  # Identifier slug; Can be used for searching/indexing link groups later
+    description = models.TextField(verbose_name="Description", help_text="A Description of this category. Will appear on the category description.") # Simple description field for the category
+    icon = models.ImageField(upload_to = 'media/links/slug_icon', blank = True, null = True, verbose_name="Category Icon", help_text="Specify an icon image to use when displaying this category on the links page") # Specify an icon to use for this link category
+    
+    def __unicode__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Link Category"
+        verbose_name_plural = "Link Categories"
+        
+    @models.permalink
+    def get_absolute_url(self):
+        return ('dv-linkcategory', [self.id_slug])
+        
+class Link(models.Model):
+    name = models.CharField(unique = True, max_length=40, verbose_name="Link Name", help_text="Name/Title of the link. Depending on link type, might not be displayed.") # Clickable name of the link
+    TYPE = (
+        ('T', 'Text Link'),
+        #('U', 'Button Link'),
+        #('B', 'Banner Link'),
+    )
+    link_type = models.CharField(max_length=1, choices = TYPE, verbose_name="Link Type", help_text="Choose the type of link you want to add", default = 'T') # Determines the type of link being added to the site
+    link_url = models.URLField(unique = True, verbose_name="Link URL", help_text="Enter the address you wish to link to. This is where the user will be directed to.")
+    link_title = models.CharField(blank = True, null = True, max_length=60, verbose_name="Link Desc.", help_text="Link Description, as you want it to appear on the site")
+    link_image = models.ImageField(upload_to = 'media/links/link_image', blank = True, null = True, verbose_name="Link Image", help_text="Image used for this link. Don't use an image bigger than your link type!")
+    url_cat = models.ForeignKey(LinkCategory, verbose_name="Link Category", help_text="Which category does this link belong in?") # Category to place the link into
+    notes = models.TextField(blank = True, null = True, verbose_name="Link Notes", help_text="Notes/comments about this link to moderator")
+    keywords = models.CharField(max_length=60, blank = True, null = True, verbose_name="Keywords", help_text="Keywords associated with this link (comma seperated, optional)")
+    
+    submitted_by = models.ForeignKey(User, blank = True, null = True, related_name="label_submittedby")
+    approved_by = models.ForeignKey(User, blank = True, null = True, related_name="label_approvedby")
+    added = models.DateTimeField(auto_now_add=True, db_index=True) # DateTime from when the link was added to the DB
+    
+    STATUS = (
+        ('A', 'Active'),
+        ('P', 'Pending Approval'),
+        ('R', 'Rejected'),
+    )
+    status = models.CharField(max_length=1, choices = STATUS, default = 'A') # Status of the link in the system
+    priority = models.BooleanField(default=False, db_index=True, help_text="If active, link will receive high priority and display in Bold") # Determines higher position in listings
+    
+    def __unicode__(self):
+        return self.name
+    
+    def save(self, force_insert=False, force_update=False):
+        # Insert Interceptions Here
+        return super(Link, self).save(force_insert, force_update)
+        
+    @models.permalink
+    def get_absolute_url(self):
+        return ('dv-linkcategory', [self.id])
 
 def create_profile(sender, **kwargs):
     if kwargs["created"]:

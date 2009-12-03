@@ -283,8 +283,10 @@ h3
 #unap-artists   {background-image: url("/static/user_green.png");}
 #unap-groups    {background-image: url("/static/group.png");} 
 #unap-labels    {background-image: url("/static/transmit_blue.png");}
+#unap-links     {background-image: url("/static/link.png");}
 #groups         {background-image: url("/static/group.png");} 
 #labels		{background-image: url("/static/transmit_blue.png");}
+#links		{background-image: url("/static/link.png");}
 
 #forum, #favorites, #logout
 {
@@ -436,6 +438,13 @@ p.pmtitle {
 {
     vertical-align: middle;
     margin-left: 3px;
+}
+
+.text-link
+{
+    vertical-align: middle;
+    margin-left: 1px;
+    margin-right: 1px;
 }
 
 .icon_header

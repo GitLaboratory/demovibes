@@ -23,6 +23,8 @@
 	    <li id="empty"></li>
             <li id="search"><a href="{% url dv-search %}">Search</a></li>
             <li id="recent"><a href="{% url dv-recent %}">New Uploads</a></li>
+	    <li id="empty"></li>
+	    <li id="links"><a href="{% url dv-links %}">Links</a></li>
         </ul>
         {% endblock %}
         <br />
@@ -55,9 +57,18 @@
         {% endif %}
         {% if user.is_staff %}
 	    <li></li>
-	    <li id="unap-artists"><a href="{% url dv-newartists %}">Pending Artists</a></li>
-	    <li id="unap-groups"><a href="{% url dv-newgroups %}">Pending Groups</a></li>
-	    <li id="unap-labels"><a href="{% url dv-newlabels %}">Pending Labels</a></li>
+	    {% if perms.webview.change_artist %}
+	        <li id="unap-artists"><a href="{% url dv-newartists %}">Pending Artists</a></li>
+	    {% endif %}
+	    {% if perms.webview.change_group %}
+	        <li id="unap-groups"><a href="{% url dv-newgroups %}">Pending Groups</a></li>
+	    {% endif %}
+	    {% if perms.webview.change_label %}
+	        <li id="unap-labels"><a href="{% url dv-newlabels %}">Pending Labels</a></li>
+	    {% endif %}
+	    {% if perms.webview.change_link %}
+	        <li id="unap-links"><a href="{% url dv-newlinks %}">Pending Links</a></li>
+	    {% endif %}
         {% endif %}
         </ul>
         <br />

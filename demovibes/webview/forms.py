@@ -140,3 +140,8 @@ class PmForm(forms.ModelForm):
     class Meta:
         model = PrivateMessage
         fields = ('to', 'subject', 'message')
+
+class CreateLinkForm(forms.ModelForm):
+    class Meta:
+        model = Link
+        fields = ["link_type", "url_cat", "name", "link_title", "link_url", "link_image", "notes"]

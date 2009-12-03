@@ -71,7 +71,6 @@ urlpatterns = patterns('',
     # First, some generic 'site' areas commonly found on any site
     url(r'^about/$',                              'demovibes.webview.views.site_about', name = "dv-about"),
     url(r'^faq/$',                                'demovibes.webview.views.site_faq', name = "dv-faq"),
-    url(r'^links/$',                              'demovibes.webview.views.site_links', name = "dv-links"),
 
     url(r'^inbox/$',                               'demovibes.webview.views.inbox', name = "dv-inbox"),
     url(r'^inbox/(?P<pm_id>\d+)/$',                'demovibes.webview.views.read_pm', name = "dv-read_pm"),
@@ -153,4 +152,10 @@ urlpatterns = patterns('',
     url(r'^labels/(?P<letter>.)/$',               'demovibes.webview.views.list_labels', name = "dv-labels_letter"),
     url(r'^label/create/$',                    'demovibes.webview.views.create_label', name = "dv-createlabel"),
     url(r'^new_labels/$',                      'demovibes.webview.views.activate_labels', name = "dv-newlabels"),
+    
+    # Link Management
+    url(r'^links/(?P<slug>[-\w]+)/$',          'demovibes.webview.views.link_category', name = "dv-linkcategory"),
+    url(r'^link/create/$',                    'demovibes.webview.views.link_create', name = "dv-createlink"),
+    url(r'^link/pending/$',                   'demovibes.webview.views.activate_links', name = "dv-newlinks"),
+    url(r'^links/$',                           'demovibes.webview.views.site_links', name = "dv-links"), # View existing Links
 )

@@ -50,6 +50,10 @@ class CompilationAdmin(admin.ModelAdmin):
 class LabelAdmin(admin.ModelAdmin):
 	search_fields =  ['name']
 	list_display = ('name', 'found_date', 'last_updated', 'created_by')
+	
+class LinkAdmin(admin.ModelAdmin):
+	search_fields = ('link_title', 'link_url') # Because we might want to find links to a specific site
+	list_display = ('name', 'link_title', 'link_url', 'link_type', 'added', 'submitted_by', 'priority')
 
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Song, SongAdmin)
@@ -65,3 +69,5 @@ admin.site.register(Queue, QueueAdmin)
 admin.site.register(SongComment, SongCommentAdmin)
 admin.site.register(Compilation, CompilationAdmin)
 admin.site.register(Label, LabelAdmin)
+admin.site.register(Link, LinkAdmin)
+admin.site.register(LinkCategory)
