@@ -158,4 +158,7 @@ urlpatterns = patterns('',
     url(r'^link/create/$',                    'demovibes.webview.views.link_create', name = "dv-createlink"),
     url(r'^link/pending/$',                   'demovibes.webview.views.activate_links', name = "dv-newlinks"),
     url(r'^links/$',                           'demovibes.webview.views.site_links', name = "dv-links"), # View existing Links
+    
+    url(r'^status/cache/$',                    'demovibes.webview.views.memcached_status'), # Show memcached status
+
 )
