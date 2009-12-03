@@ -85,6 +85,12 @@ MAX_GROUP_AVATAR_SIZE = 65536
 MAX_GROUP_AVATAR_HEIGHT = 250
 MAX_GROUP_AVATAR_WIDTH = 250
 
+# When working with text links, users can submit icons to accompany them. These determine
+# The maximum allowed dimensions for all text link icons submitted via the webform.
+MAX_LINK_IMG_SIZE = 16384
+MAX_LINK_IMG_WIDTH = 25
+MAX_LINK_IMG_HEIGHT = 18
+
 # Max internal length of the oneliner, in characters
 MAX_ONELINER_LENGTH = 256
 

@@ -145,3 +145,22 @@ class CreateLinkForm(forms.ModelForm):
     class Meta:
         model = Link
         fields = ["link_type", "url_cat", "name", "link_title", "link_url", "link_image", "notes"]
+        
+    def clean_link_image(self):
+        link_image = self.cleaned_data['link_image']
+        if not link_image:
+            return None
+
+        max_size = getattr(settings, 'MAX_LINK_IMG_SIZE', 16384)
+        max_height = getattr(settings, 'MAX_LINK_IMG_HEIGHT', 18)
+        max_width = getattr(settings, 'MAX_LINK_IMG_WIDTH', 25)
+
+        if len(link_image) > max_size:
+            raise forms.ValidationError('Link Image must be no bigger than %d bytes' % max_size)
+
+        image = Image.open(link_image)
+        img_w, img_h = image.size
+        if img_w > max_width or img_h > max_height:
+            raise forms.ValidationError('Link Image is bigger than allowed size dimensions! (Height : %d, width : %d)' % (max_height, max_width))
+
+        return self.cleaned_data['link_image']
