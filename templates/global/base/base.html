@@ -38,7 +38,7 @@
         <a href="{% url dv-oneliner %}">Oneliner History</a>
 	<br><br>
         <h3>Who's Online?</h3>
-	{% cache 120 whosonline %}
+	{% cache 60 whosonline %}
 	    {% get_online_users %}
 	{% endcache %}
     </div>
