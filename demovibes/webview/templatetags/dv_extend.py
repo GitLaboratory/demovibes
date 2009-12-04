@@ -22,6 +22,19 @@ def site_url():
     current_site = Site.objects.get_current()
     return current_site.domain
 
+@register.simple_tag
+def get_online_users():
+    # This is designed specifically for Sidebar use. Its mostly a copy
+    # Of Terrasque's original code
+    timefrom = datetime.datetime.now() - datetime.timedelta(minutes=5)
+    userlist = Userprofile.objects.filter(last_activity__gt=timefrom).order_by('user__username')
+    
+    # Stuff this into an object
+    T = get_template('webview/whos_online_sb.html')
+    C = Context ({ 'userlist' : userlist })
+    result = T.render(C)
+    return result
+
 @register.tag
 def get_rating_stars_song_avg(parser, token):
     """

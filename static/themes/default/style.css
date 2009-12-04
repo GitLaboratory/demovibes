@@ -276,6 +276,7 @@ h3
 #forum		{background-image: url("/static/user_comment.png");}
 #profile	{background-image: url("/static/user.png");}
 #favorites	{background-image: url("/static/heart.png");}
+#register	{background-image: url("/static/page_white_edit.png");}
 #logout		{background-image: url("/static/door_out.png");}
 #login		{background-image: url("/static/door_in.png");}
 #admin		{background-image: url("/static/door.png");}
@@ -430,8 +431,8 @@ p.pmtitle {
 
 .countryflag
 {
-    vertical-align: baseline;
-    margin: 0px 4px;
+    margin:-2px 2px 1px 1px; 
+    vertical-align:middle; 
 }
 
 .platform_icon

@@ -27,7 +27,7 @@
 	    <li id="links"><a href="{% url dv-links %}">Links</a></li>
         </ul>
         {% endblock %}
-        <br />
+        <br>
         <h3>Infamous OneLiner</h3>
         {% if user.is_authenticated %}
         <form action="{% url dv-oneliner_submit %}" method="post" encoding="application/x-www-form-urlencoded"  onsubmit="apf('{% url dv-ax-oneliner_submit %}',this); this.Line.value = ''; return false;" >
@@ -36,6 +36,11 @@
         {% endif %}
         {% get_oneliner %}
         <a href="{% url dv-oneliner %}">Oneliner History</a>
+	<br><br>
+        <h3>Who's Online?</h3>
+	{% cache 120 whosonline %}
+	    {% get_online_users %}
+	{% endcache %}
     </div>
 
     <div id="rightside">
@@ -48,6 +53,7 @@
             <li id="logout"><a href="{% url webview.views.log_out %}">Log Me Out</a></li>
         {% else %}
             <li id="login"><a href="{% url auth_login %}">Log In</a></li>
+	    <li id="register"><a href="/accounts/register">Register</a></li>
         {% endif %}
         {% if user.is_staff %}
             <li id="admin"><a href="/admin" target="admin">Admin Area</a></li>
