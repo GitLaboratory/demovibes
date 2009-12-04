@@ -10,9 +10,7 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
  <tr>
   <th>Song Title</th>
   <th>Artist</th>
-  <th>Approved</th>
-  <th>Uploaded By</th>
-  <th>Approved By</th>
+  <th>Added</th>
   <th>Length</th>
   <th>Status</th>
 </tr>
@@ -27,13 +25,7 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
                 {% for group in song.song.groups.all %}{% with group as G %}{% include "webview/t/group.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}{% endfor %}
             </td>
             <td>
-                {{ song.approved|timesince }} ago
-            </td>
-            <td align="center">
-                {% with song.uploaded_by as U%}{% include "webview/t/user.html" %}{% endwith %}
-            </td>
-            <td align="center">
-                {% with song.approved_by as U%}{% include "webview/t/user.html" %}{% endwith %}
+                {{ song.approved|date:"d M Y" }}
             </td>
             <td align="center">
                 {{ song.song.length }}

@@ -1,7 +1,7 @@
 *
 {
 	position: static;
-	font-family: Georgia, serif; /* "Segoe UI", "Trebuchet MS", "Helvetica", "Arial", sans-serif; */
+	font-family: snap, Georgia, serif; /* "Segoe UI", "Trebuchet MS", "Helvetica", "Arial", sans-serif; */
 }
 
 .olh_wrapper 	{
@@ -31,7 +31,7 @@
 .olh_pages	{
 		text-align: justify;
 		font-size: 8px;
-		font-family: courier, sans-serif, monospace;
+		font-family: snap, courier, sans-serif, monospace;
 		}
 
 .bbquote	{
@@ -53,7 +53,7 @@
 
 pre
 {
-	font-family: "rez ascii", "Lucida Console", monospace;
+	font-family: "snap", "rez ascii", "Lucida Console", monospace;
 }
 
 html
@@ -354,17 +354,17 @@ p.pmtitle {
 	margin-bottom: 2ex;
 	text-align: left;
 	overflow: hidden;
-	font-family: "Lucida Console", monospace;
+	font-family: "snap", "Lucida Console", monospace;
 	font-size: 11px;
 }
 
 .onelinerpre {
-	font-family: "rez ascii", "Lucida Console", monospace;
+	font-family: "snap", "rez ascii", "Lucida Console", monospace;
 	font-size: 11px;
 }
 
 .onelinertext {
-	font-family: "Terminus", "rez ascii", "Courier New", "Monaco", "Lucida Console", monospace;
+	font-family: "snap", "Terminus", "rez ascii", "Courier New", "Monaco", "Lucida Console", monospace;
 	margin: 7px;
 /*	letter-spacing: -0.2px; */
 	font-size: 12px;

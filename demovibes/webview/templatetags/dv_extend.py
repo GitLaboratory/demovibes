@@ -587,7 +587,7 @@ def bb_flag(hit):
         return "<img src='%sflags/%s.png' class='countryflag' alt='flag' title='%s'/>" % (settings.MEDIA_URL, flag, flag)
         
     # No flag image found, so default to Necta flag
-    return "<img src='%sflags/nectaflag.png' class='countryflag' alt='flag'/>" % (settings.MEDIA_URL)
+    return "<img src='%sflags/nectaflag.png' class='countryflag' title='flag'/>" % (settings.MEDIA_URL)
 
 def bb_user(hit):
     """
