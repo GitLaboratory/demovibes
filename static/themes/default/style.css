@@ -779,3 +779,7 @@ table.songlist tr.row2 td {
 	background-color: #ffe4ba;
 
 }
+
+.whosonline {
+	line-height: 135%;
+}

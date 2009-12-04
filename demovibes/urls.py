@@ -23,6 +23,6 @@ urlpatterns = patterns('',
     (r'^forum/', include('forum.urls')),
 
     #Only use this under development!! Only for serving static files with dev server!
-    (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.DOCUMENT_ROOT}),
+    #(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.DOCUMENT_ROOT}),
     (r'^about/(\w+)/$', about_pages),
 )

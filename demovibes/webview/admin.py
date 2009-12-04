@@ -11,6 +11,7 @@ class DownloadInline(admin.TabularInline):
 
 class SongAdmin(admin.ModelAdmin):
 	list_display = ['title', 'status', 'artist', 'uploader', 'bitrate', 'added', 'pouetid', 'info']
+	list_editable = ['status']   
 	search_fields = ['title', 'status']
 	list_filter = ['status']
 	filter_horizontal = ['artists', 'groups', 'labels']

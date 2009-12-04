@@ -1,5 +1,5 @@
  {% load cache %}{% spaceless %}
- {% cache 600 "song_row" song.id %}
+ {% cache 3600 "song_row" song.id %}
  <td>
   {% include "webview/t/songname.html" %}
  </td>
