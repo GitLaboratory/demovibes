@@ -781,7 +781,7 @@ def bb_youtube_ol(hit):
     Tag like so: [yt]S-T8h0T0SK8[/yt]. This version is oneliner specific
     """
     video = hit.group(1)
-    return '<a href="http://www.youtube.com/v/%s" target="_new"><img src="/static/youtube_icon.png" alt="YouTube" border="0"> YouTube Link</a>' % (video)
+    return '<a href="http://www.youtube.com/watch?v=%s" target="_new"><img src="/static/youtube_icon.png" title="YouTube" border="0"> YouTube Link</a>' % (video)
 
 def bb_googlevideo_ol(hit):
 	"""
@@ -798,7 +798,7 @@ def bb_youtube_name_ol(hit):
     video = hit.group(1)
     title = hit.group(2)
 
-    return '<a href="http://www.youtube.com/v/%s" target="_new"><img src="/static/youtube_icon.png" alt="YouTube" border="0"> %s</a>' % (title, video)
+    return '<a href="http://www.youtube.com/watch?v=%s" target="_new"><img src="/static/youtube_icon.png" title="YouTube" border="0"> %s</a>' % (title, video)
 
 def bb_gvideo(hit):
     """
