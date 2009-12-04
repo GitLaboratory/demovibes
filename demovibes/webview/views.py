@@ -386,7 +386,9 @@ def add_favorite(request, id): # XXX Fix to POST
     if not Q: # Does the user already have this as favorite?
         f = Favorite(user=user, song=song)
         f.save()
-    return HttpResponseRedirect(reverse('dv-favorites'))
+    #return HttpResponseRedirect(reverse('dv-favorites'))
+    refer = request.META['HTTP_REFERER']
+    return HttpResponseRedirect(refer)
 
 def oneliner(request):
     oneliner = Oneliner.objects.select_related(depth=1).order_by('-id')[:20]
@@ -450,7 +452,9 @@ def del_favorite(request, id): # XXX Fix to POST
     Q = Favorite.objects.filter(user = request.user, song = S)
     if Q:
         Q[0].delete()
-    return HttpResponseRedirect(reverse('dv-favorites'))
+    #return HttpResponseRedirect(reverse('dv-favorites'))
+    refer = request.META['HTTP_REFERER']
+    return HttpResponseRedirect(refer)
 
 
     
