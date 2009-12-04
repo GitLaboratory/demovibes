@@ -8,10 +8,12 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.template import RequestContext, Context, loader
+from django.core.mail import EmailMessage
 
 from registration.forms import RegistrationForm
 from registration.models import RegistrationProfile
+from django.contrib.sites.models import Site
 
 
 def activate(request, activation_key,
@@ -61,12 +63,65 @@ def activate(request, activation_key,
     
     """
     activation_key = activation_key.lower() # Normalize before trying anything with it.
-    account = RegistrationProfile.objects.activate_user(activation_key)
+    account = RegistrationProfile.objects.activate_user(activation_key) # Returns User if successful, otherwise a bool
+    
     if extra_context is None:
         extra_context = {}
     context = RequestContext(request)
     for key, value in extra_context.items():
         context[key] = callable(value) and value() or value
+        
+    if(type(account).__name__=='bool'):
+        # This returned something other than a user profile. In future, if this
+        # Returns FALSE, we know there was a problem. For now, just bail out.
+        return render_to_response(template_name,
+                              { 'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS },
+                              context_instance=context)
+        
+    # Inform admin on new user registration?
+    email_admin = getattr(settings, 'ADMIN_NOTIFY_ON_NEW_USER', 0) # Disabled by default
+    email_user = getattr(settings, 'USER_SEND_CONF_OK', 0) # Disabled by default
+    
+    if email_admin > 0:
+        try:
+            mail_to = settings.DEFAULT_FROM_EMAIL
+            mail_tpl = loader.get_template('registration/t/new_registrant.txt')
+            site = Site.objects.get_current()
+            
+            c = Context({
+                'site' : site,
+                'username': account.username,
+                })
+            email = EmailMessage(
+                    subject='[' + site.name + '] New User Registration Activated!',
+                    body=mail_tpl.render(c),
+                    from_email=mail_to, # Will always be the same address
+                    to=[mail_to])
+            email.send(fail_silently=True)
+        except:
+            # Failed to process the email request for some reason
+            pass
+        
+    if email_user > 0:
+        try:
+            mail_to = account.email
+            mail_tpl = loader.get_template('registration/t/welcome.txt')
+            site = Site.objects.get_current()
+            
+            c = Context({
+                'site' : site,
+                'username': account.username,
+                })
+            email = EmailMessage(
+                    subject='[' + site.name + '] Your Account Is Now Active!',
+                    body=mail_tpl.render(c),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[mail_to])
+            email.send(fail_silently=True)
+        except:
+            # Failed to process the email request for some reason
+            pass
+        
     return render_to_response(template_name,
                               { 'account': account,
                                 'expiration_days': settings.ACCOUNT_ACTIVATION_DAYS },
