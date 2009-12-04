@@ -1,7 +1,7 @@
 *
 {
 	position: static;
-	font-family: snap, Georgia, serif; /* "Segoe UI", "Trebuchet MS", "Helvetica", "Arial", sans-serif; */
+	font-family: "snap", "Tahoma", "Verdana", "Arial", sans-serif;
 }
 
 .olh_wrapper 	{
@@ -30,7 +30,7 @@
 
 .olh_pages	{
 		text-align: justify;
-		font-family: snap, courier, sans-serif, monospace;
+		font-family: "snap", monospace;
 		}
 
 .bbquote	{
@@ -81,7 +81,7 @@ html#transparent
 }
 
 body {
-	font-size: 10px;
+	font-size: 9pt;
 }
 
 body#site
@@ -130,12 +130,12 @@ h1, h2, h3
 
 h1
 {
-	font-size: 13px;
+	font-size: 9pt;
 }
 
 h2
 {
-	font-size: 11px;
+	font-size: 9pt;
 	position: relative;
 	vertical-align: middle;
 }
@@ -221,7 +221,7 @@ img
 h3
 {
 	margin: -1px;
-	font-size: 9px;
+	font-size: 9pt;
 	text-align: center;
 	margin-bottom: 1ex;
 }
@@ -353,7 +353,7 @@ p.pmtitle {
 	margin-bottom: 2ex;
 	text-align: left;
 	overflow: hidden;
-	font-family: "snap", "Lucida Console", monospace;
+	font-family: "snap", "rez ascii", "Lucida Console", monospace;
 }
 
 .onelinerpre {
@@ -361,7 +361,7 @@ p.pmtitle {
 }
 
 .onelinertext {
-	font-family: "snap", "Terminus", "rez ascii", "Courier New", "Monaco", "Lucida Console", monospace;
+	font-family: "snap", "rez ascii", "Lucida Console", monospace;
 	margin: 7px;
 /*	letter-spacing: -0.2px; */
 }
@@ -480,7 +480,7 @@ p.pmtitle {
 #copyleft, #copyright
 {
 	display: block;
-	font-size: 7px;
+	font-size: 7pt;
 	position: relative;
 	bottom: -3ex;
 	margin: 0;
@@ -590,7 +590,7 @@ p.pmtitle {
 	float: right;
 	margin-top: -12pt;
 	padding-right: 8px;
-	font-size: 7px;
+	font-size: 8pt;
 }
 
 .forumName
@@ -602,7 +602,7 @@ p.pmtitle {
 	padding-left: 8px;
 	padding-right: 8px;
 	padding-bottom: 12pt;
-	font-size: 10px;
+	font-size: 9pt;
 }
 
 .djangoForumListDetails .forumDescription
@@ -709,7 +709,7 @@ p.pmtitle {
 #djangoForumThreadPosts .postfooter td:first-child
 {
 	text-align: left;
-	font-size: 10px;
+	font-size: 9pt;
 }
 
 
