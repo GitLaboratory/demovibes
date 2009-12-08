@@ -218,7 +218,7 @@ def ices_get_metadata ():
 def tweet(user, password, message):
     if len(message) < 140:
         url = 'http://twitter.com/statuses/update.xml'
-        curl = 'curl -s -u %s:%s -d status="%s" %s' % (user,password,message,url)
+        curl = 'curl --connect-timeout 10 -s -u %s:%s -d status="%s" %s' % (user,password,message,url)
         try:
             pipe=popen(curl, 'r')
         except:
