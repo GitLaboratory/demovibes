@@ -59,7 +59,7 @@ streams_dict_txt = {
     'queryset': RadioStream.objects.filter(active=True, streamtype = 'M')
 }
 streams_dict = {
-    'queryset': RadioStream.objects.filter(active=True),
+    'queryset': RadioStream.objects.filter(active=True).order_by('name'),
     'template_name' : "webview/streams.html"
 }
 

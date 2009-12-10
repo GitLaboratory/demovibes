@@ -704,7 +704,6 @@ def save_flash(request):
     # return "ok" to the flash app
     return HttpResponse("OK")
 
-
 def users_online(request):
     timefrom = datetime.datetime.now() - datetime.timedelta(minutes=5)
     userlist = Userprofile.objects.filter(last_activity__gt=timefrom).order_by('user__username')

@@ -4,7 +4,8 @@
 
 {% block main %}
 <h2>{% site_name %} Audio Streams</h2>
-
+{% include "webview/stream_instructions.html" %}
+<br>
 {% for stream in object_list %}
 <div class="pmview">
 <b>Stream Name:</b> {{ stream.country_code|flag|safe }} {{stream.name}}<br>
@@ -12,7 +13,7 @@
 <b>PlayList File:</b> <a href="{{ stream.url }}.m3u">M3U</a><br>
 <b>Stream Info:</b> {{ stream.get_streamtype_display }} - {{ stream.bitrate }} kbps<br>
 {% if stream.description %}{{ stream.description|linebreaks }}{% endif %}
-</div><br>
+</div>{% if forloop.last %} {% else %}<br>{% endif %}
 {% endfor %}
 
 <h2>Recommended Players</h2>
