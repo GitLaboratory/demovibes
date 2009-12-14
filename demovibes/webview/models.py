@@ -383,9 +383,14 @@ class Song(models.Model):
                 # Parse the <screenshot> tag out of the doc, if it exists
                 screen = xmldoc.getElementsByTagName('screenshot')[0].childNodes[1]
                 imglink = screen.firstChild.nodeValue
-                return imglink
+                
+                t = loader.get_template('webview/t/pouet_screenshot.html')
+                c = Context ( { 'object' : self,
+                               'imglink' : imglink } )
+                return t.render(c)
+                
             except:
-                pass
+                return "Couldn't pull Pouet info!"
 
     def save(self, force_insert=False, force_update=False):
         if not self.id or self.song_length == None:

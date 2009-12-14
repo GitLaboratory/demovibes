@@ -83,7 +83,7 @@ It was added {{ object.added|timesince }} ago.
 </p>
 {% cache 86400 object.title object.pouetid %}
  {% if object.pouetid %}
-  <p><a href="http://www.pouet.net/prod.php?which={{ object.pouetid }}"><img src="{{ object.get_pouet_screenshot }}" border="0" title="Pouet screenshot for {{ object.pouetid }}"></a></p>
+  {{ object.get_pouet_screenshot }}
  {% endif %}
 {% endcache %}
 
