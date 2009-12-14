@@ -14,7 +14,7 @@
  {% if now_playing.song.wos_id %}<a href="http://www.worldofspectrum.org/infoseekid.cgi?id={{now_playing.song.wos_id}}" target="_new">[World of Spectrum]</a> {% endif %}
  {% if now_playing.song.lemon_id %}<a href="http://www.lemon64.com/games/details.php?ID={{now_playing.song.lemon_id}}" target="_new">[Lemon64]</a> {% endif %}
  <br>
-
+ 
  <p>Time Left: <span name="counter" sec="{{ now_playing.timeleft }}" inc="-1">{{ now_playing.song.length }}</span></p>
  
 {% else %}

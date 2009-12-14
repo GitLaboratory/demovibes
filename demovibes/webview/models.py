@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.mail import EmailMessage
 #from django.core.urlresolvers import reverse
 import mad, logging
+import xml.dom.minidom, urllib # Needed for XML processing
 from django.core.cache import cache
 from django.template.defaultfilters import striptags
 from django.contrib.sites.models import Site
@@ -366,6 +367,25 @@ class Song(models.Model):
         if self.song_length:
             return "%d:%02d" % ( self.song_length/60, self.song_length % 60 )
         return "Not set"
+    
+    def get_pouet_screenshot(self):
+        """
+        Simple XML retrival system for recovering data from pouet.net xml files. Eventually,
+        I'll add code to recover more elements from pouet. AAK.
+        """
+        if self.pouetid:
+            try:
+                pouetlink = "http://www.pouet.net/export/prod.xnfo.php?which=%d" % (self.pouetid)
+                usock = urllib.urlopen(pouetlink)
+                xmldoc = xml.dom.minidom.parse(usock)
+                usock.close()
+                
+                # Parse the <screenshot> tag out of the doc, if it exists
+                screen = xmldoc.getElementsByTagName('screenshot')[0].childNodes[1]
+                imglink = screen.firstChild.nodeValue
+                return imglink
+            except:
+                pass
 
     def save(self, force_insert=False, force_update=False):
         if not self.id or self.song_length == None:

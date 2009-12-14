@@ -571,8 +571,7 @@ def bb_song(hit):
         'song' : song,
     })
 
-    result = '<img src="/static/music.png" alt="song" border="0"> ' + t.render(c)
-    return result
+    return t.render(c)
 
 def bb_flag(hit):
     """
@@ -1042,7 +1041,7 @@ def smileys(value):
 	smileys = settings.SMILEYS
 	for smiley in smileys:
 	    # Smiley patch provided by Korkut. AAK
-	    value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" alt="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[0]), value)
+	    value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" title="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[0]), value)
 	return value
 
 @register.filter
