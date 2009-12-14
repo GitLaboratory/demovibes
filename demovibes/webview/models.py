@@ -391,6 +391,29 @@ class Song(models.Model):
                 
             except:
                 return "Couldn't pull Pouet info!"
+            
+    def get_pouet_download(self):
+        """
+        Recover first download link from Pouet XML. AAK.
+        """
+        if self.pouetid:
+            try:
+                pouetlink = "http://www.pouet.net/export/prod.xnfo.php?which=%d" % (self.pouetid)
+                usock = urllib.urlopen(pouetlink)
+                xmldoc = xml.dom.minidom.parse(usock)
+                usock.close()
+                
+                # Parse the <screenshot> tag out of the doc, if it exists
+                screen = xmldoc.getElementsByTagName('download')[0].childNodes[1]
+                dllink = screen.firstChild.nodeValue
+                
+                t = loader.get_template('webview/t/pouet_download.html')
+                c = Context ( { 'object' : self,
+                               'dllink' : dllink } )
+                return t.render(c)
+                
+            except:
+                pass
 
     def save(self, force_insert=False, force_update=False):
         if not self.id or self.song_length == None:
