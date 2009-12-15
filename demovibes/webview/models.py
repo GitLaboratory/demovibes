@@ -349,6 +349,7 @@ class Song(models.Model):
     remix_of_id = models.IntegerField(blank = True, null = True, verbose_name = "Mix SongID", help_text="Song number (such as: 252) of the original song this is mixed from.")
     cvgm_id = models.IntegerField(blank = True, null = True, verbose_name = "CVGM SongID", help_text="SongID on CVGM (Link will be provided)")
     necta_id = models.IntegerField(blank = True, null = True, verbose_name = "Necta SongID", help_text="SongID on Nectarine (Link will be provided)")
+    last_changed = models.DateTimeField(auto_now = True)
 
     objects = models.Manager()
     active = ActiveSongManager()
