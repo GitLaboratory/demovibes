@@ -13,10 +13,12 @@ from django.contrib.sites.models import Site
 from webview import common
 from string import *
 
-if os.path.exists("logging.conf"):
-    logging.config.fileConfig("logging.conf")
-else:
-    logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(name)-8s %(levelname)-8s %(message)s")
+#Only set up logging if called directly
+if __name__ == '__main__': 
+	if os.path.exists("logging.conf"):
+    		logging.config.fileConfig("logging.conf")
+	else:
+    		logging.basicConfig(level=logging.WARNING, format="[%(asctime)s] %(name)-8s %(levelname)-8s %(message)s")
 Log = logging.getLogger("pyAdder")
 
 enc = sys.getdefaultencoding()
