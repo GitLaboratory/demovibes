@@ -5,10 +5,6 @@ import pyAdder
 
 Log = logging.getLogger("Sockulf")
 
-HOST = "127.0.0.1"
-PORT = 32167
-TIMEOUT = None #Seconds, floating point
-
 class pyWhisperer:
 	def __init__(self, host, port, timeout):
 		Log.debug("Initiating listener with values HOST='%s', PORT='%s', TIMEOUT='%s'." % (host, port, timeout))
@@ -64,9 +60,15 @@ class pyWhisperer:
 		return "Goodbye cruel world!"
 
 if __name__ == '__main__':
-	import sys
-	
 	from optparse import OptionParser
+	parser = OptionParser()
+	parser.add_option("-p", "--port", dest="port", default="32167", help = "Which port to listen to")
+	parser.add_option("-i", "--ip", dest="ip", default="127.0.0.1", help="What IP address to bind to")
+	(options, args) = parser.parse_args()
+
+	HOST = options.ip
+	PORT = int(options.port)
+	TIMEOUT = None
 	
 	logging.basicConfig(level=logging.WARNING)
 	Log.setLevel(logging.DEBUG)
