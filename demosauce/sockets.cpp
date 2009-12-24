@@ -51,7 +51,7 @@ Sockets::SendCommand(string const & command, string &  result)
 				throw boost::system::system_error(error); // Some other error.
 			result.append(buf.data(), len);
 		}
-		logg << format("INFO: socket command=%1% result=%2%\n")  % command % result;
+		//logg << format("DEBUG: socket command=%1% result=%2%\n")  % command % result;
 	}
 	catch (std::exception & e)
 	{
@@ -68,7 +68,7 @@ Sockets::GetSong(SongInfo & info)
 	// since this is critical we try multiple times
 	while (attempts-- != 0 && !SendCommand("GETSONG", info.fileName))
 	{
-		logg << "INFO: sleeping a second\n";
+		logg << "WARNING: socket command GETSONG failed\n";
 		this_thread::sleep(posix_time::seconds(1));
 	}
 	if (attempts == 0)
