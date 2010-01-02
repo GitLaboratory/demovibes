@@ -1,6 +1,10 @@
 #!/bin/bash
 # Basic script to get demovibes running
 
+# Remember to add a djrandom user; otherwise when you start icecaster.sh you'll get:
+# No handlers could be found for logger "pyAdder"
+# Error: Could not import module pyAdder
+
 cd ..
 
 if [ -f "demovibes/settings.py" ]
@@ -32,12 +36,12 @@ read hostn
 #Packages to install
 database="mysql-server"
 web="libapache2-mod-wsgi apache2"
-python="python-imaging python-django python-flup python-pymad python-setuptools"
+python="python-imaging python-mysqldb python-django python-flup python-pymad python-setuptools"
 memcache="python-memcache memcached"
 icecast="icecast2"
 ices_compile="build-essential python-dev libshout3-dev"
 
-south="http://www.aeracode.org/releases/south/south-0.5.tar.gz"
+south="http://www.aeracode.org/releases/south/south-0.6.2.tar.gz"
 ices="http://downloads.us.xiph.org/releases/ices/ices-0.4.tar.gz"
 
 curdir=$(pwd)
@@ -70,8 +74,8 @@ apt-get install -y $python $web $database $icecast $ices_compile $memcache
 
 echo -e "\n\n\nInstalling Django South from $south\n\n\n"
 wget $south
-tar -xzf south-0.5.tar.gz > /dev/null
-rm south-0.5.tar.gz
+tar -xzf south-0.6.2.tar.gz > /dev/null
+rm south-0.6.2.tar.gz
 cd south
 python setup.py install > /dev/null
 cd ..
