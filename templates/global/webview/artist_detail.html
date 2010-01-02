@@ -7,7 +7,7 @@
 <table>
 <tr>
 <td class="artist_details" valign="top">
-{% if object.artist_pic %}<img class="artist_logo" src="{{ object.artist_pic.url }}" alt="{{ object.handle }}" align="left">{% else %}<img class="artist_logo" src="/static/no_artist_pic.png" alt="No Picture" align="left">{% endif %}
+{% if object.artist_pic %}<img class="artist_logo" src="{{ object.artist_pic.url }}" title="{{ object.handle }}'s Picture" align="left">{% else %}<img class="artist_logo" src="/static/no_artist_pic.png" alt="No Picture" align="left">{% endif %}
 </td>
 <td class="artist_information" valign="top">
 <strong>{{ object.handle }}</strong> {% if object.is_deceased %}<img src="/static/deceased.png" class="countryflag" alt="Deceased {% if object.deceased_date %}[On {{ object.deceased_date|date:"F j, Y" }}]{% endif %}">{% endif %}
