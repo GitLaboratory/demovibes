@@ -1,5 +1,6 @@
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "globals.h"
 #include "sockets.h"
@@ -9,7 +10,7 @@ using namespace boost;
 using namespace boost::asio;
 using boost::asio::ip::tcp;
 
-Sockets::Sockets(string const & host, string const & port):
+Sockets::Sockets(string const & host, uint32_t port):
 	host(host),
 	port(port)
 {
@@ -23,7 +24,7 @@ Sockets::SendCommand(string const & command, string &  result)
 	{
 		// create endpoint for address + port
 		tcp::resolver resolver(io);
-		tcp::resolver::query query(host, port);
+		tcp::resolver::query query(host, lexical_cast<string>(port));
 		tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 		tcp::resolver::iterator end;
 		tcp::socket socket(io);
@@ -64,19 +65,17 @@ Sockets::SendCommand(string const & command, string &  result)
 void 
 Sockets::GetSong(SongInfo & info)
 {
-	size_t attempts = 3;
-	// since this is critical we try multiple times
-	while (attempts-- != 0 && !SendCommand("GETSONG", info.fileName))
+	// since this is critical we try multiple times. no we're not. if it fails,
+	// we return error tune
+	if (!SendCommand("GETSONG", info.fileName))
 	{
 		logg << "WARNING: socket command GETSONG failed\n";
-		this_thread::sleep(posix_time::seconds(1));
-	}
-	if (attempts == 0)
-	{
-		logg << "ERROR: too many attempts\n";
-		exit(666);
+		info.fileName = setting::error_tune;
 	}
 	if (!SendCommand("GETMETA", info.title))
+	{	
 		logg << "WARNING: failed to get title for " << info.fileName << endl;
+		info.title = setting::error_title;
+	}
 	
 }

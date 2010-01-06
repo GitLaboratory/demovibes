@@ -2,6 +2,9 @@
 #define _H_BASSCAST_
 
 void BassCastInit();
-void Test();
+
+// keeps reading byte chunks from the input channel
+// should block as long no errors appear
+void BassCastRun();
 
 #endif

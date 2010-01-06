@@ -1,0 +1,14 @@
+demovibes_host		= localhost
+demovibes_port		= 32167
+encoder_samplerate	= 44100
+encoder_bitrate		= 192
+cast_host			= localhost
+cast_port			= 6010
+cast_mount			= ices
+cast_password		= password
+cast_name			= name of radio
+cast_url			= http://your.url/
+cast_genre			= music
+cast_description 	= this is a nice online radio
+error_tune			= error.tune
+error_title			= error

@@ -35,11 +35,11 @@ bool SourceHasLength(DWORD source)
 DWORD BassSourceFillBuffer(DWORD source, void * buffer, DWORD length)
 {
 	const DWORD bytesRead = BASS_ChannelGetData(source, buffer, length);
-	if (bytesRead != static_cast<DWORD>(-1))
+	if (bytesRead == static_cast<DWORD>(-1))
 	{
 		if (BASS_ErrorGetCode() != BASS_ERROR_ENDED)
 		{
-			logg << "ERROR: failed to read from stream source\n";
+			logg << "ERROR: failed to read from source\n";
 			LogBassError();
 		}
 		return 0;
@@ -69,7 +69,7 @@ bool BassSourceLoadStream(string fileName)
 void BassSourceFreeStream()
 {
 	if (!BASS_StreamFree(streamSource))
-		logg << "WARNING: failed to free source\n";		
+		logg << "WARNING: failed to free stream source\n";		
 	streamSource = 0;
 }
 
@@ -83,7 +83,7 @@ bool BassSourceLoadMusic(std::string fileName)
 	logg << "INFO: loading module " << fileName << endl;
 	// TODO make shure output is always in stereo
 	DWORD const module_flags = BASS_MUSIC_DECODE | BASS_MUSIC_PRESCAN;
-	musicSource = BASS_MusicLoad(FALSE, fileName.c_str(), 0, 0 , module_flags, setting::encoder_samplerate_int);
+	musicSource = BASS_MusicLoad(FALSE, fileName.c_str(), 0, 0 , module_flags, setting::encoder_samplerate);
 	if (musicSource== 0)
 	{
 		logg << "ERROR: failed to load music source\n";
@@ -101,7 +101,7 @@ bool BassSourceLoadMusic(std::string fileName)
 void BassSourceFreeMusic()
 {
 	if (!BASS_MusicFree(musicSource))
-		logg << "WARNING: failed to free source\n";
+		logg << "WARNING: failed to free music source\n";
 	musicSource = 0;
 }
 
