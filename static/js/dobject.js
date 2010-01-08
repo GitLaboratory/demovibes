@@ -13,7 +13,20 @@ function ajaxmonitorspawn() {
     var url=ajaxurl+'monitor/'+ajaxeventid+'/';
     debug=url;
     // alert('Monitor for '+url);
-    ajaxmonitorrequest=$.get(url,ajaxmonitorupdate);
+    // old version: http://code.google.com/p/demovibes/issues/detail?id=47
+    // ajaxmonitorrequest=$.get(url,ajaxmonitorupdate);
+    ajaxmonitorrequest=$.ajax({
+        type: 'GET',
+        dataType: 'text',
+        url: url,
+        timeout: 5000,
+        success: function(data, textStatus ){
+            ajaxmonitorupdate(data);
+        },
+        error: function(xhr, textStatus, errorThrown){
+            setTimeout('ajaxmonitorspawn()',5000); // wait a bit on fail
+        }
+     });
 }
 
 function ajaxmonitorabort() {
