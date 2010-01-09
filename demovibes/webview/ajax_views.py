@@ -26,7 +26,7 @@ def monitor(request, event_id):
             ajaxid = R.order_by('-id')[0].id
             return render_to_response('webview/js/manager.html', \
                 { 'events' : entries, 'id' : ajaxid },  context_instance=RequestContext(request))
-        time.sleep(1)
+        time.sleep(2)
     return HttpResponse("")
 
 #This might need to be uncached later on, if per-user info is sent.

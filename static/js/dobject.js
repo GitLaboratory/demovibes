@@ -19,12 +19,12 @@ function ajaxmonitorspawn() {
         type: 'GET',
         dataType: 'text',
         url: url,
-        timeout: 5000,
+        timeout: 300000,
         success: function(data, textStatus ){
             ajaxmonitorupdate(data);
         },
         error: function(xhr, textStatus, errorThrown){
-            setTimeout('ajaxmonitorspawn()',5000); // wait a bit on fail
+            setTimeout('ajaxmonitorspawn()',15000); // wait a bit on fail
         }
      });
 }
