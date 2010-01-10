@@ -11,7 +11,7 @@ else
 	echo "building release"
 fi
 
-FLAGS="-Wall -Wfatal-errors $FLAGS_RELEASE" 
+FLAGS="-Wall -Wfatal-errors $FLAGS_RELEASE -m32" 
 FLAGS_BOOST='-lboost_system -lboost_thread -lboost_filesystem -lboost_program_options -lboost_date_time'
 FLAGS_BASS='-Lbass/bin_linux -lbass -lbassenc -Wl,-rpath=./bass/bin_linux'
 SOURCE_FILES='logror.cpp basssource.cpp basscast.cpp sockets.cpp settings.cpp demosauce.cpp'
