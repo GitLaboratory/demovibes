@@ -1,5 +1,3 @@
-#include <boost/format.hpp>
-
 #include "bass/bass.h"
 
 #include "globals.h"
@@ -7,14 +5,10 @@
 
 using namespace std;
 using namespace boost;
+using namespace logror;
 
 HSTREAM streamSource = 0;
 HMUSIC musicSource = 0;
-
-void LogBassError()
-{
-	logg << "ERROR: bass error code: " << BASS_ErrorGetCode() << endl;	
-}
 
 bool SourceHasLength(DWORD source)
 {
@@ -22,12 +16,12 @@ bool SourceHasLength(DWORD source)
 	if (pos != static_cast<QWORD>(-1))
 	{
 		const WORD length = BASS_ChannelBytes2Seconds(source, pos);
-		logg << format("INFO: time length %1% seconds\n") % length;
+		Log(info, "length %1% seconds"), length;
 		return true;
 	}
 	else
 	{
-		logg << "ERROR: no time length for source\n";
+		Error("no time length for source");
 	}
 	return false;
 }
@@ -38,10 +32,7 @@ DWORD BassSourceFillBuffer(DWORD source, void * buffer, DWORD length)
 	if (bytesRead == static_cast<DWORD>(-1))
 	{
 		if (BASS_ErrorGetCode() != BASS_ERROR_ENDED)
-		{
-			logg << "ERROR: failed to read from source\n";
-			LogBassError();
-		}
+			Error("failed to read from source (%1%)"), BASS_ErrorGetCode();
 		return 0;
 	}
 	return bytesRead;
@@ -49,13 +40,12 @@ DWORD BassSourceFillBuffer(DWORD source, void * buffer, DWORD length)
 
 bool BassSourceLoadStream(string fileName)
 {
-	logg << "INFO: loading stream " << fileName << endl;
+	Log(info, "loading stream %1%"), fileName;
 	// TODO make shure output is always in stereo and encoder's samplerate
 	streamSource = BASS_StreamCreateFile(FALSE, fileName.c_str(), 0, 0, BASS_STREAM_DECODE);
 	if (streamSource == 0)
 	{
-		logg << "ERROR: failed to load stream source\n";
-		LogBassError();
+		Error("failed to load stream source (%1%)"), BASS_ErrorGetCode();
 		return false;
 	}
 	if (!SourceHasLength(streamSource))
@@ -69,7 +59,7 @@ bool BassSourceLoadStream(string fileName)
 void BassSourceFreeStream()
 {
 	if (!BASS_StreamFree(streamSource))
-		logg << "WARNING: failed to free stream source\n";		
+		Log(warning, "failed to free stream source");
 	streamSource = 0;
 }
 
@@ -80,14 +70,13 @@ DWORD BassSourceFillBufferStream(void * buffer, DWORD length)
 
 bool BassSourceLoadMusic(std::string fileName)
 {
-	logg << "INFO: loading module " << fileName << endl;
+	Log(info, "loading module %1%"), fileName;
 	// TODO make shure output is always in stereo
 	DWORD const module_flags = BASS_MUSIC_DECODE | BASS_MUSIC_PRESCAN;
 	musicSource = BASS_MusicLoad(FALSE, fileName.c_str(), 0, 0 , module_flags, setting::encoder_samplerate);
 	if (musicSource== 0)
 	{
-		logg << "ERROR: failed to load music source\n";
-		LogBassError();
+		Error("failed to load music source (%1%)"), BASS_ErrorGetCode();
 		return false;
 	}
 	if (!SourceHasLength(musicSource))
@@ -101,7 +90,7 @@ bool BassSourceLoadMusic(std::string fileName)
 void BassSourceFreeMusic()
 {
 	if (!BASS_MusicFree(musicSource))
-		logg << "WARNING: failed to free music source\n";
+		Log(warning, "failed to free music source");
 	musicSource = 0;
 }
 

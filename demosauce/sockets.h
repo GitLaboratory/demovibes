@@ -1,3 +1,10 @@
+/*
+	when I started working on this I never used boost asio or sockets in general before. I got it
+	to work quickly and for now it works. boost::asio is a bit overwhelming at first and now I saw 
+	they provide services (datagram_socket_service) which might be exactly what we need. If we change
+	the socket implementaion we might as well use that (should be more robust). ~meap
+*/
+
 #ifndef _H_SOCKETS_
 #define _H_SOCKETS_
 
@@ -31,7 +38,9 @@ class Sockets
 		bool SendCommand(std::string const & command, std::string &  result);
 		std::string const host;
 		uint32_t const port;
-		boost::asio::io_service io;  
+		boost::asio::io_service io;
 };
+
+bool ResolveIp(std::string host, std::string &ipAddress);
 
 #endif

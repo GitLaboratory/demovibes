@@ -8,6 +8,7 @@
 using namespace std;
 using namespace boost;
 using namespace boost::asio;
+using namespace logror;
 using boost::asio::ip::tcp;
 
 Sockets::Sockets(string const & host, uint32_t port):
@@ -52,11 +53,11 @@ Sockets::SendCommand(string const & command, string &  result)
 				throw boost::system::system_error(error); // Some other error.
 			result.append(buf.data(), len);
 		}
-		//logg << format("DEBUG: socket command=%1% result=%2%\n")  % command % result;
+		LogDebug("socket command=%1% result=%2%"), command, result;
 	}
 	catch (std::exception & e)
 	{
-		logg  << "ERROR: " << e.what() << endl;
+		Log(warning ,"%1%"), e.what();
 		return false;
 	}
 	return true;
@@ -69,13 +70,34 @@ Sockets::GetSong(SongInfo & info)
 	// we return error tune
 	if (!SendCommand("GETSONG", info.fileName))
 	{
-		logg << "WARNING: socket command GETSONG failed\n";
+		Error("socket command GETSONG failed");
 		info.fileName = setting::error_tune;
 	}
 	if (!SendCommand("GETMETA", info.title))
 	{	
-		logg << "WARNING: failed to get title for " << info.fileName << endl;
+		Log(warning, "failed to get title for %1%"), info.fileName;
 		info.title = setting::error_title;
 	}
-	
+}
+
+bool ResolveIp(string host, std::string &ipAddress)
+{
+	try
+	{
+		io_service io;
+		tcp::resolver resolver(io);
+		tcp::resolver::query query(tcp::v4(), host, "0");
+		tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
+		tcp::resolver::iterator end;
+		if (endpoint_iterator == end)
+			return false;
+		tcp::endpoint ep = *endpoint_iterator;
+		ipAddress = ep.address().to_string();
+	}
+	catch (std::exception & e)
+	{
+		Error("%1%"), e.what();
+		return false;
+	}
+	return true;
 }
