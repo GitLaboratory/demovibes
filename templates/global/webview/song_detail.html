@@ -53,7 +53,7 @@ Extra Resources:
 
 <p>
 Song Length: {{ object.length }}<br>
-{% if object.release_date %}Release Date: {{ object.release_date|date:"F j, Y" }}<br>{% endif %}
+{% if object.release_year %}Release Year: {{ object.release_year }}<br>{% endif %}
 Song Status: {{ object.get_status_display }}
 {% if object.bitrate %}<br />Song Bitrate: {{ object.bitrate }} kbps{% endif %}
 {% if object.type %}<br />Song Source: {{ object.type }}{% endif %}
@@ -78,7 +78,7 @@ Song Status: {{ object.get_status_display }}
 {% endif %}
 
 <p>
-This song has been played <a href="{{object.get_absolute_url}}queue_history">{{ object.times_played }}</a> times. <br>
+This song has been played {{ object.times_played }} times. [<a href="{{object.get_absolute_url}}queue_history">See Request History</a>]<br>
 It was added {{ object.added|timesince }} ago.
 </p>
 {% cache 86400 object.title object.pouetid %}

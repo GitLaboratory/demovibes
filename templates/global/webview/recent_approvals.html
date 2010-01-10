@@ -12,6 +12,7 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
   <th>Artist</th>
   <th>Added</th>
   <th>Length</th>
+  <th>Uploader</th>
   <th>Status</th>
 </tr>
 {% if songs %}
@@ -30,6 +31,9 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
             <td align="center">
                 {{ song.song.length }}
             </td>
+			<td align="center">
+			    {% with song.uploaded_by as U%}{% include "webview/t/user.html" %}{% endwith %}
+			</td>
             <td align="center">
                 <span name="a_queue_{{ song.song.id }}">{% with song.song as song %}{% include "webview/t/songlist_span_noauth.html" %}{% endwith %}</span>
                 {% with song.song as song %}{% include "webview/t/fav_icon.html" %}{% endwith %}

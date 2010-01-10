@@ -2,7 +2,7 @@
 {% block title %}Compilation: {{ comp.name }}{% if comp.label %} from {{ comp.label }}{% endif %}{% endblock %}
 
 {% block main %}
-{% load dv_extend %}<h2><img class="icon_header" src="{{ MEDIA_URL }}recplay_ico.png" alt="Compilation" />Compilation: {{ comp.name }}{% if user.is_staff %} [<a href="/admin/webview/compilation/{{ comp.id }}/">Edit Info</a>]{% endif %}</h2>
+{% load dv_extend %}<h2><img class="icon_header" {% if comp.comp_icon %}src="{{ comp.comp_icon.url }}"{% else %}src="/static/recplay_ico.png"{% endif %} alt="Compilation" />Compilation: {{ comp.name }}{% if user.is_staff %} [<a href="/admin/webview/compilation/{{ comp.id }}/">Edit Info</a>]{% endif %}</h2>
 
 <table>
 <tr>

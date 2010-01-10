@@ -25,6 +25,7 @@ class Group(models.Model):
     name = models.CharField(max_length=30, unique = True, db_index = True, verbose_name="* Name", help_text="The name of this group as you want it to appear.")
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Add the website address for this group, if one exists.")
     wiki_link = models.URLField(blank=True, help_text="URL to wikipedia entry (if available)")
+    group_icon = models.ImageField(help_text="Group Icon (Shows instead of default icon)", upload_to = 'media/groups/icons', blank = True, null = True)
     group_logo = models.ImageField(help_text="Logo/Pic Of This Group", upload_to = 'media/groups', blank = True, null = True)
     info = models.TextField(blank = True, verbose_name="Group Info", help_text="Additional information on this group. No HTML.")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
@@ -101,7 +102,7 @@ class Userprofile(models.Model):
     )
     visible_to = models.CharField(max_length=1, default = "A", choices = VISIBLE_TO)
     last_active = models.DateTimeField(blank = True, null = True)
-    email_on_pm = models.BooleanField(default=False, verbose_name = "Send email on new PM")
+    email_on_pm = models.BooleanField(default=True, verbose_name = "Send email on new PM")
     email_on_group_add = models.BooleanField(default=True, verbose_name = "Send email on group approval")
     email_on_artist_add = models.BooleanField(default=True, verbose_name = "Send email on artist approval")
     email_on_artist_comment = models.BooleanField(default = True, verbose_name="Send email on artist comments")
@@ -166,6 +167,7 @@ class Label(models.Model):
     name = models.CharField(max_length=40, unique = True, db_index = True, verbose_name="* Name", help_text="Name of this label, as you want it to appear on the site")
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Website for this label, if available")
     wiki_link = models.URLField(blank=True, help_text="Full URL to wikipedia entry (if available)")
+    label_icon = models.ImageField(upload_to = 'media/labels/icons', blank = True, null = True, verbose_name="Label Icon (Shows instead of default icon)", help_text="Upload an image containing the icon for this label")
     logo = models.ImageField(upload_to = 'media/labels', blank = True, null = True, verbose_name="Label Logo", help_text="Upload an image containing the logo for this label")
     info = models.TextField(blank = True, help_text="Additional information about this label. No HTML.")
     startswith = models.CharField(max_length=1, editable = False, db_index = True)
@@ -327,9 +329,11 @@ class Song(models.Model):
     rating_votes = models.IntegerField(default = 0)
     num_favorited = models.IntegerField(default = 0)
     rating = models.FloatField(blank = True, null = True)
-    release_date = models.DateField(blank = True, null = True, verbose_name="Release Date", help_text="Release date (YYYY-MM-DD - Ex. 1986-05-26)")
+    #release_date = models.DateField(blank = True, null = True, verbose_name="Release Date", help_text="Release date (YYYY-MM-DD - Ex. 1986-05-26)")
+    release_year = models.CharField(blank = True, null = True, verbose_name="Release Year", help_text="Year the song was released (Ex: 1985)", max_length="4", db_index=True)
     STATUS_CHOICES = (
             ('A', 'Active'),
+            ('B', 'Banned'),
             ('J', 'Jingle'),
             ('I', 'Inactive'),
             ('V', 'Not verified'),
@@ -556,6 +560,7 @@ class Compilation(models.Model):
     prod_artists = models.ManyToManyField(Artist, verbose_name="Production Artists", help_text="Artists associated with the production of this compilation (not necessarily the same as the tracks)", null = True, blank = True) # Internal artists involved in the production
     info = models.TextField(help_text="Description, as you want it to appear on the site. BBCode tags supported. No HTML.", blank = True) # Info page, which will be a simple textbox entry such as a description field
     prod_notes = models.TextField(help_text="Production notes, from the author/group/artists specific to the making of this compilation", blank = True) # Personalized production notes
+    comp_icon = models.ImageField(help_text="Album Icon (Shows instead of default icon)", upload_to = 'media/compilations/icons', blank = True, null = True) # Album Artwork
     cover_art = models.ImageField(help_text="Album Cover/Screenshot", upload_to = 'media/compilations', blank = True, null = True) # Album Artwork
     details_page = models.URLField(help_text="External link to info page about the compilation", blank = True) # Link to external website about the compilation, such as demoparty page
     purchase_page = models.URLField(help_text="If this is a commercial product, you can provide a 'Buy Now' link here", blank = True) # If commercial CD, link to purchase the album
@@ -764,6 +769,7 @@ class RadioStream(models.Model):
         ('M', 'MP3'),
         ('O', 'Ogg'),
         ('A', 'AAC'),
+        ('S', 'SHOUTcast'),
     )
     streamtype = models.CharField(max_length=1, choices = STREAMS)
     active = models.BooleanField(default=True, db_index=True)
