@@ -1,5 +1,5 @@
 import time
-from webview.models import Queue, Oneliner, Userprofile, Compilation, AjaxEvent, Song, User
+from webview import models
 from django.conf import settings
 from django.core.cache import cache
 from django.shortcuts import render_to_response
@@ -7,6 +7,7 @@ from django.template import Context, Template
 from django.template.loader import get_template
 from django.conf import settings
 import logging
+import socket
 import datetime
 
 def play_queued(queue):
@@ -18,38 +19,38 @@ def play_queued(queue):
     temp = get_now_playing(True)
     temp = get_history(True)
     temp = get_queue(True)
-    AjaxEvent.objects.create(event="queue")
-    AjaxEvent.objects.create(event="history")
-    AjaxEvent.objects.create(event="nowplaying")
+    models.add_event(event="queue")
+    models.add_event(event="history")
+    models.add_event(event="nowplaying")
     
-    
+
 # This function should both make cake, and eat it
 def queue_song(song, user, event = True, force = False):
     sl = settings.SONG_LOCK_TIME
     Q = False
     time = datetime.timedelta(hours = sl['hours'], days = sl['days'], minutes = sl['minutes'])
     result = True
+    models.Queue.objects.lock(models.Song, models.User, models.AjaxEvent)
     if not force:
-        Queue.objects.lock(Song, User, AjaxEvent)
-        requests = Queue.objects.filter(played=False, requested_by = user).count()
+        requests = models.Queue.objects.filter(played=False, requested_by = user).count()
         if requests >= settings.SONGS_IN_QUEUE:
-            AjaxEvent.objects.create(event='eval:alert("You have reached your queue limit. Wait for the songs to play.");', user = user)
+            models.add_event(event='eval:alert("You have reached your queue limit. Wait for the songs to play.");', user = user)
             result = False
         if result and song.is_locked():
             result = False
     if result:
         song.locked_until = datetime.datetime.now() + time
         song.save()
-        Q = Queue(song=song, requested_by=user, played = False)
+        Q = models.Queue(song=song, requested_by=user, played = False)
         Q.save()
-    Queue.objects.unlock()
+    models.Queue.objects.unlock()
     if result:
         Q.eta = Q.get_eta()
         Q.save()
-        AjaxEvent.objects.create(event='a_queue_%i' % song.id)
+        models.add_event(event='a_queue_%i' % song.id)
         if event:
             bla = get_queue(True) # generate new queue cached object
-            AjaxEvent.objects.create(event='queue')
+            models.add_event(event='queue')
     return Q
 
 
@@ -59,11 +60,11 @@ def get_now_playing(create_new=True):
     R = cache.get(key)
     if not R or create_new:
         try:
-            songtype = Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
+            songtype = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
             song = songtype.song
         except:
             return ""
-        comps = Compilation.objects.filter(songs__id = song.id)
+        comps = models.Compilation.objects.filter(songs__id = song.id)
         T = get_template('webview/t/now_playing_song.html')
         C = Context({ 'now_playing' : songtype, 'comps' : comps })
         R = T.render(C)   
@@ -77,7 +78,7 @@ def get_history(create_new=False):
     R = cache.get(key)
     if not R or create_new:
         logging.info("No existing cache for history, making new one")
-        history = Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[1:21]
+        history = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[1:21]
         T = get_template('webview/js/history.html')
         C = Context({ 'history' : history })
         R = T.render(C)
@@ -93,7 +94,7 @@ def get_oneliner(create_new=False):
     if not R or create_new:
         logging.info("No existing cache for oneliner, making new one")
         lines = getattr(settings, 'ONELINER', 10)
-        oneliner = Oneliner.objects.select_related(depth=2).order_by('-id')[:lines]
+        oneliner = models.Oneliner.objects.select_related(depth=2).order_by('-id')[:lines]
         T = get_template('webview/js/oneliner.html')
         C = Context({ 'oneliner' : oneliner })
         R = T.render(C)
@@ -107,7 +108,7 @@ def get_queue(create_new=False):
     R = cache.get(key)
     if not R or create_new:
         logging.info("No existing cache for queue, making new one")
-        queue = Queue.objects.select_related(depth=2).filter(played=False).order_by('id')
+        queue = models.Queue.objects.select_related(depth=2).filter(played=False).order_by('id')
         T = get_template('webview/js/queue.html')
         C = Context({ 'queue' : queue })
         R = T.render(C)
@@ -130,10 +131,20 @@ def get_profile(user):
     return profile
 
 def get_latest_event():
-    try:
-        return AjaxEvent.objects.order_by('-id')[0].id
-    except:
-        return 0
+    use_eventful = getattr(settings, 'USE_EVENTFUL', False)
+    if use_eventful:
+        host = getattr(settings, 'EVENTFUL_HOST', "127.0.0.1")
+        port = getattr(settings, 'EVENTFUL_PORT', 9911)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.send("event::")
+        result = s.recv(1024)
+        return result.strip()
+    else:
+        try:
+            return models.AjaxEvent.objects.order_by('-id')[0].id
+        except:
+            return 0
 
 def log_debug(area, text, level=1):
     settings_level = getattr(settings, 'DEBUGLEVEL', 0)

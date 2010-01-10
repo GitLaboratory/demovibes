@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response
+import socket
 from django.template import RequestContext
 from django.conf import settings
 from django.db.models import Q
@@ -15,18 +16,29 @@ def monitor(request, event_id):
         P = get_profile(request.user)
         P.last_activity = datetime.datetime.now()
         P.save()
-    for x in range(120):
-        R = AjaxEvent.objects.filter(id__gt=event_id).order_by('id')
-        if R:
-            entries = list()
-            for event in R:
-                if event.user == None or event.user == request.user:
-                    if not str(event.event) in entries:
-                        entries.append(str(event.event))
-            ajaxid = R.order_by('-id')[0].id
-            return render_to_response('webview/js/manager.html', \
-                { 'events' : entries, 'id' : ajaxid },  context_instance=RequestContext(request))
-        time.sleep(2)
+    use_eventful = getattr(settings, 'USE_EVENTFUL', False)
+    if use_eventful:
+        host = getattr(settings, 'EVENTFUL_HOST', "127.0.0.1")
+        port = getattr(settings, 'EVENTFUL_PORT', 9911)
+        userid = request.user and request.user.id or ""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.send("get:%s:%s" % (userid, event_id))
+        result = s.recv(1024)
+        return HttpResponse(result)
+    else:
+        for x in range(120):
+            R = AjaxEvent.objects.filter(id__gt=event_id).order_by('id')
+            if R:
+                entries = list()
+                for event in R:
+                    if event.user == None or event.user == request.user:
+                        if not str(event.event) in entries:
+                            entries.append(str(event.event))
+                ajaxid = R.order_by('-id')[0].id
+                return render_to_response('webview/js/manager.html', \
+                    { 'events' : entries, 'id' : ajaxid },  context_instance=RequestContext(request))
+            time.sleep(2)
     return HttpResponse("")
 
 #This might need to be uncached later on, if per-user info is sent.
@@ -48,7 +60,7 @@ def oneliner_submit(request):
         Oneliner.objects.create(user = request.user, message = message)
         request.path = reverse('dv-ax-oneliner')
         f = get_oneliner(True)
-        AjaxEvent.objects.create(event='oneliner')
+        add_event(event='oneliner')
     return HttpResponse("OK")
 
 def oneliner(request):

@@ -405,7 +405,7 @@ def oneliner_submit(request):
         message =  request.POST['Line'].strip()
         if message != "":
             Oneliner.objects.create(user = request.user, message = message)
-            AjaxEvent.objects.create(event='oneliner')
+            add_event(event='oneliner')
     except:
         pass
     try:
@@ -748,7 +748,7 @@ def set_rating_autovote(request, song_id, user_rating):
     if int_vote <= 5 and int_vote > 0:
         S = Song.objects.get(id = song_id)
         S.set_vote(int_vote, request.user)
-        AjaxEvent.objects.create(event="nowplaying")
+        add_event(event="nowplaying")
 
         # Successful vote placed. 
         try:

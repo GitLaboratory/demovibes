@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import datetime
+import socket
 from django.conf import settings
 from django.core.mail import EmailMessage
 #from django.core.urlresolvers import reverse
@@ -13,6 +14,19 @@ from django.template import RequestContext, Context, loader
 from django.db.models.signals import post_save
 from django.utils.translation import ugettext_lazy as _
 #from demovibes.webview.common import get_oneliner, get_now_playing, get_queue, get_history
+
+def add_event(event, user = None):
+    use_eventful = getattr(settings, 'USE_EVENTFUL', False)
+    if use_eventful:
+        host = getattr(settings, 'EVENTFUL_HOST', "127.0.0.1")
+        port = getattr(settings, 'EVENTFUL_PORT', 9911)
+        userid = user and user.id or ""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.send("set:%s:%s" % (userid, event))
+        s.close()
+    else:
+        AjaxEvent.objects.create(event = event, user = user)
 
 from managers import *
 
@@ -529,7 +543,7 @@ class Song(models.Model):
         if not force:
             requests = Queue.objects.filter(played=False, requested_by = user).count()
             if requests >= settings.SONGS_IN_QUEUE:
-                AjaxEvent.objects.create(event='eval:alert("You have reached your queue limit. Wait for the songs to play.");', \
+                add_event(event='eval:alert("You have reached your queue limit. Wait for the songs to play.");', \
                     user = user)
                 result = False
             if self.is_locked():
@@ -537,7 +551,7 @@ class Song(models.Model):
         if result:
             Q = Queue(song=self, requested_by=user, played = False)
             Q.save()
-            AjaxEvent.objects.create(event='a_queue_%i' % self.id)
+            add_event(event='a_queue_%i' % self.id)
         Queue.objects.unlock()
         return result
     

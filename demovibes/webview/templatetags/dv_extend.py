@@ -43,9 +43,9 @@ def get_rating_stars_song_avg(parser, token):
     GetSongRatingStarsAvgNode() class.
     """
     try:
-	tag_name, username = token.split_contents()
+        tag_name, username = token.split_contents()
     except ValueError:
-	raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
+        raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
 
     # Send this out for processing. Don't come back without pizza! hehe
     return GetSongRatingStarsAvgNode(username)
@@ -58,10 +58,9 @@ def get_text_links(parser, token):
     This will also insert a header object for the category, if links exist.
     """
     try:
-	tag_name, slugname = token.split_contents()
+        tag_name, slugname = token.split_contents()
     except ValueError:
-	raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
-	
+        raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
     return GetTextLinkEntries(slugname)
 
 @register.tag
@@ -70,10 +69,9 @@ def count_text_links(parser, token):
     Counts the number of links in the specified link category slug
     """
     try:
-	tag_name, slugname = token.split_contents()
+        tag_name, slugname = token.split_contents()
     except ValueError:
-	raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
-	
+        raise template.TemplateSyntaxError, "%r tag requires exactly one argument" % token.contents.split()[0]
     return CountTextLinkEntries(slugname)
     
 def get_banner_links(parser, token):
@@ -113,13 +111,10 @@ def current_song():
 
 @register.simple_tag
 def ajaxevent():
-	"""
-	Returns the latest ajax event in the table, or 0 if there are none.
-	"""
-	try:
-		return AjaxEvent.objects.order_by('-id')[0].id
-	except:
-		return 0
+    """
+    Returns the latest ajax event in the table, or 0 if there are none.
+    """
+    return common.get_latest_event()
 
 @register.simple_tag
 def get_oneliner():
