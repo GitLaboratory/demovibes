@@ -12,3 +12,6 @@ cast_genre			= music
 cast_description 	= this is a nice online radio
 error_tune			= error.tune
 error_title			= error
+log_file			= demosauce.log
+log_file_level		= info
+log_console_level	= warn
