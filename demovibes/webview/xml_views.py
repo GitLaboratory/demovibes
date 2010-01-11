@@ -27,3 +27,16 @@ def oneliner(request):
     return render_to_response('webview/xml/oneliner.xml', \
         {'oneliner_data' : oneliner_data}, \
         context_instance=RequestContext(request), mimetype = "application/xml")
+
+@cache_output
+def online(request):
+    try:
+	timefrom = datetime.datetime.now() - datetime.timedelta(minutes=5)
+        online_data = Userprofile.objects.filter(last_activity__gt=timefrom).order_by('user__username')
+	#online_data = Userprofile.objects.select_related(depth=2).filter(last_activity__gt=timefrom).order_by('user__username')[1:50]
+    except:
+        return "Invalid Online Data"
+
+    return render_to_response('webview/xml/online.xml', \
+        {'online_data' : online_data}, \
+        context_instance=RequestContext(request), mimetype = "application/xml")

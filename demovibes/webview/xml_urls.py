@@ -38,6 +38,7 @@ def cached_object_detail(*args, **kwargs):
 urlpatterns = patterns('',
     (r'^queue/$',  	                'demovibes.webview.xml_views.queue'),
     (r'^oneliner/$',  	            'demovibes.webview.xml_views.oneliner'),
+    (r'^online/$',  	            'demovibes.webview.xml_views.online'),
     (r'^song/(?P<object_id>\d+)/$', cached_object_detail , song_dict),
     (r'^compilation/(?P<object_id>\d+)/$', cached_object_detail , compilation_dict),
     (r'^group/(?P<object_id>\d+)/$', cached_object_detail , group_dict), 
