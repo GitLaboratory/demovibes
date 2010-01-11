@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include <boost/cstdint.hpp>
+
 #include "bass/bass.h"
 
 void BassSourceInit();
@@ -12,14 +14,14 @@ void BassSourceFreeStream();
 /**	
 *	@return the number of  byts written to buffer.
 */
-DWORD BassSourceFillBufferStream(void * buffer, DWORD length);
+uint32_t BassSourceFillBufferStream(void * buffer, uint32_t length);
 
 bool BassSourceLoadMusic(std::string fileName);
 void BassSourceFreeMusic();
 /**	
 *	@return the number of  byts written to buffer.
 */
-DWORD BassSourceFillBufferMusic(void * buffer, DWORD length);
+uint32_t BassSourceFillBufferMusic(void * buffer, uint32_t length);
 
 void LogBassError();
 

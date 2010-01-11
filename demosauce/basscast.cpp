@@ -54,7 +54,6 @@ DecoderType DecideDecoderType(const string & fileName)
 	return type;
 }
 
-
 size_t NoiseFillBuffer(void * buffer, size_t length)
 { 
 	BOOST_STATIC_ASSERT(SAMPLE_SIZE == 2);
@@ -139,7 +138,7 @@ DWORD CALLBACK FillBuffer(HSTREAM handle, void * buffer, DWORD length, void * us
 		ChangeSong();
 		return length;
 	}
-	const DWORD bytesWritten = ActiveFillBuffer(buffer, length);
+	const DWORD bytesWritten = numeric_cast<DWORD>(ActiveFillBuffer(buffer, length));
 	if (bytesWritten > length)
 		Fatal("WTF!? possible buffer overrun? quitting shitting my pants");
 	if (bytesWritten < length) // should indicate end of source file, needs to be testted irl
@@ -220,7 +219,7 @@ void BassCastRun()
 	for (;;)
 	{
 		// this should block once the streamer can't keep up
-	    const DWORD bytesRead = BASS_ChannelGetData(sink, buff, buffSize); 
+		const DWORD bytesRead = BASS_ChannelGetData(sink, buff, buffSize); 
     	if (bytesRead == static_cast<DWORD>(-1))
 			Fatal("lost sink channel (%1%)"), BASS_ErrorGetCode();
 	}

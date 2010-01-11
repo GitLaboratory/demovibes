@@ -1,3 +1,5 @@
+#include <boost/numeric/conversion/cast.hpp>
+
 #include "bass/bass.h"
 
 #include "globals.h"
@@ -26,7 +28,7 @@ bool SourceHasLength(DWORD source)
 	return false;
 }
 
-DWORD BassSourceFillBuffer(DWORD source, void * buffer, DWORD length)
+uint32_t BassSourceFillBuffer(DWORD source, void * buffer, uint32_t length)
 {
 	const DWORD bytesRead = BASS_ChannelGetData(source, buffer, length);
 	if (bytesRead == static_cast<DWORD>(-1))
@@ -35,7 +37,7 @@ DWORD BassSourceFillBuffer(DWORD source, void * buffer, DWORD length)
 			Error("failed to read from source (%1%)"), BASS_ErrorGetCode();
 		return 0;
 	}
-	return bytesRead;
+	return numeric_cast<uint32_t>(bytesRead);
 }
 
 bool BassSourceLoadStream(string fileName)
@@ -63,7 +65,7 @@ void BassSourceFreeStream()
 	streamSource = 0;
 }
 
-DWORD BassSourceFillBufferStream(void * buffer, DWORD length)
+uint32_t BassSourceFillBufferStream(void * buffer, uint32_t length)
 {
 	return BassSourceFillBuffer(streamSource, buffer, length);
 }
@@ -94,7 +96,7 @@ void BassSourceFreeMusic()
 	musicSource = 0;
 }
 
-DWORD BassSourceFillBufferMusic(void * buffer, DWORD length)
+uint32_t BassSourceFillBufferMusic(void * buffer, uint32_t length)
 {
 	return BassSourceFillBuffer(musicSource, buffer, length);
 }

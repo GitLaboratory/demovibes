@@ -35,10 +35,9 @@ void LogSetFile(string fileName, Level level)
 	log.exceptions(std::ifstream::goodbit); // don't throw exception if something fails
 	log.open(fileName.c_str());
 	if (log.fail())
-	{
 		std::cout << "WARNING: could not open log file\n";
+	else
 		fileLevel = level;
-	}
 }
 
 LogBlob LogAction(Level level, bool takeAction, string message)
@@ -92,9 +91,7 @@ LogBlob::~LogBlob()
 		if (errorQuit)
 			msg.append("\nterminated (too many errors)");
 		if (level >= consoleLevel)
-		{
 			std::cout <<  msg << std::endl;
-		}
 		if (level >= fileLevel)
 			log << msg << std::endl;
 	}

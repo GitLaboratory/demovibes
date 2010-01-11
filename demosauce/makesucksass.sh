@@ -1,19 +1,26 @@
 #!/bin/sh
 #builds the backend
-#additional dependencies: boost libraries
 
-if test "$1" = "debug"
-then
+echo -n "configuration: "
+if test "$1" = "debug"; then
+	echo -n "debug"
 	FLAGS_RELEASE='-g -DDEBUG' #-pedantic
-	echo "building debug"
 else
+	echo -n "release"
 	FLAGS_RELEASE='-O2'
-	echo "building release"
 fi
 
-FLAGS="-Wall -Wfatal-errors $FLAGS_RELEASE -m32" 
+if test `uname -m` = "x86_64"; then
+	echo " 64 bit "
+	BASS_BIN='bass/bin_linux64'
+else
+	echo " 32 bit"
+	BASS_BIN='bass/bin_linux'
+fi
+
+FLAGS="-Wall -Wfatal-errors $FLAGS_RELEASE" 
 FLAGS_BOOST='-lboost_system -lboost_thread -lboost_filesystem -lboost_program_options -lboost_date_time'
-FLAGS_BASS='-Lbass/bin_linux -lbass -lbassenc -Wl,-rpath=./bass/bin_linux'
+FLAGS_BASS="-L$BASS_BIN -lbass -lbassenc -Wl,-rpath=.$BASS_BIN"
 SOURCE_FILES='logror.cpp basssource.cpp basscast.cpp sockets.cpp settings.cpp demosauce.cpp'
 
 g++ $FLAGS $FLAGS_BOOST $FLAGS_BASS -o demosauce $SOURCE_FILES

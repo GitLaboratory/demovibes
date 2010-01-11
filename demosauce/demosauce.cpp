@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 		Sockets socktes(setting::demovibes_host, setting::demovibes_port);
 		demovibes = &socktes;
 		BassCastInit();
-		cout << "runining...\n";
+		cout << "runniALL GLORY TO THE HYPNOTOAD!\n";
 		BassCastRun();
 	} 
 	catch (std::exception & e)
