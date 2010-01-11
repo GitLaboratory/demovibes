@@ -27,11 +27,12 @@ enum DecoderType
 	module_generic,
 	module_amiga
 };
+
 DecoderType activeDecoder = nada;
-DWORD (* ActiveFillBuffer) (void *, DWORD) = NULL;
+uint32_t (* ActiveFillBuffer) (void *, uint32_t) = NULL;
 HENCODE encoder = 0;
 HSTREAM sink = 0;
-size_t noiseBytes = 0;
+uint32_t noiseBytes = 0;
 
 DecoderType DecideDecoderType(const string & fileName)
 {
@@ -54,7 +55,7 @@ DecoderType DecideDecoderType(const string & fileName)
 	return type;
 }
 
-size_t NoiseFillBuffer(void * buffer, size_t length)
+uint32_t NoiseFillBuffer(void * buffer, uint32_t length)
 { 
 	BOOST_STATIC_ASSERT(SAMPLE_SIZE == 2);
 	if (length < SAMPLE_SIZE * setting::encoder_channels)

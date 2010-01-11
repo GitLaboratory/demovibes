@@ -19,7 +19,7 @@ else
 fi
 
 FLAGS="-Wall -Wfatal-errors $FLAGS_RELEASE" 
-FLAGS_BOOST='-lboost_system -lboost_thread -lboost_filesystem -lboost_program_options -lboost_date_time'
+FLAGS_BOOST='-lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_date_time-mt'
 FLAGS_BASS="-L$BASS_BIN -lbass -lbassenc -Wl,-rpath=.$BASS_BIN"
 SOURCE_FILES='logror.cpp basssource.cpp basscast.cpp sockets.cpp settings.cpp demosauce.cpp'
 
