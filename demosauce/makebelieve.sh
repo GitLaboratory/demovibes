@@ -33,7 +33,7 @@ fi
 
 # demosauce
 FLAGS_BOOST='-lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_date_time-mt'
-FLAGS_BASS="-L$BASS_BIN -lbass -lbassenc -Wl,-rpath=.$BASS_BIN"
+FLAGS_BASS="-L$BASS_BIN -lbass -lbassenc -Wl,-rpath=./$BASS_BIN"
 SOURCE_FILES='logror.cpp basssource.cpp basscast.cpp sockets.cpp settings.cpp demosauce.cpp'
 g++ $FLAGS $FLAGS_BOOST $FLAGS_BASS -o demosauce $SOURCE_FILES
 
