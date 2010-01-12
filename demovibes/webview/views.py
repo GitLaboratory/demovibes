@@ -461,6 +461,7 @@ def del_favorite(request, id): # XXX Fix to POST
 @login_required
 def upload_song(request, artist_id):
     artist = get_object_or_404(Artist, id=artist_id)
+    auto_approve = getattr(settings, 'ADMIN_AUTO_APPROVE_UPLOADS', 0)
     
     # Quick test to see if the artist is currently active. If not, bounce
     # To the current queue!
@@ -473,6 +474,12 @@ def upload_song(request, artist_id):
             status = 'A'
         else:
             status = 'U'
+            
+        # Check to see if moderation settings allow for the check
+        if request.user.is_staff and auto_approve == 1:
+            # Automatically approved due to Moderator status
+            status = 'A'
+        
         a = Song(uploader = request.user, status = status)
         form = UploadForm(request.POST, request.FILES, instance = a)
         if form.is_valid():
