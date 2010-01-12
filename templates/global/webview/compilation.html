@@ -17,7 +17,7 @@
 Name: {{ comp.name }}<br>
 {% if comp.label %}Label: {{ comp.label }}<br>{% endif %}
 {% if comp.rel_date %}Release Date: {{ comp.rel_date|date:"F j, Y" }}<br>{% endif %}
-{% if comp.running_time %}Running Time: {{ comp.running_time }} Secs.<br>{% endif %}
+{% if comp.running_time %}Running Time: {{ comp.length }}<br>{% endif %}
 {% if comp.num_discs %}Num. Disks: {{ comp.num_discs }}<br>{% endif %}
 {% if comp.youtube_link %}Video Clip: <a href="{{ comp.youtube_link }}" target="_new">Video Link</a><br>{% endif %}
 {% if comp.media_format %}Media Type: {{ comp.media_format }}<br>{% endif %}

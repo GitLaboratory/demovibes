@@ -588,7 +588,7 @@ class Compilation(models.Model):
     zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum) - See http://www.zxdemo.org")
     hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="Hall of Light ID number (Amiga) - See http://hol.abime.net")
     projecttwosix_id = models.IntegerField(blank=True, null = True, verbose_name="Project2612 ID", help_text="Project2612 ID Number (Genesis / Megadrive) - See http://www.project2612.org")
-    running_time = models.IntegerField(help_text="Overall running time", blank = True, null = True) # Running time of the album/compilation
+    running_time = models.IntegerField(help_text="Overall running time (In Seconds)", blank = True, null = True) # Running time of the album/compilation
     date_added = models.DateTimeField(auto_now_add=True) # Date the compilation added to the DB
     created_by = models.ForeignKey(User, null = True, blank = True)
     songs = models.ManyToManyField(Song, null = True, blank = True)
@@ -609,6 +609,14 @@ class Compilation(models.Model):
     
     class Meta:
         ordering = ['name']
+        
+    def length(self):
+        """
+        Returns compilation length in minutes:seconds format
+        """
+        if self.running_time:
+            return "%d:%02d" % ( self.running_time/60, self.running_time % 60 )
+        return "Not set"
 
     def save(self, force_insert=False, force_update=False): 
         S = self.name[0].lower() #Stores the first character in the DB, for easier lookup
@@ -774,10 +782,10 @@ class News(models.Model):
         ordering = ['-added']
         
 class RadioStream(models.Model):
-    url = models.CharField(max_length=120)
-    name = models.CharField(max_length=120)
+    url = models.CharField(max_length=120, verbose_name="Direct URL", help_text="Direct URL to stream (no m3u). Shoutcast streams include PLS extension")
+    name = models.CharField(max_length=120, verbose_name="Stream Name", help_text="Name of the stream, as you want it to appear on the site")
     description = models.TextField()
-    country_code = models.CharField(max_length=10)
+    country_code = models.CharField(max_length=10, verbose_name="Country Code", help_text="Lower-case country code of the server location")
     bitrate = models.IntegerField()
     STREAMS = (
         ('M', 'MP3'),

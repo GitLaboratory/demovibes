@@ -12,7 +12,7 @@
 <div class="popup">
     <b>Stream Name:</b> {{ stream.country_code|flag|safe }} {{stream.name}}<br>
     <b>Direct Stream Link:</b> <a href="{{ stream.url }}">{{stream.name}}</a><br>
-    <b>PlayList File:</b> <a href="{{ stream.url }}.m3u">M3U</a><br>
+    {% ifnotequal stream.streamtype 'S' %}<b>PlayList File:</b> <a href="{{ stream.url }}.m3u">M3U</a><br>{% endifnotequal %}
     <b>Stream Info:</b> {{ stream.get_streamtype_display }} - {{ stream.bitrate }} kbps<br>
     {% if stream.description %}{{ stream.description|linebreaks }}{% endif %}
     </div>

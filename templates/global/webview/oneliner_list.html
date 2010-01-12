@@ -15,7 +15,7 @@
 </div>
 
 <div class="olh_message">
-    <p>{{ line.message|force_escape|wordwrap:100|smileys|oneliner_mediaparse|bbcode_oneliner|urlize|safe }}</p>
+    <p>{{ line.message|force_escape|wordwrap:100|smileys|oneliner_mediaparse|bbcode_oneliner|dv_urlize|safe }}</p>
 </div>
 </div>
 {% endfor %}
