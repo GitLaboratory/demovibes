@@ -469,6 +469,7 @@ def upload_song(request, artist_id):
         
     if request.method == 'POST':
         if artist.link_to_user == request.user:
+            # Auto Approved Song. Set Active, Add to Recent Uploads list
             status = 'A'
         else:
             status = 'U'
@@ -479,6 +480,18 @@ def upload_song(request, artist_id):
             new_song.save()
             new_song.artists.add(artist)
             form.save_m2m()
+            
+            if(new_song.status == 'A'):
+                # Auto Approved!
+                try:
+                    # If the song entry exists, we shouldn't care
+                    exist = SongApprovals.objects.get(song = new_song)
+
+                except:
+                    # Should throw when the song isn't found in the DB
+                    Q = SongApprovals(song = new_song, approved_by=request.user, uploaded_by=request.user)
+                    Q.save()
+                
             return HttpResponseRedirect(new_song.get_absolute_url())
     else:
         form = UploadForm()
