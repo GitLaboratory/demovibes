@@ -4,12 +4,12 @@
 #include <boost/format.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
 #include "bass/bass.h"
 #include "bass/bassenc.h"
 
+#include "decoder_common.h"
 #include "globals.h"
 #include "basssource.h"
 #include "sockets.h"
@@ -19,41 +19,11 @@ using namespace std;
 using namespace boost;
 using namespace logror;
 
-enum DecoderType
-{
-	nada,
-	noise,
-	codec_generic,
-	module_generic,
-	module_amiga
-};
-
-DecoderType activeDecoder = nada;
+DecoderType activeDecoder = decoder_nada;
 uint32_t (* ActiveFillBuffer) (void *, uint32_t) = NULL;
 HENCODE encoder = 0;
 HSTREAM sink = 0;
 uint32_t noiseBytes = 0;
-
-DecoderType DecideDecoderType(const string & fileName)
-{
-	DecoderType type = nada;
-	if (iends_with(fileName, ".mp3") ||
-		iends_with(fileName, ".mp2") ||
-		iends_with(fileName, ".mp1") ||
-		iends_with(fileName, ".ogg") ||
-		iends_with(fileName, ".aac") ||
-		iends_with(fileName, ".m4a"))
-		type = codec_generic;
-	else if (iends_with(fileName, ".xm") ||
-		iends_with(fileName, ".s3m") ||
-		iends_with(fileName, ".it"))
-		type = module_generic;
-	else if (iends_with(fileName, ".mod"))
-		type = module_amiga;
-	else
-		Error("no decoder for %1%"), fileName;
-	return type;
-}
 
 uint32_t NoiseFillBuffer(void * buffer, uint32_t length)
 { 
@@ -74,38 +44,38 @@ void ChangeSong()
 	// free old decoder
 	switch (activeDecoder)
 	{
-		case codec_generic:
+		case decoder_codec_generic:
 			BassSourceFreeStream();
 			break;    
-		case module_generic:
-		case module_amiga:
+		case decoder_module_generic:
+		case decoder_module_amiga:
 			BassSourceFreeMusic();
 			break;
 		default:;
 	}
-	activeDecoder = nada;
+	activeDecoder = decoder_nada;
 	SongInfo songInfo;
 	// find new decoder
-	while (activeDecoder == nada)
+	while (activeDecoder == decoder_nada)
 	{
 		songInfo = GetNextSong();
 		activeDecoder = DecideDecoderType(songInfo.fileName);
 		switch (activeDecoder)
 		{
-			case codec_generic:
+			case decoder_codec_generic:
 				if (!BassSourceLoadStream(songInfo.fileName))
-					activeDecoder = nada;
+					activeDecoder = decoder_nada;
 				break;    
-			case module_generic:
-			case module_amiga:
+			case decoder_module_generic:
+			case decoder_module_amiga:
 				if (!BassSourceLoadMusic(songInfo.fileName))
-					activeDecoder = nada;
+					activeDecoder = decoder_nada;
 				break;
 		default:;
 		}
-		if (activeDecoder == nada && songInfo.fileName == setting::error_tune)
+		if (activeDecoder == decoder_nada && songInfo.fileName == setting::error_tune)
 		{
-			activeDecoder = noise;
+			activeDecoder = decoder_noise;
 			noiseBytes = setting::encoder_samplerate * setting::encoder_channels * SAMPLE_SIZE * 120; // 2 minutes
 			Log(warning, "could not play error_tune, playing some noise instead");
 		}
@@ -113,14 +83,14 @@ void ChangeSong()
 	// assign active decode function
 	switch (activeDecoder)
 	{
-		case noise:
+		case decoder_noise:
 			ActiveFillBuffer = NoiseFillBuffer;
 		break;
-		case codec_generic:
+		case decoder_codec_generic:
 			ActiveFillBuffer = BassSourceFillBufferStream;
 			break;
-		case module_generic:
-		case module_amiga:
+		case decoder_module_generic:
+		case decoder_module_amiga:
 			ActiveFillBuffer = BassSourceFillBufferMusic;
 			break;
 		default:
