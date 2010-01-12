@@ -1,7 +1,7 @@
 #!/bin/sh
 #builds the backend
 
-echo -n "configuration: "
+echo -n "demovibes configuration: "
 if test "$1" = "debug"; then
 	echo -n "debug"
 	FLAGS_RELEASE='-g -DDEBUG' #-pedantic
@@ -21,11 +21,17 @@ fi
 
 FLAGS="-Wall -Wfatal-errors $FLAGS_RELEASE" 
 
+# libReplayGain
+REPLAYGAIN_A='replay_gain/libreplay_gain.a'
+if test ! -f $REPLAYGAIN_A; then
+	cd replay_gain;	./build.sh; cd ..
+fi
+
 # scan
 FLAGS_BOOST='-lboost_date_time-mt'
 FLAGS_BASS="-L$BASS_BIN -lbass -Wl,-rpath=./$BASS_BIN"
 SOURCE_FILES='logror.cpp scan.cpp'
-g++ $FLAGS $FLAGS_BASS $FLAGS_BOOST -o scan $SOURCE_FILES
+g++ $FLAGS $FLAGS_REPLAYGAIN $FLAGS_BASS $FLAGS_BOOST -o scan $SOURCE_FILES $REPLAYGAIN_A
 
 if test $? -ne 0; then
 	exit 1;

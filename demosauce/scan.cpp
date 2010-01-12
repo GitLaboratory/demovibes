@@ -4,6 +4,8 @@
 
 #include "bass/bass.h"
 
+#include "replay_gain/replay_gain.h"
+
 #include "logror.h"
 #include "decoder_common.h"
 
@@ -29,6 +31,10 @@ int main(int argc, char* argv[])
 		default:
 			logror::Fatal("unsupported file type");
 	}
+	BASS_CHANNELINFO info;
+	BASS_ChannelGetInfo(channel, &info);
+	if (info.chans < 1 || info.chans > 2)
+		logror::Fatal("usupported number of channels");
 	if (BASS_ErrorGetCode() != BASS_OK)
 		logror::Fatal("BASS returned error code %1%"), BASS_ErrorGetCode();
 	const QWORD chanLength = BASS_ChannelGetLength(channel, BASS_POS_BYTE);
@@ -44,6 +50,18 @@ int main(int argc, char* argv[])
 	} 
 	else
 		std::cout << "bitrate:n/a\n";
+	
+	RG_SampleFormat format;
+	format.sampleRate = info.freq;
+	format.sampleFormat = RG_SIGNED_16_BIT;
+	format.numberChannels = info.chans;
+	format.interleaved = TRUE;
+	RG_Context * context = RG_NewContext(&format);
+	char buffer[96000]; 
+	DWORD bytes = 0;
+	while ((bytes = BASS_ChannelGetData(channel, buffer, sizeof(buffer))) == sizeof(buffer))
+		RG_Analyze(context, buffer, bytes / info.chans / RG_FormatSize(RG_SIGNED_16_BIT));
+	std::cout << "replaygain:" << RG_GetTitleGain(context) << std::endl;
 	// theoretically all resources should be freed here. just so you know :D
 	return EXIT_SUCCESS;
 }
