@@ -106,7 +106,7 @@ MAX_LINK_IMG_HEIGHT = 18
 
 # Auto-Approve Admin Uploads
 #
-# Anyone with a Super User status who uploads tracks will be auto approved if set to 1. No
+# Anyone with a Staff status who uploads tracks will be auto approved if set to 1. No
 # Email notification will be sent if this occurs. Default is Off (0). Set to 1 to Enable.
 ADMIN_AUTO_APPROVE_UPLOADS = 0
 
@@ -116,6 +116,10 @@ MAX_ONELINER_LENGTH = 256
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
 USE_I18N = True
+
+# If you want to use a custom forum name in response emails, uncomment this line and
+# Define the custom value here. Most forums will not need to use this.
+#FORUM_MAIL_PREFIX = "[Forum Name]"
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"

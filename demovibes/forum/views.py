@@ -21,7 +21,8 @@ def forum_email_notification(post):
     try:
         mail_subject = settings.FORUM_MAIL_PREFIX 
     except AttributeError:
-        mail_subject = '[Forum]'
+	me = Site.objects.get_current()
+        mail_subject = "[%s Forums]" % me.name
     try:
         mail_from = settings.FORUM_MAIL_FROM
     except AttributeError:
@@ -31,6 +32,8 @@ def forum_email_notification(post):
         'body': wordwrap(striptags(post.body), 72),
         'site' : Site.objects.get_current(),
         'thread': post.thread,
+        'author' : post.author,
+        'subject' : post.thread.title,
         })
     email = EmailMessage(
             subject=mail_subject+' '+striptags(post.thread.title),
