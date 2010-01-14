@@ -1,4 +1,4 @@
-<tr class="{% cycle 'row1' 'row2' %}">
+<tr class="{% cycle 'row1' 'row2' %}">{% load cache %}{% cache 3600 qlist req.id %}
  <td align="left">
   {% if req.priority %}*{% endif %}{% with req.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
  </td>
@@ -21,4 +21,5 @@
   {% include "webview/t/user.html" %}
   {% endwith %}
  </td>
+{% endcache %}
 </tr>

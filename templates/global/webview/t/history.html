@@ -1,4 +1,4 @@
-<tr class="{% cycle 'row1' 'row2' %}">
+<tr class="{% cycle 'row1' 'row2' %}">{% load cache%}{% cache 3600 hilist req.id %}
  <td align="left">
   {% with req.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
  </td>
@@ -18,5 +18,5 @@
  </td>
  <td align="left">
   {% with req.requested_by as U%}{% include "webview/t/user.html" %}{% endwith %}
- </td>
+ </td>{% endcache %}
 </tr>

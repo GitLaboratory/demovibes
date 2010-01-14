@@ -17,7 +17,7 @@
  <th>Uploader</th>
  <th>Uploaded</th>
 </tr>
-{% for song in songs %}
+{% for song in songs %}{% cache 1800 ulsongs song.id %}
 <tr>
  <td>
   {% include "webview/t/songname.html" %}
@@ -43,7 +43,7 @@
  <td>
   <a href="{% url dv-uploads%}?song={{song.id}}&status=R"><img src="/static/thumb_down.png" alt="Reject"></a>
  </td>
-</tr>
+</tr>{% endcache %} 
 {% endfor %}
 </table>
 {% endblock %}

@@ -1,7 +1,7 @@
 {% extends "base/base.html" %}
 
 {% block title %}Recent Song Approvals{% endblock %}
-
+{% load cache %}
 {% block main %}
  <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Recently Approved Songs</h2>
 Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
@@ -16,7 +16,7 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
   <th>Status</th>
 </tr>
 {% if songs %}
-    {% for song in songs %}
+    {% for song in songs %}{% cache recsongs song.id %}
         <tr>
             <td>
                 {% with song.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
@@ -38,7 +38,7 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br><br>
                 <span name="a_queue_{{ song.song.id }}">{% with song.song as song %}{% include "webview/t/songlist_span_noauth.html" %}{% endwith %}</span>
                 {% with song.song as song %}{% include "webview/t/fav_icon.html" %}{% endwith %}
             </td>
-        </tr>
+        </tr>{% endcache %}
     {% endfor %}
 {% else %}
    <tr><td>No Entries!!</td><td></td><td></td><td></td><td></td><td></td></tr>
