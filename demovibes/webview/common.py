@@ -136,9 +136,13 @@ def get_latest_event():
         host = getattr(settings, 'EVENTFUL_HOST', "127.0.0.1")
         port = getattr(settings, 'EVENTFUL_PORT', 9911)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
-        s.send("event::")
-        result = s.recv(1024)
+        s.settimeout(5)
+        try:
+            s.connect((host, port))
+            s.send("event::")
+            result = s.recv(1024)
+        except socket.timeout:
+            return 0
         return result.strip()
     else:
         try:

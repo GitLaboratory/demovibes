@@ -10,21 +10,30 @@ from django.template import RequestContext
 from django.conf import settings
 from django.db.models import Q
 import time, datetime
+from django.core.cache import cache
 
 def monitor(request, event_id):
     if request.user.is_authenticated():
-        P = get_profile(request.user)
-        P.last_activity = datetime.datetime.now()
-        P.save()
+        key = "uonli_%s" % request.user.id
+        get = cache.get(key)
+        if not get:
+            P = get_profile(request.user)
+            P.last_activity = datetime.datetime.now()
+            P.save()
+            cache.set(key, "1", 100)
     use_eventful = getattr(settings, 'USE_EVENTFUL', False)
     if use_eventful:
         host = getattr(settings, 'EVENTFUL_HOST', "127.0.0.1")
         port = getattr(settings, 'EVENTFUL_PORT', 9911)
         userid = request.user and request.user.id or ""
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
-        s.send("get:%s:%s" % (userid, event_id))
-        result = s.recv(1024)
+        s.settimeout(240)
+        try:
+            s.connect((host, port))
+            s.send("get:%s:%s" % (userid, event_id))
+            result = s.recv(1024)
+        except socket.timeout:
+            result = ""
         return HttpResponse(result)
     else:
         for x in range(120):

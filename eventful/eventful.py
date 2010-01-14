@@ -1,7 +1,39 @@
 import socket
 import logging
+import threading
 
 Log = logging
+
+class messenger(threading.Thread):
+    def __init__(self, sock, events, eventid):
+        threading.Thread.__init__(self)
+        self.sock = sock
+        self.eventid = eventid
+        self.events = events
+
+    def mk_message(self, id, user = ""):
+        events = []
+        Log.debug("Message construct: id = '%s' and user = '%s'" % (id, user))
+        for e in self.events:
+            Log.debug("Message: checking event (user %s, id %s) : %s" % (e['user'], e['id'], e['event']) )
+            if int(e['id']) > int(id) and (e['user'] == user or e['user'] == ""):
+                if not e['event'] in events:
+                    events.append(e['event'])
+        message = "\n".join(events) + "\n!%s" % self.eventid
+        Log.debug("Make message: %s" % message)
+        return message
+
+    def send_message(self, sock):
+        Log.debug("Sending message to socket")
+        message = self.mk_message(sock['id'], sock['user'])
+        ml = len(message)
+        sent = 0
+        while ml > sent:
+            sent += sock['conn'].send(message[sent:ml])
+        sock['conn'].close()
+
+    def run(self):
+        self.send_message(self.sock)
 
 class locoland:
     def __init__(self, host = "127.0.0.1", port = 9911, max_events = 20):
@@ -24,32 +56,21 @@ class locoland:
 
     def send_events(self):
         Log.debug("Sending events to %s clients" % len(self.waiters))
+        events = self.events[:]
+        threads = []
+        eventid = int(self.eventid)
         while self.waiters:
             sock = self.waiters.pop()
-            self.send_message(sock)
-            del sock
+            t = messenger(sock, events, eventid)
+            threads.append(t)
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
-    def mk_message(self, id, user = ""):
-        events = []
-        Log.debug("Message construct: id = '%s' and user = '%s'" % (id, user))
-        for e in self.events:
-            Log.debug("Message: checking event (user %s, id %s) : %s" % (e['user'], e['id'], e['event']) )
-            if int(e['id']) > int(id) and e['user'] == user or e['user'] == "":
-                if not e['event'] in events:
-                    events.append(e['event'])
-        message = "\n".join(events) + "\n!%s" % self.eventid
-        Log.debug("Make message: %s" % message)
-        return message
-
-    def send_message(self, sock):
-        Log.debug("Sending message to socket")
-        message = self.mk_message(sock['id'], sock['user'])
-        ml = len(message)
-        sent = 0
-        while ml > sent:
-            sent += sock['conn'].send(message[sent:ml])
-        sock['conn'].close()
-
+    def send_message(self, info):
+        th = messenger(info, self.events, self.eventid)
+        th.start()
 
     def listen(self):
         while self.on:
@@ -65,8 +86,8 @@ class locoland:
                     if int(data) < self.eventid:
                         self.send_message(info)
                     else:
-                        Log.debug("Adding connecton to waiter list")
                         self.waiters.append(info)
+                        Log.debug("Adding connecton to waiter list (%s in list)" % len(self.waiters))
                 
                 if key == "set":
                     self.add_event(data, user)
@@ -82,7 +103,7 @@ class locoland:
                 if key == "event":
                     conn.send("%s\n" % self.eventid)
                     conn.close()
-            except:
+            except 99999:
                 conn.send("ERROR")
                 Log.warn("Error occurred, data : %s" % recv)
                 conn.close()

@@ -26,16 +26,18 @@ class BasicTest(TestCase):
         self.artist.delete()
 
     def login(self):
-        r = self.client.post(reverse("auth_login"), {'username': "testuser", 'password': "userpw"})
+        r = self.client.post(reverse("auth_login"), 
+            {'username': "testuser", 'password': "userpw"})
         self.assertNotEqual(r.status_code, 200)
     
     def testPagesLoad(self):
         """
         Basic check if pages load or not
         """
-        pages = ['dv-root', 'dv-songs', 'dv-platforms', "dv-streams", "dv-oneliner",
-                 "dv-search", "dv-recent", "dv-groups", "dv-artists", "dv-compilations",
-                 "dv-queue", "dv-labels", "dv-links", "dv-users_online"]
+        pages = ['dv-root', 'dv-songs', 'dv-platforms', "dv-streams", 
+                "dv-oneliner", "dv-search", "dv-recent", "dv-groups", 
+                "dv-artists", "dv-compilations", "dv-queue", "dv-labels", 
+                "dv-links", "dv-users_online"]
         pages = [reverse(a) for a in pages]
         
         pages.append(reverse("dv-artist", args = [self.artist.id]))
@@ -43,11 +45,13 @@ class BasicTest(TestCase):
         pages.append(reverse("dv-user-favs", args = [self.user.username]))
         
         restricted = ["dv-inbox", "dv-send_pm", "dv-my_profile", "dv-favorites",
-                      "dv-createartist", "dv-creategroup", "dv-createlabel", "dv-createlink"]
+                      "dv-createartist", "dv-creategroup", "dv-createlabel", 
+                      "dv-createlink"]
         restricted = [reverse(a) for a in restricted]
         restricted.append(reverse("dv-upload", args = [self.artist.id]))
         
-        admin = ["dv-newlinks", "dv-newlabels", "dv-newgroups", "dv-newartists", "dv-uploads"]
+        admin = ["dv-newlinks", "dv-newlabels", "dv-newgroups", 
+                "dv-newartists", "dv-uploads"]
         admin = [reverse(a) for a in admin]
         
         for page in pages:
@@ -73,9 +77,11 @@ class BasicTest(TestCase):
         Test of oneliner
         """
         r = self.client.post(reverse("dv-oneliner_submit"), {'Line': "Test"})
-        self.assertRedirects(r, reverse("auth_login")+"?next=%s" % reverse("dv-oneliner_submit"))
+        self.assertRedirects(r, 
+              reverse("auth_login")+"?next=%s" % reverse("dv-oneliner_submit"))
         
-        r = self.client.post(reverse("dv-ax-oneliner_submit"), {'Line': "TestFailLine12345675"})
+        r = self.client.post(reverse("dv-ax-oneliner_submit"), 
+          {'Line': "TestFailLine12345675"})
         self.assertContains(r, "NoAuth")
         self.assertEqual(models.Oneliner.objects.count(), 0)
         
@@ -90,7 +96,8 @@ class BasicTest(TestCase):
         self.assertContains(r, "TestMoo")
         self.assertContains(r, "testuser")
         
-        r = self.client.post(reverse("dv-ax-oneliner_submit"), {'Line': "TestLine12345678"})
+        r = self.client.post(reverse("dv-ax-oneliner_submit"), 
+            {'Line': "TestLine12345678"})
         r = self.client.post(reverse("dv-ax-oneliner_submit"), {'Line': ""})
         self.assertEqual(models.Oneliner.objects.count(), 2)
         r = self.client.get(reverse("dv-ax-oneliner"))
