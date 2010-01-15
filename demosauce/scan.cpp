@@ -4,11 +4,14 @@
 #include <iostream>
 
 #include "bass/bass.h"
+#include "bass/bass_aac.h"
+#include "bass/bassflac.h"
 
 #include "replay_gain/replay_gain.h"
 
 #include "logror.h"
 #include "decoder_common.h"
+#include "basssource.h"
 
 std::string TypeToString(DWORD channelType)
 {
@@ -23,6 +26,10 @@ std::string TypeToString(DWORD channelType)
 		case BASS_CTYPE_STREAM_WAV_PCM:
 		case BASS_CTYPE_STREAM_WAV_FLOAT:
 		case BASS_CTYPE_STREAM_WAV: return "wav";
+		case BASS_CTYPE_STREAM_AAC: return "aac";
+		case BASS_CTYPE_STREAM_MP4: return "mp4";
+		case BASS_CTYPE_STREAM_FLAC: return "flac";
+		case BASS_CTYPE_STREAM_FLAC_OGG: return "flac-ogg";
 		
 		case BASS_CTYPE_MUSIC_MOD: return "mod";
 		case BASS_CTYPE_MUSIC_MTM: return "mtm";
@@ -50,6 +57,15 @@ int main(int argc, char* argv[])
 	{
 		case decoder_codec_generic:
 			channel = BASS_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
+			break;
+		case decoder_codec_aac:
+			channel = BASS_AAC_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
+			break;
+		case decoder_codec_mp4:
+			channel = BASS_MP4_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
+			break;
+		case decoder_codec_flac:
+			channel = BASS_FLAC_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
 			break;
 		case decoder_module_generic:
 		case decoder_module_amiga:

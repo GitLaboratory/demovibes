@@ -9,15 +9,22 @@
 #define _H_SOCKETS_
 
 #include <string>
-#include <boost/asio.hpp>
+
 #include <boost/cstdint.hpp>
+#include <boost/utility.hpp>
+#include <boost/scoped_ptr.hpp>
+	
+struct SongInfo
+{
+	std::string fileName;
+	std::string title;
+};
 
-#include "globals.h"
-
-class Sockets
+class Sockets : boost::noncopyable
 {
 	public:
-		Sockets(std::string const & host, uint32_t port);	
+		Sockets(std::string const & host, uint32_t const port);
+		virtual ~Sockets();
 
 		/**	Tries to obtain the information from the designated host.
 		*	Guarantees to return or fail with style. If something goes wrong,
@@ -27,20 +34,11 @@ class Sockets
 		void GetSong(SongInfo & info);
 		
 	private:
-		
-		/**	Sends a command to designated endpoint.
-		*	@param command  command to be sent
-		*	@param result 
-		*		string is cleared and filled with result of command
-		*		content undefined if method returns false
-		*	@return true if successfull, false on any error.
-		*/
-		bool SendCommand(std::string const & command, std::string &  result);
-		std::string const host;
-		uint32_t const port;
-		boost::asio::io_service io;
+		struct Pimpl;
+		boost::scoped_ptr<Pimpl> pimpl;
 };
 
+// helper function, bass seems to be a bit buggy on that part
 bool ResolveIp(std::string host, std::string &ipAddress);
 
 #endif

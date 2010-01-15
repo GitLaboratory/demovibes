@@ -1,8 +1,9 @@
-#include <boost/thread/thread.hpp>
-#include <boost/format.hpp>
+#include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/thread/thread.hpp>
 
 #include "globals.h"
+#include "logror.h"
 #include "sockets.h"
 
 using namespace std;
@@ -11,14 +12,23 @@ using namespace boost::asio;
 using namespace logror;
 using boost::asio::ip::tcp;
 
-Sockets::Sockets(string const & host, uint32_t port):
-	host(host),
-	port(port)
+struct Sockets::Pimpl
 {
+	bool SendCommand(string const & command, string &  result);
+	string host;
+	uint32_t port;
+	io_service io;
+};
+
+Sockets::Sockets(string const & host, uint32_t const port):
+	pimpl(new Pimpl)
+{
+	pimpl->host = host;
+	pimpl->port = port;
 }
 
 bool 
-Sockets::SendCommand(string const & command, string &  result)
+Sockets::Pimpl::SendCommand(string const & command, string & result)
 {
 	result.clear(); // result string might conatin shit from lasst call or something
 	try
@@ -68,12 +78,12 @@ Sockets::GetSong(SongInfo & info)
 {
 	// since this is critical we try multiple times. no we're not. if it fails,
 	// we return error tune
-	if (!SendCommand("GETSONG", info.fileName))
+	if (!pimpl->SendCommand("GETSONG", info.fileName))
 	{
 		Error("socket command GETSONG failed");
 		info.fileName = setting::error_tune;
 	}
-	if (!SendCommand("GETMETA", info.title))
+	if (!pimpl->SendCommand("GETMETA", info.title))
 	{	
 		Log(warning, "failed to get title for %1%"), info.fileName;
 		info.title = setting::error_title;
@@ -101,3 +111,5 @@ bool ResolveIp(string host, std::string &ipAddress)
 	}
 	return true;
 }
+
+Sockets::~Sockets() {} // empty, to make scoped_ptr happy

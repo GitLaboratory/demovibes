@@ -4,25 +4,19 @@
 #include <string>
 
 #include <boost/cstdint.hpp>
+#include <boost/utility.hpp>
+#include <boost/scoped_ptr.hpp>
 
-#include "bass/bass.h"
-
-void BassSourceInit();
-
-bool BassSourceLoadStream(std::string fileName);
-void BassSourceFreeStream();
-/**	
-*	@return the number of  bytes written to buffer.
-*/
-uint32_t BassSourceFillBufferStream(void * buffer, uint32_t length);
-
-bool BassSourceLoadMusic(std::string fileName);
-void BassSourceFreeMusic();
-/**	
-*	@return the number of  bytes written to buffer.
-*/
-uint32_t BassSourceFillBufferMusic(void * buffer, uint32_t length);
-
-void LogBassError();
+class BassSource : boost::noncopyable
+{
+public:
+	BassSource();
+	virtual ~BassSource();
+	bool Load(std::string fileName);
+	uint32_t FillBuffer(void * buffer, uint32_t length);
+private:
+	struct Pimpl;
+	boost::scoped_ptr<Pimpl> pimpl;
+};
 
 #endif

@@ -19,5 +19,4 @@ if test $? -eq 0; then
 	rm -f $OUTPUT
 	ar rs $OUTPUT *.o
 	rm *.o
-	echo "done"
 fi

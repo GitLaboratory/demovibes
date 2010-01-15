@@ -1,14 +1,11 @@
-#include <cstdlib>
-#include <algorithm>
-
 #include <boost/format.hpp>
-#include <boost/static_assert.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
 #include "bass/bass.h"
 #include "bass/bassenc.h"
 
+#include "sockets.h"
 #include "decoder_common.h"
 #include "globals.h"
 #include "basssource.h"
@@ -19,116 +16,132 @@ using namespace std;
 using namespace boost;
 using namespace logror;
 
-DecoderType activeDecoder = decoder_nada;
-uint32_t (* ActiveFillBuffer) (void *, uint32_t) = NULL;
-HENCODE encoder = 0;
-HSTREAM sink = 0;
-uint32_t noiseBytes = 0;
+struct BassCastPimpl
+{
+	void Start();
+	void ChangeSong();
+	//-----------------
+	Sockets sockets;
+	BassSource bassSource;
+	DecoderType currentDecoder;
+	HENCODE encoder;
+	HSTREAM sink;
+	//-----------------
+	BassCastPimpl():
+		sockets(setting::demovibes_host, setting::demovibes_port),
+		currentDecoder(decoder_nada),
+		encoder(0),
+		sink(0) {}
+};
 
-uint32_t NoiseFillBuffer(void * buffer, uint32_t length)
-{ 
-	BOOST_STATIC_ASSERT(SAMPLE_SIZE == 2);
-	if (length < SAMPLE_SIZE * setting::encoder_channels)
-		return 0;
-	const size_t bytesToWrite = min(noiseBytes, length);
-	int16_t * out = reinterpret_cast<int16_t *>(buffer);
-	for (size_t i = 0; i < bytesToWrite / SAMPLE_SIZE; ++i)
-		*out++ = static_cast<int16_t>(rand() & 0x00ff);
-	noiseBytes -= bytesToWrite;
-	return bytesToWrite;
+BassCast::BassCast():
+	pimpl(new BassCastPimpl)
+{
+	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
+	if (!BASS_Init(0, setting::encoder_samplerate, 0, 0, NULL) &&
+		BASS_ErrorGetCode() != BASS_ERROR_ALREADY)
+		Fatal("BASS init failed (%1%)"), BASS_ErrorGetCode();
+	pimpl->ChangeSong();
+	pimpl->Start();	
+}
+
+void
+BassCast::Run()
+{   
+    const size_t buffSize = numeric_cast<size_t>(setting::encoder_samplerate);
+    char * buff = new char[buffSize]; // don't like buffers on stack 
+	for (;;)
+	{
+		// this should block once the streamer can't keep up
+		const DWORD bytesRead = BASS_ChannelGetData(pimpl->sink, buff, buffSize); 
+    	if (bytesRead == static_cast<DWORD>(-1))
+    	{
+    		delete buff;
+			Fatal("lost sink channel (%1%)"), BASS_ErrorGetCode();
+		}
+	}
+	delete buff; // never reached, but what the hell..
 }
 
 // this is called whenever the song is changed
-void ChangeSong()
+void 
+BassCastPimpl::ChangeSong()
 {
-	// free old decoder
-	switch (activeDecoder)
-	{
-		case decoder_codec_generic:
-			BassSourceFreeStream();
-			break;    
-		case decoder_module_generic:
-		case decoder_module_amiga:
-			BassSourceFreeMusic();
-			break;
-		default:;
-	}
-	activeDecoder = decoder_nada;
+	currentDecoder = decoder_nada;
 	SongInfo songInfo;
 	// find new decoder
-	while (activeDecoder == decoder_nada)
+	while (currentDecoder == decoder_nada)
 	{
-		songInfo = GetNextSong();
-		activeDecoder = DecideDecoderType(songInfo.fileName);
-		switch (activeDecoder)
+		sockets.GetSong(songInfo);
+		currentDecoder = DecideDecoderType(songInfo.fileName);
+		switch (currentDecoder)
 		{
 			case decoder_codec_generic:
-				if (!BassSourceLoadStream(songInfo.fileName))
-					activeDecoder = decoder_nada;
-				break;    
+			case decoder_codec_aac:
+			case decoder_codec_mp4:
+			case decoder_codec_flac:
 			case decoder_module_generic:
 			case decoder_module_amiga:
-				if (!BassSourceLoadMusic(songInfo.fileName))
-					activeDecoder = decoder_nada;
+				if (!bassSource.Load(songInfo.fileName))
+					currentDecoder = decoder_nada;
 				break;
 		default:;
 		}
-		if (activeDecoder == decoder_nada && songInfo.fileName == setting::error_tune)
+		if (currentDecoder == decoder_nada && songInfo.fileName == setting::error_tune)
 		{
-			activeDecoder = decoder_noise;
-			noiseBytes = setting::encoder_samplerate * setting::encoder_channels * SAMPLE_SIZE * 120; // 2 minutes
-			Log(warning, "could not play error_tune, playing some noise instead");
+			currentDecoder = decoder_noise;
+			// noise will be put back in later
+			Log(warning, "could not load error tune %1%, playing some noise instead"), songInfo.fileName;
 		}
 	}
-	// assign active decode function
-	switch (activeDecoder)
-	{
-		case decoder_noise:
-			ActiveFillBuffer = NoiseFillBuffer;
-		break;
-		case decoder_codec_generic:
-			ActiveFillBuffer = BassSourceFillBufferStream;
-			break;
-		case decoder_module_generic:
-		case decoder_module_amiga:
-			ActiveFillBuffer = BassSourceFillBufferMusic;
-			break;
-		default:
-			Fatal("grill your coder");
-	}	
 	BASS_Encode_CastSetTitle(encoder, songInfo.title.c_str(), NULL);
 }
 
 // this is where most of the shit happens
-DWORD CALLBACK FillBuffer(HSTREAM handle, void * buffer, DWORD length, void * user)
+DWORD 
+FillBuffer(HSTREAM handle, void * buffer, DWORD length, void * user)
 {
-	if (ActiveFillBuffer == NULL)
+	BassCastPimpl & pimpl = * reinterpret_cast<BassCastPimpl*>(user);
+	uint32_t bytesWritten = 0;
+	uint32_t const lengthier = numeric_cast<uint32_t>(length);
+	switch (pimpl.currentDecoder)
 	{
-		Log(warning, "ActiveFillBuffer is NULL");
-		memset(buffer, 0, length);
-		ChangeSong();
-		return length;
+		case decoder_noise:
+			// noise needs to be put back here
+			break;
+		case decoder_codec_generic:
+		case decoder_codec_aac:
+		case decoder_codec_mp4:
+		case decoder_codec_flac:
+		case decoder_module_generic:
+		case decoder_module_amiga:
+			bytesWritten = pimpl.bassSource.FillBuffer(buffer, lengthier);
+			break;
+		default:
+			Error("grill your coder");
+			memset(buffer, 0, length);
+			pimpl.ChangeSong();
+			return length;
 	}
-	const DWORD bytesWritten = numeric_cast<DWORD>(ActiveFillBuffer(buffer, length));
 	if (bytesWritten > length)
 		Fatal("WTF!? possible buffer overrun? quitting shitting my pants");
 	if (bytesWritten < length) // should indicate end of source file, needs to be testted irl
 	{
 		Log(info, "end of source, %1% bytes remaining"), bytesWritten;
-		memset(buffer, 0, length - bytesWritten); // fill rest of buffer with zeros. i'm way too lazy to mangle buffers at this point
-		ChangeSong();
+		memset(buffer, 0, length - bytesWritten); // fill rest of buffer with zeros. i'm way too lazy to juggle buffers
+		pimpl.ChangeSong();
 	}
 	return length;
 }
 
-void Start();
-
 // encoder death notification
-void CALLBACK EncoderNotify(HENCODE handle, DWORD status, void *user)
+void 
+EncoderNotify(HENCODE handle, DWORD status, void * user)
 {
+	BassCastPimpl & pimpl = * reinterpret_cast<BassCastPimpl*>(user);
 	if (status < 0x10000) 
 	{ 	// encoder/connection died
-		if (!BASS_Encode_Stop(encoder)) // free the recording and encoder
+		if (!BASS_Encode_Stop(pimpl.encoder)) // free the recording and encoder
 			Log(warning, "failed to stop old encoder %1%"), BASS_ErrorGetCode();
 		bool deadUplink = status == BASS_ENCODE_NOTIFY_CAST;
 		if (deadUplink)
@@ -136,14 +149,15 @@ void CALLBACK EncoderNotify(HENCODE handle, DWORD status, void *user)
 		else
 			Error("the encoder died");
 		this_thread::sleep(deadUplink ? posix_time::seconds(60) : posix_time::seconds(1));
-		Start(); // restart
+		pimpl.Start(); // restart
 	}
 }
 
-void Start()
+void 
+BassCastPimpl::Start()
 {
 	// set up source stream -- samplerate, number channels, flags, callback, user data
-	sink = BASS_StreamCreate(setting::encoder_samplerate, setting::encoder_channels, BASS_STREAM_DECODE, &FillBuffer, NULL);
+	sink = BASS_StreamCreate(setting::encoder_samplerate, setting::encoder_channels, BASS_STREAM_DECODE, &FillBuffer, this);
 	if (!sink)
 		Fatal("couldn't create sink (%1%)"), BASS_ErrorGetCode();
 	// setup encoder 
@@ -173,25 +187,4 @@ void Start()
 		Fatal("couldn't set callback cunction (%1%)"), BASS_ErrorGetCode();
 }
 
-void BassCastInit()
-{
-	// 0=no sound device, freq, no flags, console app, no clsid
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
-	if (!BASS_Init(0, setting::encoder_samplerate, 0, 0, NULL)) 
-		Fatal("BASS init failed (%1%)"), BASS_ErrorGetCode();
-	ChangeSong();
-	Start();
-}
-
-void BassCastRun()
-{   
-    const size_t buffSize = numeric_cast<size_t>(setting::encoder_samplerate);
-    char buff[buffSize]; // don't like buffers on stack 
-	for (;;)
-	{
-		// this should block once the streamer can't keep up
-		const DWORD bytesRead = BASS_ChannelGetData(sink, buff, buffSize); 
-    	if (bytesRead == static_cast<DWORD>(-1))
-			Fatal("lost sink channel (%1%)"), BASS_ErrorGetCode();
-	}
-}
+BassCast::~BassCast() {} // this HAS to be here, or scoped_ptr will poop in it's pants, header won't work.

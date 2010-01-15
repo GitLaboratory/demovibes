@@ -55,6 +55,7 @@ LogBlob LogAction(Level level, bool takeAction, std::string message);
 inline LogBlob Log(Level level, std::string message) { return LogAction(level, false, message);  }
 inline LogBlob Error(std::string message) { return LogAction(error, true, message); }
 inline LogBlob Fatal(std::string message) { return LogAction(fatal, true, message); }
+
 #ifdef DEBUG
 	#define LogDebug(message) logror::LogAction(logror::debug, false, message)
 #else

@@ -165,61 +165,6 @@ void RG_Analyze(RG_Context * context, void * data, uint32_t length)
 		AnalyzeSamples(context->cxt, context->buffer, NULL, length, 1);
 }
 
-void GainF64(RG_SampleFormat * format, double gain, void * data, uint32_t length)
-{
-	// gain is oblivious to channels and interleaving \o/
-	double const boobies = gain;
-	uint32_t const processLength = format->numberChannels * length; 
-	double * out = (double *) data;
-	for (size_t i = 0; i < processLength; i++)
-		*out++ *= boobies;
-}
-
-void GainF32(RG_SampleFormat * format, double gain, void * data, uint32_t length)
-{
-	float const boobies = (float) gain;
-	uint32_t const processLength = format->numberChannels * length; 
-	float * out = (float *) data;
-	for (size_t i = 0; i < processLength; i++)
-		*out++ *= boobies;
-}
-
-void GainS16(RG_SampleFormat * format, double gain, void * data, uint32_t length)
-{
-	float const boobies = (float) gain;
-	uint32_t const processLength = format->numberChannels * length; 
-	int16_t * out = (int16_t *) data;
-	for (size_t i = 0; i < processLength; i++)
-	{
-		*out = (int16_t) (boobies * *out);
-		out++;
-	}
-}
-
-void GainU8(RG_SampleFormat * format, double gain, void * data, uint32_t length)
-{
-	float const boobies = (float) gain;
-	uint32_t const processLength = format->numberChannels * length; 
-	uint8_t * out = (uint8_t *) data;
-	for (size_t i = 0; i < processLength; i++)
-	{
-		*out = 0x0f + (uint8_t) (boobies * (*out - 0x0f));
-		out++;
-	}
-}
-
-void RG_Apply(RG_SampleFormat * format, double gain, void * data, uint32_t length)
-{
-	switch (format->sampleFormat) 
-	{
-		case RG_UNSIGNED_8_BIT: GainU8(format, gain, data, length); break;
-		case RG_SIGNED_16_BIT: GainS16(format, gain, data, length); break;
-		case RG_FLOAT_32_BIT: GainF32(format, gain, data, length); break;
-		case RG_FLOAT_64_BIT: GainF64(format, gain, data, length); break;
-		default: return;
-	}
-}
-
 double RG_GetTitleGain(RG_Context * context)
 {
 	double gain = GetTitleGain(context->cxt);

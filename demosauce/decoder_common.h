@@ -11,6 +11,9 @@ enum DecoderType
 	decoder_nada,
 	decoder_noise,
 	decoder_codec_generic,
+	decoder_codec_aac,
+	decoder_codec_mp4,
+	decoder_codec_flac,
 	decoder_module_generic,
 	decoder_module_amiga
 };
@@ -23,9 +26,16 @@ DecideDecoderType(const std::string & fileName)
 		boost::iends_with(fileName, ".mp2") ||
 		boost::iends_with(fileName, ".mp1") ||
 		boost::iends_with(fileName, ".ogg") ||
-		boost::iends_with(fileName, ".aac") ||
-		boost::iends_with(fileName, ".m4a"))
+		boost::iends_with(fileName, ".wav") ||
+		boost::iends_with(fileName, ".aiff"))
 		type = decoder_codec_generic;
+	else if (boost::iends_with(fileName, ".aac"))
+		type = decoder_codec_aac;
+	else if (boost::iends_with(fileName, ".mp4") ||
+		boost::iends_with(fileName, ".m4a"))
+		type = decoder_codec_mp4;	
+	else if (boost::iends_with(fileName, ".flac"))
+		type = decoder_codec_flac;	
 	else if (boost::iends_with(fileName, ".xm") ||
 		boost::iends_with(fileName, ".s3m") ||
 		boost::iends_with(fileName, ".it"))

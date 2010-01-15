@@ -2,12 +2,10 @@
 #define _H_GLOBALS_
 
 #include <string>
-
 #include <boost/cstdint.hpp>
-
 #include "logror.h"
 
-// seddings, actual variables are in settings.cpp
+// seddings, actual instances are in settings.cpp
 namespace setting 
 {
 	extern std::string		demovibes_host;
@@ -28,18 +26,8 @@ namespace setting
 	extern std::string		log_file;
 	extern logror::Level	log_file_level;
 	extern logror::Level	log_console_level;
-	}
+}
 
-// definitons
-#define SAMPLE_SIZE 2 //16 bit processing, baby!
-	
-struct SongInfo
-{
-	std::string fileName;
-	std::string title;
-};
-
-// function declarations
-SongInfo GetNextSong();
+#define SAMPLE_SIZE 2 // 16 bit processing, baby! thats TWICE the BITS!
 
 #endif
