@@ -1031,8 +1031,13 @@ def wordwrap(value, arg=80):
 @register.filter
 def smileys(value):
 	"""
-	Replaces smiley text with images
+	Replaces smiley text with images. First, do secret smileys so we can replace
+	Smileys pre-converted with others later.
 	"""
+	secretsmileys = settings.SECRETSMILEYS
+	for smiley in secretsmileys:
+	    value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" title="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[2]), value)
+
 	smileys = settings.SMILEYS
 	for smiley in smileys:
 	    # Smiley patch provided by Korkut. AAK

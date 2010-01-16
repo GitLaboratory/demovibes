@@ -1,5 +1,6 @@
 # Django settings for demovibes project.
 from smileys import SMILEYS
+from secretsmileys import SECRETSMILEYS
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
