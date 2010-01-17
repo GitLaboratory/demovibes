@@ -1,6 +1,6 @@
 /*
 	fancy streaming engine for scenemusic 
-	slapped together by maep, [put your names here]  2009
+	slapped together by maep, [put your names here]  2009, 2010
 	
 	BEHOLD, A FUCKING PONY!
 	

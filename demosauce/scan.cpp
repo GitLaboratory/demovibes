@@ -43,78 +43,58 @@ std::string TypeToString(DWORD channelType)
 
 int main(int argc, char* argv[])
 {
-	logror::LogSetConsoleLevel(logror::error);
+	logror::LogSetConsoleLevel(logror::fatal);
 	if (argc < 2 || (*argv[1] == '-' && argc < 3)) 
 		logror::Fatal("not enough arguments");
 	const char * fileName = argv[argc - 1];
 	
 	// open file
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
-	BASS_Init(0, 44100, 0, 0, NULL);
-	const DecoderType decoderType = DecideDecoderType(fileName);
-	DWORD channel = 0;
-	switch(decoderType)
+	BassSource source;
+	bool success = false;
+	switch(DecideDecoderType(fileName))
 	{
 		case decoder_codec_generic:
-			channel = BASS_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
-			break;
 		case decoder_codec_aac:
-			channel = BASS_AAC_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
-			break;
 		case decoder_codec_mp4:
-			channel = BASS_MP4_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
-			break;
 		case decoder_codec_flac:
-			channel = BASS_FLAC_StreamCreateFile(FALSE, fileName, 0, 0, BASS_STREAM_DECODE | BASS_STREAM_PRESCAN);
+			success = source.Load(fileName, true);
 			break;
 		case decoder_module_generic:
 		case decoder_module_amiga:
-			channel = BASS_MusicLoad(FALSE, fileName, 0, 0, BASS_MUSIC_DECODE | BASS_MUSIC_PRESCAN, 44100);
+			success = source.Load(fileName, true);
 			break;
-		default:
-			logror::Fatal("unsupported file type");
+		default:;
 	}
-	// conduct some tests
-	BASS_CHANNELINFO info;
-	BASS_ChannelGetInfo(channel, &info);
-	
-	if (info.chans < 1 || info.chans > 2)
-		logror::Fatal("usupported number of channels");
-	if (BASS_ErrorGetCode() != BASS_OK)
-		logror::Fatal("BASS returned error code %1%"), BASS_ErrorGetCode();
-	// get type
-	std::cout << "type:" << TypeToString(info.ctype) << std::endl;
-	// get length
-	const QWORD chanLength = BASS_ChannelGetLength(channel, BASS_POS_BYTE);
-	if (chanLength == static_cast<QWORD>(-1))
-		logror::Fatal("unable to determine length (%1%)"), fileName;
-	const int time = BASS_ChannelBytes2Seconds(channel, chanLength);
-	std::cout << "length:" << time << std::endl;
-	// get bitrate
-	if (decoderType == decoder_codec_generic)
+	if (!success)
 	{
-		const DWORD fileLength = BASS_StreamGetFilePosition(channel, BASS_FILEPOS_END);
-		const int bitrate = static_cast<int>(fileLength / (125 * time) + 0.5);
-		std::cout << "bitrate:" << bitrate << std::endl;
-	} 
-	else
-		std::cout << "bitrate:n/a\n";
-	// get replay gain vaule
+		if (BASS_ErrorGetCode() == BASS_ERROR_NOTAVAIL)
+			logror::Fatal("unalbe to determine length");
+		else
+			logror::Fatal("failed to load file (code: %1%)"), BASS_ErrorGetCode();
+	}
+	if (source.Channels() < 1 || source.Channels() > 2)
+		logror::Fatal("usupported number of channels");
+
+	std::cout << "type:" << TypeToString(source.BassChannelType()) << std::endl;
+	std::cout << "length:" << source.Duration() << std::endl;
+	std::cout << "bitrate:" << source.Bitrate() << std::endl;
+	
 	if (strcmp(argv[1], "--no-replay_gain"))
 	{
 		RG_SampleFormat format;
-		format.sampleRate = info.freq;
+		format.sampleRate = source.Samplerate();
 		format.sampleFormat = RG_SIGNED_16_BIT;
-		format.numberChannels = info.chans;
+		format.numberChannels = source.Channels();
 		format.interleaved = TRUE;
 		RG_Context * context = RG_NewContext(&format);
-		char buffer[96000]; 
-		DWORD bytes = 0;
-		while ((bytes = BASS_ChannelGetData(channel, buffer, sizeof(buffer))) == sizeof(buffer))
-		RG_Analyze(context, buffer, bytes / info.chans / RG_FormatSize(RG_SIGNED_16_BIT));
+		int16_t buffer[48000 * 8];
+		static uint32_t const buffFrames = 
+			bytes2frames<uint32_t, int16_t>(sizeof(buffer), source.Channels());
+		uint32_t frames = 0;
+		while ((frames = source.Process(buffer, buffFrames)) == buffFrames)	
+			RG_Analyze(context, buffer, frames);
 		std::cout << "replaygain:" << RG_GetTitleGain(context) << std::endl;
 		RG_FreeContext(context);
 	}
-	// theoretically all resources should be freed here. just so you know :D
 	return EXIT_SUCCESS;
 }

@@ -9,7 +9,6 @@
 enum DecoderType
 {
 	decoder_nada,
-	decoder_noise,
 	decoder_codec_generic,
 	decoder_codec_aac,
 	decoder_codec_mp4,
@@ -43,7 +42,7 @@ DecideDecoderType(const std::string & fileName)
 	else if (boost::iends_with(fileName, ".mod"))
 		type = decoder_module_amiga;
 	else
-		logror::Error("no decoder for %1%"), fileName;
+		logror::Log(logror::warning, "no decoder for %1%"), fileName;
 	return type;
 }
 

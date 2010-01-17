@@ -4,10 +4,10 @@
 flags='-Wall -Wfatal-errors'
 flags_debug='-g -DDEBUG'
 flags_release='-s -O2'
-source_files='dsp.cpp logror.cpp scan.cpp basssource.cpp basscast.cpp sockets.cpp settings.cpp demosauce.cpp'
-link_scan='logror.o scan.o'
+source_files='basscast.cpp dsp.cpp basssource.cpp scan.cpp sockets.cpp demosauce.cpp settings.cpp logror.cpp'
+link_scan='logror.o basssource.o scan.o'
 flags_scan='-lbass -lbass_aac -lbassflac -lboost_date_time-mt'
-link_demosauce='logror.o basssource.o basscast.o sockets.o settings.o demosauce.o'
+link_demosauce='dsp.o logror.o basssource.o basscast.o sockets.o settings.o demosauce.o'
 flags_demosauce='-lbass -lbassenc -lbass_aac -lbassflac -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_date_time-mt'
 
 build_debug=
@@ -71,4 +71,4 @@ echo 'linking demosauce'
 g++ $flags $flags_demosauce $flags_bass $link_demosauce -o demosauce
 if test $? -ne 0; then exit 1; fi
 
-rm -f *.o
+if test ! $do_lazy; then rm -f *.o; fi

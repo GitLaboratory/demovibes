@@ -169,7 +169,7 @@ double RG_GetTitleGain(RG_Context * context)
 {
 	double gain = GetTitleGain(context->cxt);
 	if (gain == GAIN_NOT_ENOUGH_SAMPLES)
-		return 1;
+		return 0; // no change
 	return gain;
 }
 
@@ -177,6 +177,6 @@ double RG_GetAlbumGain(RG_Context * context)
 {
 	double gain = GetAlbumGain(context->cxt);
 	if (gain == GAIN_NOT_ENOUGH_SAMPLES)
-		return 1;
+		return 0; // no change
 	return gain;	
 }

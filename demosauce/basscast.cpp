@@ -1,3 +1,4 @@
+#include <cstring>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/numeric/conversion/cast.hpp>
@@ -5,16 +6,22 @@
 #include "bass/bass.h"
 #include "bass/bassenc.h"
 
-#include "sockets.h"
-#include "decoder_common.h"
 #include "globals.h"
-#include "basssource.h"
 #include "sockets.h"
+#include "dsp.h"
+#include "basssource.h"
 #include "basscast.h"
 
 using namespace std;
 using namespace boost;
 using namespace logror;
+
+/*	current processing stack layout, () machines can be bypassed
+	NoiseSource -> (BassSource) -> MapChannels -> Gain -> BassCast
+	planned layout:
+	NoiseSource -> (BassSource) -> (Resample) -> (MixChannels) -> MapChannels ->
+	(LinearFade) -> Gain -> BassCast
+*/
 
 struct BassCastPimpl
 {
@@ -22,33 +29,43 @@ struct BassCastPimpl
 	void ChangeSong();
 	//-----------------
 	Sockets sockets;
-	BassSource bassSource;
-	DecoderType currentDecoder;
+	MachineStack machineStack;
+	shared_ptr<BassSource> bassSource;
+	shared_ptr<NoiseSource> noiseSource;
+	shared_ptr<MapChannels> mapChannels;
+	shared_ptr<Gain> gain;
 	HENCODE encoder;
 	HSTREAM sink;
 	//-----------------
-	BassCastPimpl():
+	BassCastPimpl() :
 		sockets(setting::demovibes_host, setting::demovibes_port),
-		currentDecoder(decoder_nada),
+		bassSource(new BassSource),
+		noiseSource(new NoiseSource),
+		mapChannels(new MapChannels),
+		gain(new Gain),
 		encoder(0),
-		sink(0) {}
+		sink(0) 
+		{
+			BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
+			if (!BASS_Init(0, setting::encoder_samplerate, 0, 0, NULL) &&
+				BASS_ErrorGetCode() != BASS_ERROR_ALREADY)
+				Fatal("BASS init failed (%1%)"), BASS_ErrorGetCode();
+			mapChannels->SetOutChannels(setting::encoder_channels);
+			machineStack.AddMachine(noiseSource);
+			machineStack.AddMachine(bassSource);
+			machineStack.AddMachine(mapChannels);
+			machineStack.AddMachine(gain);
+			machineStack.UpdateRouting();
+			ChangeSong();	
+			Start();
+		}
 };
 
-BassCast::BassCast():
-	pimpl(new BassCastPimpl)
-{
-	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
-	if (!BASS_Init(0, setting::encoder_samplerate, 0, 0, NULL) &&
-		BASS_ErrorGetCode() != BASS_ERROR_ALREADY)
-		Fatal("BASS init failed (%1%)"), BASS_ErrorGetCode();
-	pimpl->ChangeSong();
-	pimpl->Start();	
-}
+BassCast::BassCast() : pimpl(new BassCastPimpl) { }
 
-void
-BassCast::Run()
+void BassCast::Run()
 {   
-    const size_t buffSize = numeric_cast<size_t>(setting::encoder_samplerate);
+    const size_t buffSize = numeric_cast<size_t>(setting::encoder_samplerate * 2);
     char * buff = new char[buffSize]; // don't like buffers on stack 
 	for (;;)
 	{
@@ -64,100 +81,71 @@ BassCast::Run()
 }
 
 // this is called whenever the song is changed
-void 
-BassCastPimpl::ChangeSong()
+void BassCastPimpl::ChangeSong()
 {
-	currentDecoder = decoder_nada;
+	// reset routing
+	bassSource->SetBypass(false);
 	SongInfo songInfo;
-	// find new decoder
-	while (currentDecoder == decoder_nada)
+	for (bool loadSuccess = false; !loadSuccess;)
 	{
 		sockets.GetSong(songInfo);
-		currentDecoder = DecideDecoderType(songInfo.fileName);
-		switch (currentDecoder)
+		loadSuccess = bassSource->Load(songInfo.fileName);
+		gain->SetAmp(songInfo.gain);
+		if (!loadSuccess && songInfo.fileName == setting::error_tune)
 		{
-			case decoder_codec_generic:
-			case decoder_codec_aac:
-			case decoder_codec_mp4:
-			case decoder_codec_flac:
-			case decoder_module_generic:
-			case decoder_module_amiga:
-				if (!bassSource.Load(songInfo.fileName))
-					currentDecoder = decoder_nada;
-				break;
-		default:;
-		}
-		if (currentDecoder == decoder_nada && songInfo.fileName == setting::error_tune)
-		{
-			currentDecoder = decoder_noise;
-			// noise will be put back in later
-			Log(warning, "could not load error tune %1%, playing some noise instead"), songInfo.fileName;
+			Log(warning, "no error tune, playing 2 minutes of glorious noise"), songInfo.fileName;
+			noiseSource->Set(setting::encoder_channels, 120 * setting::encoder_samplerate);
+			bassSource->SetBypass(true);
+			loadSuccess = true;
 		}
 	}
+	machineStack.UpdateRouting();
 	BASS_Encode_CastSetTitle(encoder, songInfo.title.c_str(), NULL);
 }
 
 // this is where most of the shit happens
-DWORD 
-FillBuffer(HSTREAM handle, void * buffer, DWORD length, void * user)
+DWORD FillBuffer(HSTREAM handle, void * buffer, DWORD length, void * user)
 {
 	BassCastPimpl & pimpl = * reinterpret_cast<BassCastPimpl*>(user);
-	uint32_t bytesWritten = 0;
-	uint32_t const lengthier = numeric_cast<uint32_t>(length);
-	switch (pimpl.currentDecoder)
-	{
-		case decoder_noise:
-			// noise needs to be put back here
-			break;
-		case decoder_codec_generic:
-		case decoder_codec_aac:
-		case decoder_codec_mp4:
-		case decoder_codec_flac:
-		case decoder_module_generic:
-		case decoder_module_amiga:
-			bytesWritten = pimpl.bassSource.FillBuffer(buffer, lengthier);
-			break;
-		default:
-			Error("grill your coder");
-			memset(buffer, 0, length);
-			pimpl.ChangeSong();
-			return length;
-	}
-	if (bytesWritten > length)
+	uint32_t const & channels = setting::encoder_channels;
+	uint32_t framesWritten = 0;
+	uint32_t const frames = bytes2frames<uint32_t, int16_t>(length, channels);
+	framesWritten = pimpl.machineStack.Process(reinterpret_cast<int16_t*>(buffer), frames);
+	if (framesWritten > frames)
 		Fatal("WTF!? possible buffer overrun? quitting shitting my pants");
-	if (bytesWritten < length) // should indicate end of source file, needs to be testted irl
+	if (framesWritten < frames) // implicates end of stream
 	{
-		Log(info, "end of source, %1% bytes remaining"), bytesWritten;
-		memset(buffer, 0, length - bytesWritten); // fill rest of buffer with zeros. i'm way too lazy to juggle buffers
+		Log(info, "end of source, %1% frames remaining"), frames - framesWritten;
+		size_t const bytesWritten = frames2bytes<size_t, int16_t>(framesWritten, channels);
+		memset(reinterpret_cast<char*>(buffer) + bytesWritten, 0, length - bytesWritten);
 		pimpl.ChangeSong();
 	}
 	return length;
 }
 
 // encoder death notification
-void 
-EncoderNotify(HENCODE handle, DWORD status, void * user)
+void EncoderNotify(HENCODE handle, DWORD status, void * user)
 {
-	BassCastPimpl & pimpl = * reinterpret_cast<BassCastPimpl*>(user);
-	if (status < 0x10000) 
-	{ 	// encoder/connection died
-		if (!BASS_Encode_Stop(pimpl.encoder)) // free the recording and encoder
-			Log(warning, "failed to stop old encoder %1%"), BASS_ErrorGetCode();
-		bool deadUplink = status == BASS_ENCODE_NOTIFY_CAST;
-		if (deadUplink)
-			Error("the server connection died");
-		else
-			Error("the encoder died");
-		this_thread::sleep(deadUplink ? posix_time::seconds(60) : posix_time::seconds(1));
-		pimpl.Start(); // restart
-	}
+	BassCastPimpl & pimpl = * reinterpret_cast<BassCastPimpl *>(user);
+	if (status >= 0x10000) 
+		return;
+	if (!BASS_Encode_Stop(pimpl.encoder)) 
+		Log(warning, "failed to stop old encoder %1%"), BASS_ErrorGetCode();
+	bool deadUplink = status == BASS_ENCODE_NOTIFY_CAST;
+	if (deadUplink)
+		Error("the server connection died");
+	else
+		Error("the encoder died");
+	this_thread::sleep(deadUplink ? posix_time::seconds(60) : posix_time::seconds(1));
+	pimpl.Start();
 }
 
 void 
 BassCastPimpl::Start()
 {
 	// set up source stream -- samplerate, number channels, flags, callback, user data
-	sink = BASS_StreamCreate(setting::encoder_samplerate, setting::encoder_channels, BASS_STREAM_DECODE, &FillBuffer, this);
+	sink = BASS_StreamCreate(setting::encoder_samplerate, setting::encoder_channels, 
+		BASS_STREAM_DECODE, &FillBuffer, this);
 	if (!sink)
 		Fatal("couldn't create sink (%1%)"), BASS_ErrorGetCode();
 	// setup encoder 
@@ -167,8 +155,8 @@ BassCastPimpl::Start()
 	if (!encoder) 
 		Fatal("couldn't start encoder (%1%)"), BASS_ErrorGetCode();
 	// setup casting
-	string host = setting::cast_host; //
-	ResolveIp(setting::cast_host, host); // bass didn't resolve localhost, but if this fails we try anyways
+	string host = setting::cast_host; 
+	ResolveIp(setting::cast_host, host); // if resolve fails, host will retain it's original value
 	string server = str(format("%1%:%2%/%3%") % host % setting::cast_port % setting::cast_mount);
 	const char * pass = setting::cast_password.c_str();
 	const char * content = BASS_ENCODE_TYPE_MP3;

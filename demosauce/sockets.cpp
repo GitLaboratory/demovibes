@@ -76,18 +76,21 @@ Sockets::Pimpl::SendCommand(string const & command, string & result)
 void 
 Sockets::GetSong(SongInfo & info)
 {
-	// since this is critical we try multiple times. no we're not. if it fails,
-	// we return error tune
 	if (!pimpl->SendCommand("GETSONG", info.fileName))
 	{
 		Error("socket command GETSONG failed");
 		info.fileName = setting::error_tune;
 	}
 	if (!pimpl->SendCommand("GETMETA", info.title))
-	{	
-		Log(warning, "failed to get title for %1%"), info.fileName;
 		info.title = setting::error_title;
-	}
+	info.gain = 1; 
+	/* uncomment to enable GETGAIN command, remove line above
+	string gain;
+	if (!pimpl->SendCommand("GETGAIN", gain))
+		gain = "1";
+	try { info.gain = lexical_cast<float>(gain); }
+	catch (bad_lexical_cast &) { info.gain = 1; }
+	*/
 }
 
 bool ResolveIp(string host, std::string &ipAddress)
