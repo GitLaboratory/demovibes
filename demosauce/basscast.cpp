@@ -90,7 +90,7 @@ void BassCastPimpl::ChangeSong()
 	{
 		sockets.GetSong(songInfo);
 		loadSuccess = bassSource->Load(songInfo.fileName);
-		gain->SetAmp(songInfo.gain);
+		gain->SetAmp(DbToAmp(songInfo.gain));
 		if (!loadSuccess && songInfo.fileName == setting::error_tune)
 		{
 			Log(warning, "no error tune, playing 2 minutes of glorious noise"), songInfo.fileName;
