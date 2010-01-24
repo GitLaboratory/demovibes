@@ -552,8 +552,17 @@ def create_artist(request):
     """
     Simple form to allow registereed users to create a new artist entry.
     """
+    auto_approve = getattr(settings, 'ADMIN_AUTO_APPROVE_ARTIST', 0)
+    
     if request.method == 'POST':
-        a = Artist(created_by = request.user, status = 'U')
+        # Check to see if moderation settings allow for the check
+        if request.user.is_staff and auto_approve == 1:
+            # Automatically approved due to Moderator status
+            status = 'A'
+        else:
+            status = 'U'
+            
+        a = Artist(created_by = request.user, status = status)
         form = CreateArtistForm(request.POST, request.FILES, instance = a)
         if form.is_valid():
             new_artist = form.save(commit=False)
@@ -593,8 +602,9 @@ def activate_artists(request):
         artist.save()
         
         # Send the email to inform the user of their request status
-        PrivateMessage.objects.create(sender = request.user, to = artist.created_by,\
-         message = mail_tpl.render(c), subject = "Artist Request Status Changed To: %s" % stat)
+        if song.uploader.get_profile().email_on_artist_add and status == 'A' or status == 'R':
+            PrivateMessage.objects.create(sender = request.user, to = artist.created_by,\
+             message = mail_tpl.render(c), subject = "Artist Request Status Changed To: %s" % stat)
 
     artists =Artist.objects.filter(status = "U").order_by('last_updated')
     return render_to_response('webview/pending_artists.html', { 'artists': artists }, context_instance=RequestContext(request))
@@ -604,8 +614,18 @@ def create_group(request):
     """
     Simple form to allow registereed users to create a new group entry.
     """
+    auto_approve = getattr(settings, 'ADMIN_AUTO_APPROVE_GROUP', 0)
+    
     if request.method == 'POST':
-        g = Group(created_by = request.user, status = 'U')
+        # Check to see if moderation settings allow for the check
+        if request.user.is_staff and auto_approve == 1:
+            # Automatically approved due to Moderator status
+            status = 'A'
+        else:
+            status = 'U'
+            
+    if request.method == 'POST':
+        g = Group(created_by = request.user, status = status)
         form = CreateGroupForm(request.POST, request.FILES, instance = g)
         if form.is_valid():
             new_group = form.save(commit=False)
@@ -645,8 +665,9 @@ def activate_groups(request):
         group.save()
         
         # Send the email to inform the user of their request status
-        PrivateMessage.objects.create(sender = request.user, to = group.created_by,\
-         message = mail_tpl.render(c), subject = "Group Request Status Changed To: %s" % stat)
+        if song.uploader.get_profile().email_on_group_add and status == 'A' or status == 'R':
+            PrivateMessage.objects.create(sender = request.user, to = group.created_by,\
+             message = mail_tpl.render(c), subject = "Group Request Status Changed To: %s" % stat)
 
     groups =Group.objects.filter(status = "U").order_by('last_updated')
     return render_to_response('webview/pending_groups.html', { 'groups': groups }, context_instance=RequestContext(request))
@@ -656,8 +677,18 @@ def create_label(request):
     """
     Simple form to allow registereed users to create a new label entry.
     """
+    auto_approve = getattr(settings, 'ADMIN_AUTO_APPROVE_LABEL', 0)
+    
     if request.method == 'POST':
-        l = Label(created_by = request.user, status = 'U')
+        # Check to see if moderation settings allow for the check
+        if request.user.is_staff and auto_approve == 1:
+            # Automatically approved due to Moderator status
+            status = 'A'
+        else:
+            status = 'U'
+            
+    if request.method == 'POST':
+        l = Label(created_by = request.user, status = status)
         form = CreateLabelForm(request.POST, request.FILES, instance = l)
         if form.is_valid():
             new_label = form.save(commit=False)
@@ -697,8 +728,9 @@ def activate_labels(request):
         this_label.save()
         
         # Send the email to inform the user of their request status
-        PrivateMessage.objects.create(sender = request.user, to = this_label.created_by,\
-         message = mail_tpl.render(c), subject = "Label Request Status Changed To: %s" % stat)
+        if song.uploader.get_profile().email_on_label_add and status == 'A' or status == 'R':
+            PrivateMessage.objects.create(sender = request.user, to = this_label.created_by,\
+             message = mail_tpl.render(c), subject = "Label Request Status Changed To: %s" % stat)
 
     labels = Label.objects.filter(status = "U").order_by('last_updated')
     return render_to_response('webview/pending_labels.html', { 'labels': labels }, context_instance=RequestContext(request))

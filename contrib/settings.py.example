@@ -111,6 +111,18 @@ MAX_LINK_IMG_HEIGHT = 18
 # Email notification will be sent if this occurs. Default is Off (0). Set to 1 to Enable.
 ADMIN_AUTO_APPROVE_UPLOADS = 0
 
+# Auto-Approve Admin Artist Creations
+ADMIN_AUTO_APPROVE_ARTIST = 0
+
+# Auto-Approve Admin Group Creations
+ADMIN_AUTO_APPROVE_GROUP = 0
+
+# Auto-Approve Admin Label Creations
+ADMIN_AUTO_APPROVE_LABEL = 0
+
+# Auto-Approve Admin Compilation Creations
+ADMIN_AUTO_APPROVE_COMPILATION = 0
+
 # Max internal length of the oneliner, in characters
 MAX_ONELINER_LENGTH = 256
 

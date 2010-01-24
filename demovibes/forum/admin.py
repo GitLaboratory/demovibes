@@ -13,6 +13,7 @@ class PostAdmin(admin.ModelAdmin):
 
 class ThreadAdmin(admin.ModelAdmin):
     list_display = ['title', 'forum', 'sticky', 'closed']
+    search_fields = ['title']
 
 admin.site.register(Forum, ForumAdmin)
 admin.site.register(Thread, ThreadAdmin)
