@@ -355,7 +355,7 @@ class Song(models.Model):
             ('E', 'Reported'),
             ('U', 'Uploaded'),
             ('M', 'Moved'), # Moved to CVGM/Necta (Depending on content, see [thread]286[/thread] on Necta)
-            ('N', 'Needs Re-Encoding'), # Requested by Arab. AAK
+            ('N', 'Needs Re-Encoding'), # Technically, this track can still play even though it needs re-encoded. AAK
             ('C', 'Removed By Request'), # If we are asked to remove a track. AAK
             ('R', 'Rejected')
         )
@@ -504,7 +504,7 @@ class Song(models.Model):
 
         This function compares the time it was last queued
         """
-        if self.status != 'A':
+        if self.status != 'A' and self.status != 'N':
             return True
         #last = self.last_queued()
         if not self.locked_until or self.locked_until < datetime.datetime.now():
