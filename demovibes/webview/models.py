@@ -36,7 +36,7 @@ from managers import *
 alphalist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '-']
 
 class Group(models.Model):
-    name = models.CharField(max_length=30, unique = True, db_index = True, verbose_name="* Name", help_text="The name of this group as you want it to appear.")
+    name = models.CharField(max_length=80, unique = True, db_index = True, verbose_name="* Name", help_text="The name of this group as you want it to appear.")
     webpage = models.URLField(blank=True, verbose_name="Website", help_text="Add the website address for this group, if one exists.")
     wiki_link = models.URLField(blank=True, help_text="URL to wikipedia entry (if available)")
     group_icon = models.ImageField(help_text="Group Icon (Shows instead of default icon)", upload_to = 'media/groups/icons', blank = True, null = True)
@@ -46,7 +46,7 @@ class Group(models.Model):
     pouetid = models.IntegerField(verbose_name="Pouet ID", help_text="If this group has a Pouet entry, enter the ID number here - See http://www.pouet.net", blank=True, null = True)
     found_date = models.DateField(verbose_name="Found Date", help_text="Date this group was formed (YYYY-MM-DD)", null=True, blank = True)
     created_by = models.ForeignKey(User,  null = True, blank = True, related_name="group_createdby")
-    last_updated = models.DateTimeField(blank = True, null = True)
+    last_updated = models.DateTimeField(editable = False, blank = True, null = True)
     
     STATUS_CHOICES = (
             ('A', 'Active'),
@@ -190,7 +190,7 @@ class Label(models.Model):
     found_date = models.DateField(help_text="Date label was formed (YYYY-MM-DD)", null=True, blank = True)
     cease_date = models.DateField(help_text="Date label was closed/went out of business (YYYY-MM-DD)", null=True, blank = True)
     created_by = models.ForeignKey(User,  null = True, blank = True, related_name="label_createdby")
-    last_updated = models.DateTimeField(blank = True, null = True)
+    last_updated = models.DateTimeField(editable = False, blank = True, null = True)
     
     STATUS_CHOICES = (
             ('A', 'Active'),
@@ -240,7 +240,7 @@ class Artist(models.Model):
     info = models.TextField(blank = True, help_text="Additional artist information. No HTML allowed.")
     alias_of = models.ForeignKey('self', null = True, blank = True, related_name='aliases')
     created_by = models.ForeignKey(User,  null = True, blank = True, related_name="artist_createdby")
-    last_updated = models.DateTimeField(blank = True, null = True)
+    last_updated = models.DateTimeField(editable = False, blank = True, null = True)
     
     STATUS_CHOICES = (
             ('A', 'Active'),
@@ -278,19 +278,32 @@ class ArtistVote(models.Model):
     Kind of like the ratings on poeut a bit too hehe. AAK
     """
     artist = models.ForeignKey(Artist)
-    vote = models.IntegerField(default=0)
+    VOTE_CHOICES = (
+            ('U', 'Thumbs Up'),
+            ('N', 'Neutral'),
+            ('D', 'Thumbs Down')
+        )
+    rating = models.CharField(max_length = 1, choices = VOTE_CHOICES, default = 'U')
+    comment = models.CharField(max_length=250, verbose_name="Comment", help_text="Enter your comments about this artist. 1 entry per user.")
     user = models.ForeignKey(User)
     added = models.DateTimeField(auto_now_add=True)
 
 class SongType(models.Model):
     title = models.CharField(max_length=64, unique = True)
     description = models.TextField()
+    symbol = models.ImageField(upload_to = 'media/songsource/symbol', blank = True, null = True)
+    image = models.ImageField(upload_to = 'media/songsource/image', blank = True, null = True)
 
     def __unicode__(self):
         return self.title
         
     class meta:
+        ordering = ['title']
         verbose_name = 'Song Source'
+        
+    @models.permalink
+    def get_absolute_url(self):
+        return ("dv-source", [str(self.id)])
     
 class SongPlatform(models.Model):
     title = models.CharField(max_length=64, unique = True)
@@ -324,13 +337,16 @@ class Song(models.Model):
     groups = models.ManyToManyField(Group, null = True, blank = True)
     labels = models.ManyToManyField(Label, null = True, blank = True) # Production labels
     title = models.CharField(verbose_name="* Song Name", help_text="The name of this song, as it should appear in the database", max_length=80, db_index = True)
-    file = models.FileField(upload_to='media/music', verbose_name="File", help_text="Select an MP3 file to upload. The MP3 should be between 128 and 320Kbps, Stereo or Joint Stereo, with a Constant Bitrate.")
-    pouetid = models.IntegerField(blank=True, null = True, help_text="Pouet number (which= portion) from Pouet.net")
+    file = models.FileField(upload_to='media/music', verbose_name="File", help_text="Select an MP3 file to upload. The MP3 should be between 128 and 320Kbps, with a Constant Bitrate.")
+    explicit = models.BooleanField(default=False, verbose_name = "Explicit Lyrics?", help_text="Place a checkmark in the box to flag this song as having explicit lyrics/content")
+    pouetid = models.IntegerField(blank=True, null = True, help_text="Pouet number (which= number) from Pouet.net", verbose_name="Pouet ID")
+    dtv_id = models.IntegerField(blank=True, null = True, help_text="Demoscene TV number (id_prod= number) from Demoscene.tv", verbose_name="Demoscene.TV")
     wos_id = models.CharField(max_length=8, blank=True, null = True, verbose_name="W.O.S. ID", help_text="World of Spectrum ID Number (Spectrum) such as 0003478 (leading 0's are IMPORTANT!) - See http://www.worldofspectrum.org")
     zxdemo_id = models.IntegerField(blank=True, null = True, verbose_name="ZXDemo ID", help_text="ZXDemo Production ID Number (Spectrum) - See http://www.zxdemo.org")
     hol_id = models.IntegerField(blank=True, null = True, verbose_name="H.O.L. ID", help_text="Hall of Light ID number (Amiga) - See http://hol.abime.net")
+    al_id = models.IntegerField(blank=True, null = True, verbose_name="Atari Legends ID", help_text="Atari Legends ID Number (Atari) - See http://www.atarilegend.com")
     projecttwosix_id = models.IntegerField(blank=True, null = True, verbose_name="Project2612 ID", help_text="Project2612 ID Number (Genesis / Megadrive) - See http://www.project2612.org")
-    hvsc_url = models.URLField(blank=True, verbose_name="HVSC Link", help_text="Link to HVSC SID file as a complete URL (C64) - See HVSC or mirror (such as www.andykellett.com/music")
+    hvsc_url = models.URLField(blank=True, verbose_name="HVSC Link", help_text="Link to HVSC SID file as a complete URL (C64) - See HVSC or alt. mirror (such as www.andykellett.com/music )")
     lemon_id = models.IntegerField(blank=True, null = True, verbose_name="Lemon64 ID", help_text="Lemon64 Game ID (C64 Only) - See http://www.lemon64.com")
     added = models.DateTimeField(auto_now_add=True)
     info = models.TextField(blank = True, help_text="Additional Song information. BBCode tags are supported. No HTML.")
@@ -772,10 +788,15 @@ class News(models.Model):
     )
     status = models.CharField(choices=STATUS, max_length=1)
     added = models.DateTimeField(auto_now_add=True, db_index=True)
+    last_updated = models.DateTimeField(editable = False, blank = True, null = True)
     icon = models.URLField(blank = True)
 
     def __unicode__(self):
         return self.title
+    
+    def save(self, force_insert=False, force_update=False): 
+        self.last_updated = datetime.datetime.now()
+        return super(News, self).save(force_insert, force_update)
 
     class Meta:
         verbose_name_plural = 'News'
@@ -893,25 +914,72 @@ class Link(models.Model):
     submitted_by = models.ForeignKey(User, blank = True, null = True, related_name="label_submittedby")
     approved_by = models.ForeignKey(User, blank = True, null = True, related_name="label_approvedby")
     added = models.DateTimeField(auto_now_add=True, db_index=True) # DateTime from when the link was added to the DB
+    last_updated = models.DateTimeField(editable = False, blank = True, null = True)
     
     STATUS = (
         ('A', 'Active'),
         ('P', 'Pending Approval'),
         ('R', 'Rejected'),
     )
-    status = models.CharField(max_length=1, choices = STATUS, default = 'A') # Status of the link in the system
+    status = models.CharField(max_length=1, choices = STATUS, default = 'A', db_index=True) # Status of the link in the system
     priority = models.BooleanField(default=False, db_index=True, help_text="If active, link will receive high priority and display in Bold") # Determines higher position in listings
     
     def __unicode__(self):
         return self.name
     
     def save(self, force_insert=False, force_update=False):
-        # Insert Interceptions Here
+        self.last_updated = datetime.datetime.now()
         return super(Link, self).save(force_insert, force_update)
         
     @models.permalink
     def get_absolute_url(self):
         return ('dv-linkcategory', [self.id])
+        
+class Faq(models.Model):
+    priority = models.IntegerField(help_text="Priority order. Used for sorting questions.", default = 0, blank=True, null = True)
+    question = models.CharField(max_length=500, verbose_name="Question", help_text="The question, as it should appear on the FAQ list")
+    answer = models.TextField(verbose_name="Answer", help_text="Full answer to FAQ question. Use BBCode as needed.")
+    active = models.BooleanField(default=True, verbose_name = "Active?", db_index=True)
+    added = models.DateTimeField(auto_now_add=True, db_index=True)
+    last_updated = models.DateTimeField(editable = False, blank = True, null = True)
+    added_by = models.ForeignKey(User, blank = True, null = True)
+    
+    def __unicode__(self):
+        return self.question
+        
+    def save(self, force_insert=False, force_update=False): 
+        self.last_updated = datetime.datetime.now()
+        return super(Faq, self).save(force_insert, force_update)
+        
+    class Meta:
+        ordering = ['priority']
+        verbose_name = "FAQ"
+        verbose_name_plural = "FAQ's"
+        
+    @models.permalink
+    def get_absolute_url(self):
+        return ('dv-faqitem', [self.id])
+    
+class Screenshot(models.Model):
+    name = models.CharField(unique = True, max_length=70, verbose_name="Screen Name", help_text="Name/Title of this screenshot. Be verbose, to make it easier to find later. Use something such as a demo/production/game name.")
+    image = models.ImageField(upload_to = 'media/screenshot/image', blank = True, null = True) # Image to be displayed for this screenshot
+    description = models.TextField(verbose_name="Description", help_text="Brief description about this image, and any other applicable notes.")
+    last_updated = models.DateTimeField(editable = False, blank = True, null = True)
+    active = models.BooleanField(default=True, verbose_name = "Active?", db_index=True)
+    startswith = models.CharField(max_length=1, editable = False, db_index = True)
+    added_by = models.ForeignKey(User, blank = True, null = True, related_name="screenshoit_addedby")
+    
+    def __unicode__(self):
+        return self.name
+        
+    def save(self, force_insert=False, force_update=False):
+        # Eventually, we will add a screenshot browser
+        S = self.name[0].lower()
+        if not S in alphalist:
+            S = '#'
+        self.startswith = S
+        self.last_updated = datetime.datetime.now()
+        return super(Screenshot, self).save(force_insert, force_update)
 
 def create_profile(sender, **kwargs):
     if kwargs["created"]:

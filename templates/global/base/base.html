@@ -13,6 +13,7 @@
             <li id="home"><a href="{% url dv-root %}">Home</a></li>
             <li id="forum"><a href="{% url forum_index %}">Forum</a></li>
             <li id="songs"><a href="{% url dv-songs %}">Songs</a></li>
+	    <li id="song-source"><a href="{% url dv-sources %}">Sources</a></li>
             <li id="song-platform"><a href="{% url dv-platforms %}">Platforms</a></li>
             <li id="artists"><a href="{% url dv-artists %}">Artists</a></li>
             <li id="groups"><a href="{% url dv-groups %}">Groups</a></li>
@@ -24,6 +25,7 @@
             <li id="search"><a href="{% url dv-search %}">Search</a></li>
             <li id="recent"><a href="{% url dv-recent %}">New Uploads</a></li>
 	    <li id="empty"></li>
+	    <li id="faq"><a href="{% url dv-faq %}">FAQ</a></li>
 	    <li id="links"><a href="{% url dv-links %}">Links</a></li>
         </ul>
         {% endblock %}
@@ -91,14 +93,14 @@
 		<input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onClick="window.open('{% url dv-play_stream %}','player','width=170,height=130,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')"> - <a href="{% url dv-streams %}">Streams</a>
 	</form>
 
-	{% cache 3600 sidebarnews %}
-		{% get_sidebar_news %}
-		{% for sbnews in sidebarnews %}
-			<br />
-			<h3>{{ sbnews.title }}</h3>
-			{{ sbnews.text|safe }}
-		{% endfor %}
-	{% endcache %}
+	{% get_sidebar_news %}
+	    {% for sbnews in sidebarnews %}
+		{% cache 3600 "sidebarnews" sbnews.id sbnews.last_updated %}
+		    <br />
+		    <h3>{{ sbnews.title }}</h3>
+		    {{ sbnews.text|safe }}
+		{% endcache %}
+	{% endfor %}
 
     </div>
 

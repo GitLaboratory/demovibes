@@ -120,6 +120,9 @@ ADMIN_AUTO_APPROVE_GROUP = 0
 # Auto-Approve Admin Label Creations
 ADMIN_AUTO_APPROVE_LABEL = 0
 
+# Auto-Approve Admin Link Creations
+ADMIN_AUTO_APPROVE_LINK = 0
+
 # Auto-Approve Admin Compilation Creations
 ADMIN_AUTO_APPROVE_COMPILATION = 0
 

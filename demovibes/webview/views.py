@@ -114,12 +114,6 @@ def site_about(request):
     """
     return render_to_response('webview/site-about.html', { }, context_instance=RequestContext(request))
 
-def site_faq(request):
-    """
-    Support for a generic FAQ function
-    """
-    return render_to_response('webview/site-faq.html', { }, context_instance=RequestContext(request))
-
 def list_queue(request):
     """
     Display the current song, the next songs in queue, and the latest 20 songs in history.
@@ -848,8 +842,17 @@ def link_create(request):
     User submitted links appear using this form for moderators to approve. Once sent, they are directed to
     A generic 'Thanks' page.
     """
+    auto_approve = getattr(settings, 'ADMIN_AUTO_APPROVE_LINK', 0)
+    
     if request.method == 'POST':
-        l = Link(submitted_by = request.user, status = 'P')
+        # Check to see if moderation settings allow for the check
+        if request.user.is_staff and auto_approve == 1:
+            # Automatically approved due to Moderator status
+            status = 'A'
+        else:
+            status = 'P'
+            
+        l = Link(submitted_by = request.user, status = status)
         form = CreateLinkForm(request.POST, request.FILES, instance = l)
         if form.is_valid():
             new_link = form.save(commit=False)

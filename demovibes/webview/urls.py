@@ -63,14 +63,24 @@ streams_dict = {
     'template_name' : "webview/streams.html"
 }
 
+"""
+Retreive all FAQ Questions marked as 'Active'
+"""
+faq_dict = {
+    'queryset': Faq.objects.filter(active=True)
+}
+
 platforms = {
     'queryset' : SongPlatform.objects.all(),
+}
+
+sources = {
+    'queryset' : SongType.objects.all(),
 }
 
 urlpatterns = patterns('',
     # First, some generic 'site' areas commonly found on any site
     url(r'^about/$',                              'demovibes.webview.views.site_about', name = "dv-about"),
-    url(r'^faq/$',                                'demovibes.webview.views.site_faq', name = "dv-faq"),
 
     url(r'^inbox/$',                               'demovibes.webview.views.inbox', name = "dv-inbox"),
     url(r'^inbox/(?P<pm_id>\d+)/$',                'demovibes.webview.views.read_pm', name = "dv-read_pm"),
@@ -87,6 +97,9 @@ urlpatterns = patterns('',
     url(r'^recent/$',                              'demovibes.webview.views.show_approvals', name = "dv-recent"),
     url(r'^platform/(?P<object_id>\d+)/$',         'django.views.generic.list_detail.object_detail', platforms, name = "dv-platform"),
     url(r'^platforms/$',                           'django.views.generic.list_detail.object_list', platforms, name = "dv-platforms"),
+    
+    url(r'^sources/$',                           'django.views.generic.list_detail.object_list', sources, name = "dv-sources"),
+    url(r'^source/(?P<object_id>\d+)/$',         'django.views.generic.list_detail.object_detail', sources, name = "dv-source"),
     
     #Song views
     url(r'^songs/$',                               'django.views.generic.list_detail.object_list', \
@@ -159,6 +172,11 @@ urlpatterns = patterns('',
     url(r'^link/pending/$',                   'demovibes.webview.views.activate_links', name = "dv-newlinks"),
     url(r'^links/$',                           'demovibes.webview.views.site_links', name = "dv-links"), # View existing Links
     
+    # FAQ System
+    url(r'^faq/$',                                'django.views.generic.list_detail.object_list', faq_dict, name = "dv-faq"), # Generic FAQ System (All active Questions)
+    url(r'^faq/(?P<object_id>\d+)/$',           'django.views.generic.list_detail.object_detail', faq_dict, name = "dv-faqitem"),
+    
+    # Statistics & Cache stuff
     url(r'^status/cache/$',                    'demovibes.webview.views.memcached_status', name = "dv-memcached"), # Show memcached status
 
 )

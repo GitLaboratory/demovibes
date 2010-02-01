@@ -781,6 +781,19 @@ def bb_compilation_name(hit):
         return T.render(Co)
     except:
         return '[album]%s[/album]' % (comp)
+	
+def bb_faq(hit):
+    """
+    Create a clickable FAQ link.
+    """
+    faqq = hit.group(1)
+    try:
+        F = Faq.objects.get(id=faqq)
+        T = loader.get_template('webview/t/faq_question.html')
+        Q = Context({'F' : F})
+        return T.render(Q)
+    except:
+        return '[faq]%s[/faq]' % (faqq)
 
 def bb_youtube_ol(hit):
     """
@@ -904,6 +917,7 @@ def bbcode(value):
         (r'\[label\](.+?)\[/label\]', bb_labelname),
         (r'\[platform\](\d+?)\[/platform\]', bb_platform),
         (r'\[platform\](.+?)\[/platform\]', bb_platformname),
+	(r'\[faq\](\d+?)\[/faq\]', bb_faq),
         
         # Experimental BBCode tags
         (r'\[youtube\](.+?)\[/youtube\]', bb_youtube),
@@ -1013,6 +1027,7 @@ def bbcode_oneliner(value):
         (r'\[label\](.+?)\[/label\]', bb_labelname),
         (r'\[platform\](\d+?)\[/platform\]', bb_platform),
         (r'\[platform\](.+?)\[/platform\]', bb_platformname),
+	(r'\[faq\](\d+?)\[/faq\]', bb_faq),
       ]
 
     for bbset in bbdata:

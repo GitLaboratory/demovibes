@@ -266,6 +266,7 @@ h3
 
 #home 		{background-image: url("/static/house.png");}
 #songs		{background-image: url("/static/music.png");}
+#song-source		{background-image: url("/static/sound.png");}
 #song-platform		{background-image: url("/static/sound.png");}
 #artists	{background-image: url("/static/user_green.png");}
 #compilations   {background-image: url("/static/recplay_ico.png");}
@@ -273,6 +274,7 @@ h3
 #menuqueue	{background-image: url("/static/script.png");}
 #search		{background-image: url("/static/find.png");}
 #forum		{background-image: url("/static/user_comment.png");}
+#faq		{background-image: url("/static/comment.png");}
 #profile	{background-image: url("/static/user.png");}
 #favorites	{background-image: url("/static/heart.png");}
 #register	{background-image: url("/static/page_white_edit.png");}
@@ -438,6 +440,20 @@ p.pmtitle {
 }
 
 .text-link
+{
+    vertical-align: middle;
+    margin-left: 1px;
+    margin-right: 1px;
+}
+
+.song-resource
+{
+    vertical-align: middle;
+    margin-left: 1px;
+    margin-right: 1px;
+}
+
+.user-resource
 {
     vertical-align: middle;
     margin-left: 1px;

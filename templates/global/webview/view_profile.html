@@ -19,14 +19,8 @@
 {% else %}
  {{ profile.user.get_profile.country|flag|safe }} {% if profile.infoline %}<strong>{{ profile.infoline }}</strong>{% else %}<em>[No Info Line]</em>{% endif %}<br>
 {% endif %}
-{% if profile.aol_id or profile.icq_id or profile.yahoo_id or profile.twitter_id %}
- {% if profile.aol_id %} <img src="/static/aim-icon.png" title="{{ profile.aol_id }} on AIM">{% endif %}
- {% if profile.icq_id %} <a href="http://www.icq.com/people/about_me.php?uin={{ profile.icq_id }}" target="_new"><img src="/static/icq-icon.png" title="{{ profile.icq_id }} on ICQ"></a>{% endif %}
- {% if profile.yahoo_id %} <a href="http://profiles.yahoo.com/{{ profile.yahoo_id }}" target="_new"><img src="/static/yahoo-icon.png" title="{{ profile.yahoo_id }} on Yahoo!"></a>{% endif %}
- {% if profile.twitter_id %} <a href="http://www.twitter.com/{{ profile.twitter_id }}" target="_new"><img src="/static/twitter-icon.png" title="{{ profile.twitter_id}} on Twitter"></a>{% endif %}
- <br>
-{% endif %}
-
+{% with profile.user as U %}{% include "webview/t/user-icons.html" %}{% endwith %}<br>
+<br>
 Member Since: {{ profile.user.date_joined|date:"F j, Y" }}<br />
 Last Login: {{ profile.user.last_login|date:"F j, Y" }}<br />
 
