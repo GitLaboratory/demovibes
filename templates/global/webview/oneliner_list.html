@@ -7,7 +7,7 @@
 
 <div class="olh_wrapper">
 {% load cache %}
-{% for line in object_list %}{% cache 3600 olhistory line.id %}
+{% for line in object_list %}{% cache 86400 olhistory line.id %}
 <div class="olh_item">
 <div class="olh_user">
     <p>{% with line.user as U%}{% include "webview/t/user.html" %}{% endwith %}<br />

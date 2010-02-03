@@ -381,8 +381,8 @@ def add_favorite(request, id): # XXX Fix to POST
         f = Favorite(user=user, song=song)
         f.save()
     #return HttpResponseRedirect(reverse('dv-favorites'))
-    refer = request.META['HTTP_REFERER']
-    return HttpResponseRedirect(refer)
+    refer = 'HTTP_REFERER' in request.META['HTTP_REFERER'] and request.META['HTTP_REFERER'] or False
+    return HttpResponseRedirect(refer or reverse("dv-favorites"))
 
 def oneliner(request):
     oneliner = Oneliner.objects.select_related(depth=1).order_by('-id')[:20]
@@ -596,11 +596,12 @@ def activate_artists(request):
         artist.save()
         
         # Send the email to inform the user of their request status
-        if song.uploader.get_profile().email_on_artist_add and status == 'A' or status == 'R':
+        
+        if artist.created_by.get_profile().email_on_artist_add and status == 'A' or status == 'R':
             PrivateMessage.objects.create(sender = request.user, to = artist.created_by,\
              message = mail_tpl.render(c), subject = "Artist Request Status Changed To: %s" % stat)
 
-    artists =Artist.objects.filter(status = "U").order_by('last_updated')
+    artists = Artist.objects.filter(status = "U").order_by('last_updated')
     return render_to_response('webview/pending_artists.html', { 'artists': artists }, context_instance=RequestContext(request))
 
 @login_required

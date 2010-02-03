@@ -21,6 +21,7 @@
 </table>
 <br />
 
+Pages:
 {% for p in page_range %}
 {% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% url dv-favorites %}?page={{ p }}">{{ p }}</a> {% endifequal %}
 {% endfor %}

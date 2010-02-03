@@ -16,7 +16,7 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br /><b
   <th>Status</th>
 </tr>
 {% if songs %}
-    {% for song in songs %}{% cache 3600 recsongs song.id %}
+    {% for song in songs %}{% cache 604800 recsongs song.id %}
         <tr>
             <td>
                 {% with song.song as song %}{% include "webview/t/songname.html" %}{% endwith %}

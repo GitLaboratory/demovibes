@@ -32,7 +32,7 @@ def monitor(request, event_id):
             s.connect((host, port))
             s.send("get:%s:%s" % (userid, event_id))
             result = s.recv(1024)
-        except socket.timeout:
+        except:
             result = ""
         return HttpResponse(result)
     else:

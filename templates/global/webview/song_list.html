@@ -13,7 +13,7 @@
 {% endfor %}
 </table>
 <br />
-Pages : 
+Pages: 
 {% for p in page_range %}
 {% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% if letter %}{% url dv-songs_letter letter %}{% else %}{% url dv-songs %}{% endif %}?page={{ p }}">{{ p }}</a> {% endifequal %}
 {% endfor %}

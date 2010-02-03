@@ -1046,7 +1046,7 @@ def smileys(value):
 	Replaces smiley text with images. First, do secret smileys so we can replace
 	Smileys pre-converted with others later.
 	"""
-	secretsmileys = settings.SECRETSMILEYS
+	secretsmileys = getattr(settings,'SECRETSMILEYS', [])
 	for smiley in secretsmileys:
 	    value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" title="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[2]), value)
 
@@ -1071,7 +1071,7 @@ def flag(value):
 
 @register.filter
 def dv_urlize(text):
- 	"""
+	"""
 	Simplified replacement of the urlize filter in Django, which at present offers no option
 	To allow a link to open in a new tab/window. AAK.
 	"""
