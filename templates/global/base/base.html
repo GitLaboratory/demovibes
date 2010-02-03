@@ -4,8 +4,6 @@
 {% load dv_extend %}
 
 {% block content %}
-
-
     <div id="sidebar">
         <h3>Welcome, {% if user.is_authenticated %}{{ user }}{% else %}Visitor{% endif %}!</h3>
         {% block sidebar %}
@@ -13,20 +11,20 @@
             <li id="home"><a href="{% url dv-root %}">Home</a></li>
             <li id="forum"><a href="{% url forum_index %}">Forum</a></li>
             <li id="songs"><a href="{% url dv-songs %}">Songs</a></li>
-	    <li id="song-source"><a href="{% url dv-sources %}">Sources</a></li>
+	        <li id="song-source"><a href="{% url dv-sources %}">Sources</a></li>
             <li id="song-platform"><a href="{% url dv-platforms %}">Platforms</a></li>
             <li id="artists"><a href="{% url dv-artists %}">Artists</a></li>
             <li id="groups"><a href="{% url dv-groups %}">Groups</a></li>
-	    <li id="labels"><a href="{% url dv-labels %}">Labels</a></li>
+	        <li id="labels"><a href="{% url dv-labels %}">Labels</a></li>
             <li id="compilations"><a href="{% url dv-compilations %}">Compilations</a></li>
-	    <li>&nbsp;</li>
+	        <li>&nbsp;</li>
             <li id="menuqueue"><a href="{% url dv-queue %}">Queue</a></li>
-	    <li>&nbsp;</li>
+	        <li>&nbsp;</li>
             <li id="search"><a href="{% url dv-search %}">Search</a></li>
             <li id="recent"><a href="{% url dv-recent %}">New Uploads</a></li>
-	    <li>&nbsp;</li>
-	    <li id="faq"><a href="{% url dv-faq %}">FAQ</a></li>
-	    <li id="links"><a href="{% url dv-links %}">Links</a></li>
+	        <li>&nbsp;</li>
+	        <li id="faq"><a href="{% url dv-faq %}">FAQ</a></li>
+	        <li id="links"><a href="{% url dv-links %}">Links</a></li>
         </ul>
         {% endblock %}
         <br />
