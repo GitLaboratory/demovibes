@@ -26,10 +26,10 @@
 		{% if post.author.get_profile.avatar %}
 		<img src="{{ post.author.get_profile.avatar.url }}" alt="avatar"/><br />
 		{% endif %}
-		{{ post.author.get_profile.infoline }}<br>
-		{% with post.author as U %}{% include "webview/t/user-icons.html" %}{% endwith %}<br>
-		{% get_post_count post.author %} Posts<br>
-        <a href="{{ post.get_absolute_url }}">#{{ post.id }}</a> <span>({{ post.time|timesince }} ago)</span><br>
+		{{ post.author.get_profile.infoline }}<br />
+		{% with post.author as U %}{% include "webview/t/user-icons.html" %}{% endwith %}<br />
+		{% get_post_count post.author %} Posts<br />
+        <a href="{{ post.get_absolute_url }}">#{{ post.id }}</a> <span>({{ post.time|timesince }} ago)</span><br />
 	</td>
 	<td class="post">{% cache 600 "forumpost" post.id post.edited %}
 		{{ post.body|force_escape|linebreaks|bbcode|wordwrap:"100"|smileys }}

@@ -9,7 +9,7 @@ As part of our ongoing discovery of musician/music related websites, we are prou
  {% for cat in link_cats.all %}
   {% get_text_links cat.id_slug %}
  {% endfor %}
-{% endif %}<br>
-<br>
-Know of a great link that belongs here? <a href="{% url dv-createlink %}">Send Us Your Link!</a><br>
+{% endif %}<br />
+<br />
+Know of a great link that belongs here? <a href="{% url dv-createlink %}">Send Us Your Link!</a><br />
 {% endblock %}

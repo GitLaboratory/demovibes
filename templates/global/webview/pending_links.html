@@ -9,7 +9,7 @@
 {% if text_links %}
  <h2><img class="icon_header" src="/static/link.png" alt="" />Pending Text Links</h2>
  {% for link in text_links.all %}
-  {% with link as L %}{% include "webview/t/link_text.html" %} [<a href="{{ L.url_cat.get_absolute_url }}" title="See All Links In Category">{{ L.url_cat.name }}</a>] {% include "webview/t/pending_link_toolbar.html" %}{% if forloop.last %}{% else %}<br>{% endif %}{% endwith %}
+  {% with link as L %}{% include "webview/t/link_text.html" %} [<a href="{{ L.url_cat.get_absolute_url }}" title="See All Links In Category">{{ L.url_cat.name }}</a>] {% include "webview/t/pending_link_toolbar.html" %}{% if forloop.last %}{% else %}<br />{% endif %}{% endwith %}
  {% endfor %}
 {% endif %}
 {% endblock %}

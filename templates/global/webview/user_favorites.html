@@ -5,8 +5,7 @@
 {% load cache %}
 
 {% block main %}
-<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />
-{{ favuser.username }}'s Favourite Songs</h2>
+<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />{{ favuser.username }}'s Favourite Songs</h2>
 {% with favuser as U%}{% include "webview/t/user.html" %}{% endwith %} Has The Following Favourite Songs:
 {% cache 600 favuser.favorites favuser.username %}
 <table class="songlist">
@@ -24,7 +23,7 @@
  </tr>
 {% endfor %}
 </table>
-<p><em>Contents of this page are beeing cached.<br />
-last update: {% now "d-m-Y, H:i:s" %}</em></p>
+<p><em>Contents of this page are being cached.<br />
+Last Updated: {% now "d-m-Y, H:i:s" %}</em></p>
 {% endcache %}
 {% endblock %}

@@ -30,7 +30,7 @@ class UploadForm(forms.ModelForm):
 class CreateArtistForm(forms.ModelForm):
     class Meta:
         model = Artist
-        fields = ["handle", "name", "dob", "home_country", "home_location", "hol_id", "last_fm_id", "info", "artist_pic", "webpage", "wiki_link", "groups", "labels"]
+        fields = ["handle", "name", "dob", "home_country", "home_location", "hol_id", "twitter_id", "last_fm_id", "info", "artist_pic", "webpage", "wiki_link", "groups", "labels"]
 
     def clean_artist_pic(self):
         artist_pic = self.cleaned_data['artist_pic']

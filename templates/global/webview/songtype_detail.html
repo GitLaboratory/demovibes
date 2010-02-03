@@ -4,7 +4,7 @@
 
 {% block main %}{% spaceless %}
 <h2><img class="icon_header" src="{{ MEDIA_URL }}script.png" alt="" />Song Source - {{ object.title }}</h2>
-{% if object.image %}<img src="{{ object.image.url }}">{% endif %}
+{% if object.image %}<img src="{{ object.image.url }}" title="Screenshot For {{ object.title }}" alt="Screenshot For {{ object.title }}" />{% endif %}
 {{object.description|linebreaks}}
 
 <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Songs</h2>

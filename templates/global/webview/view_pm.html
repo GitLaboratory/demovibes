@@ -3,7 +3,7 @@
 {% block title %}Read Private Message{% endblock %}
 {% load dv_extend %}
 {% block main %}
-<h2>Read Private Message</h2>
+<h2><img class="icon_header" src="{{ MEDIA_URL }}newspaper.png" alt="" />Read Private Message</h2>
 Message From: {% with pm.sender as U%}{% include "webview/t/user.html" %}{% endwith %}<br/>
 Sent On: {{ pm.sent }}
 <p class="pmtitle">{{ pm.subject }}</p>

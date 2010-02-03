@@ -97,8 +97,8 @@ def logo():
         alt = "#%s - By %s" % (L.id, L.creator)
     except:
         logo = "%slogos/default.png" % settings.MEDIA_URL
-        alt = "Demovibes"
-    return '<img id="logo" src="%s" title="%s" />' % (logo, alt)
+        alt = "Logo"
+    return '<img id="logo" src="%s" title="%s" alt="%s" />' % (logo, alt, alt)
 
 @register.simple_tag
 def current_song():
@@ -291,10 +291,8 @@ class GetSongRatingStarsAvgNode(template.Node):
         htmltxt = common.get_now_playing()
 
         # Open the table
-        htmltxt = htmltxt + '<span class="vote" name="vote-%d" onmouseout="voteshow(\'vote-%d\', %d);">' % ( song.id, song.id, user_vote )
-
-        htmltxt = htmltxt + "<table>\n"
-        htmltxt = htmltxt + '<tr>'
+        htmltxt = htmltxt + '<table class="vote" name="vote-%d" onmouseout="voteshow(\'vote-%d\', %d);">\n' % ( song.id, song.id, user_vote )
+        htmltxt = htmltxt + '<tr>\n'
 
         for count in range(1, 6):
             DiffVal = (count - user_vote) # Pre-calc rating difference
@@ -305,10 +303,10 @@ class GetSongRatingStarsAvgNode(template.Node):
     
             if(count > user_vote):
                 # Represent stars AFTER the current rated star
-                TempLine = TempLine + '<img src="/static/star-white.png" title="%d Star" border="0" id="vote-%d-%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-white.png" title="%d Star" border="0" id="vote-%d-%d" />' % ( count, song.id, count )
             else:
                 # This represents a star already under/up to the rating
-                TempLine = TempLine + '<img src="/static/star-red.png" title="%d Star" border="0" id="vote-%d-%d">' % ( count, song.id, count )
+                TempLine = TempLine + '<img src="/static/star-red.png" title="%d Star" border="0" id="vote-%d-%d" />' % ( count, song.id, count )
         
             if(user_anon == False):
                 TempLine = TempLine + '</a>'
@@ -329,18 +327,17 @@ class GetSongRatingStarsAvgNode(template.Node):
             htmltxt = htmltxt + '<td>%s</td>' % (FavIconTxt)
 
         # Add a link to voting history
-        htmltxt = htmltxt + '<td><a href="/demovibes/song/%d/votes/"><img class="song_head" src="/static/script.png" title="Voting History"></a></td>' % (song.id)
+        htmltxt = htmltxt + '<td><a href="/demovibes/song/%d/votes/"><img class="song_head" src="/static/script.png" title="Voting History" /></a></td>' % (song.id)
 
         # Close off the rest of the table/span
-        htmltxt = htmltxt + '</tr>'
-        htmltxt = htmltxt + '</table>'
-        htmltxt = htmltxt + '</span>'
+        htmltxt = htmltxt + '</tr>\n'
+        htmltxt = htmltxt + '</table>\n'
 
         # Insert the rating/Vote counts info
         if(user_anon == False):
-            htmltxt = htmltxt + 'Your Vote: %d<br>' % (user_vote)
+            htmltxt = htmltxt + 'Your Vote: %d<br />' % (user_vote)
 
-        htmltxt = htmltxt + 'Rating: %.2f (%d Votes)<br>' % (song_rating, vote_count )
+        htmltxt = htmltxt + 'Rating: %.2f (%d Votes)<br />' % (song_rating, vote_count )
 
         # Return the newly computed images html string
         return htmltxt
@@ -578,10 +575,10 @@ def bb_flag(hit):
     flag = flagcode.lower().encode('ascii', 'ignore')
     
     if os.path.isfile(os.path.join(settings.DOCUMENT_ROOT, "flags", "%s.png" % flag)):
-        return "<img src='%sflags/%s.png' class='countryflag' alt='flag' title='%s'/>" % (settings.MEDIA_URL, flag, flag)
+        return "<img src='%sflags/%s.png' class='countryflag' alt='flag' title='%s' />" % (settings.MEDIA_URL, flag, flag)
         
     # No flag image found, so default to Necta flag
-    return "<img src='%sflags/nectaflag.png' class='countryflag' title='flag'/>" % (settings.MEDIA_URL)
+    return "<img src='%sflags/nectaflag.png' class='countryflag' title='flag' />" % (settings.MEDIA_URL)
 
 def bb_user(hit):
     """
@@ -599,7 +596,7 @@ def bb_user(hit):
     except:
         # This is normally thrown when the user is invalid. Return the original result,
         # Only we add an icon to indicate an invalid user.
-        return '<img src="/static/user_error.png" alt="user" border="0"> %s' % (user)
+        return '<img src="/static/user_error.png" alt="user" border="0" />%s' % (user)
 
 def bb_artistname(hit):
     """
@@ -614,7 +611,7 @@ def bb_artistname(hit):
     except:
         # This is normally thrown when the artist is invalid. Return the original result,
         # Only we add an icon to indicate an invalid artist.
-        return '<img src="/static/user_error.png" alt="artist" border="0"> %s' % (artist)
+        return '<img src="/static/user_error.png" alt="artist" border="0" /> %s' % (artist)
 
 def bb_group(hit):
     """
@@ -642,7 +639,7 @@ def bb_groupname(hit):
     except:
         # This is normally thrown when the group is invalid. Return the original result,
         # Only we add an icon to indicate an invalid group.
-        return '<img src="/static/user_error.png" alt="user" border="0"> %s' % (group)
+        return '<img src="/static/user_error.png" alt="user" border="0" /> %s' % (group)
 
 def bb_label(hit):
     """
@@ -670,7 +667,7 @@ def bb_labelname(hit):
         return T.render(C)
     except:
         # This will throw if the requested label is spelt incorrectly, or doesnt exist
-        return '<img src="/static/transmit.png" alt="Invalid Label" border="0"> %s' % (real_name)
+        return '<img src="/static/transmit.png" alt="Invalid Label" border="0" /> %s' % (real_name)
 
 def bb_platform(hit):
     """
@@ -708,7 +705,7 @@ def bb_thread(hit):
     try:
         post_id = hit.group(1)
         t = Thread.objects.get(id=post_id)
-        return '<a href="%s"><img src="%snewspaper.png" alt="forum" border="0"> %s</a>' % (t.get_absolute_url(), settings.MEDIA_URL, t)
+        return '<a href="%s"><img src="%snewspaper.png" alt="forum" border="0" /> %s</a>' % (t.get_absolute_url(), settings.MEDIA_URL, t)
     except:
         return "[thread]%s[/thread]" % (post_id)
     
@@ -719,7 +716,7 @@ def bb_forum(hit):
     try:
         forum_slug = hit.group(1)
         f = Forum.objects.get(slug=forum_slug)
-        return '<a href="%s"><img src="%snewspaper.png" alt="forum" border="0"> %s</a>' % (f.get_absolute_url(), settings.MEDIA_URL, f)
+        return '<a href="%s"><img src="%snewspaper.png" alt="forum" border="0" /> %s</a>' % (f.get_absolute_url(), settings.MEDIA_URL, f)
     except:
         return "[forum]%s[/forum]" % (forum_slug)
     
@@ -801,13 +798,13 @@ def bb_youtube_ol(hit):
     Tag like so: [yt]S-T8h0T0SK8[/yt]. This version is oneliner specific
     """
     video = hit.group(1)
-    return '<a href="http://www.youtube.com/watch?v=%s" target="_new"><img src="/static/youtube_icon.png" title="YouTube" border="0"> YouTube Link</a>' % (video)
+    return '<a href="http://www.youtube.com/watch?v=%s" target="_new"><img src="/static/youtube_icon.png" title="YouTube" alt="YouTube" border="0" /> YouTube Link</a>' % (video)
 
 def bb_googlevideo_ol(hit):
 	"""
 	"""
 	video = hit.group(1)
-	return '<a href="http://video.google.com/videoplay?docid=%s" target="_new"><img src="/static/googlevideo_icon.png" alt="YouTube" border="0"> Google Video Link</a>' % (video)
+	return '<a href="http://video.google.com/videoplay?docid=%s" target="_new"><img src="/static/googlevideo_icon.png" title="Google Video" alt="Google Video" border="0"> Google Video Link</a>' % (video)
     
 def bb_youtube_name_ol(hit):
     """
@@ -818,7 +815,7 @@ def bb_youtube_name_ol(hit):
     video = hit.group(1)
     title = hit.group(2)
 
-    return '<a href="http://www.youtube.com/watch?v=%s" target="_new"><img src="/static/youtube_icon.png" title="YouTube" border="0"> %s</a>' % (title, video)
+    return '<a href="http://www.youtube.com/watch?v=%s" target="_new"><img src="/static/youtube_icon.png" title="YouTube" alt="YouTube" border="0"> %s</a>' % (title, video)
 
 def bb_gvideo(hit):
     """
@@ -860,8 +857,8 @@ def bbcode(value):
         (r'\[url=(.+?)\](.+?)\[/url\]', r'<a href="\1" target="_new">\2</a>'),
         (r'\[email\](.+?)\[/email\]', r'<a href="mailto:\1">\1</a>'),
         (r'\[email=(.+?)\](.+?)\[/email\]', r'<a href="mailto:\1">\2</a>'),
-        (r'\[img\](.+?)\[/img\]', r'<img src="\1" alt="" \>'),
-        (r'\[img=(.+?)\](.+?)\[/img\]', r'<a href="\1" target="_new"><b>\2</b><br><img src="\1" alt="" \></a>'),
+        (r'\[img\](.+?)\[/img\]', r'<img src="\1" alt="" />'),
+        (r'\[img=(.+?)\](.+?)\[/img\]', r'<a href="\1" target="_new"><b>\2</b><br /><img src="\1" alt="" /></a>'),
         
         (r'\[b\](.+?)\[/b\]', r'<strong>\1</strong>'),
         (r'\[i\](.+?)\[/i\]', r'<i>\1</i>'),
@@ -1067,10 +1064,10 @@ def flag(value):
     """
     flag = value.lower().encode('ascii', 'ignore')
     if os.path.isfile(os.path.join(settings.DOCUMENT_ROOT, "flags", "%s.png" % flag)):
-        return "<img src='%sflags/%s.png' class='countryflag' alt='flag' title='%s'/>" % (settings.MEDIA_URL, flag, flag)
+        return "<img src='%sflags/%s.png' class='countryflag' alt='flag' title='%s' />" % (settings.MEDIA_URL, flag, flag)
         
     # No flag image found, return the Necta flag hehe
-    return "<img src='%sflags/nectaflag.png' class='countryflag' alt='flag'/>" % (settings.MEDIA_URL)
+    return "<img src='%sflags/nectaflag.png' class='countryflag' alt='flag' />" % (settings.MEDIA_URL)
 
 @register.filter
 def dv_urlize(text):

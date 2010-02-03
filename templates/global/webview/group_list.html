@@ -12,7 +12,7 @@
 Page Number:
 {% for p in page_range %}
 {% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% if letter %}{% url dv-groups_letter letter %}{% else %}{% url dv-groups %}{% endif %}?page={{ p }}">{{ p }}</a> {% endifequal %}
-{% endfor %}<br>
-Not Finding Who You're Looking For? <a href="{% url dv-creategroup %}">Suggest A New Group!</a><br>
+{% endfor %}<br />
+Not Finding Who You're Looking For? <a href="{% url dv-creategroup %}">Suggest A New Group!</a><br />
 
 {% endblock %}

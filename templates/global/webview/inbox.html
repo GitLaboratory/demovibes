@@ -9,7 +9,7 @@
 <tr><th>Subject</th><th>From</th><th>To</th><th>Sent Date</th></tr>
 {% for mail in mails %}
 <tr class="{% cycle 'row1' 'row2' %}">
- <td><a href="{{ mail.get_absolute_url }}">{{ mail.subject }}</a>{% if mail.unread %} <img src="{{ MEDIA_URL }}new.png" alt="[New Message]">{% endif %}</td>
+ <td><a href="{{ mail.get_absolute_url }}">{{ mail.subject }}</a>{% if mail.unread %} <img src="{{ MEDIA_URL }}new.png" alt="[New Message]" />{% endif %}</td>
  <td>{% with mail.sender as U%}{% include "webview/t/user.html" %}{% endwith %}</td>
  <td>{% with mail.to as U%}{% include "webview/t/user.html" %}{% endwith %} </td>
  <td>{{ mail.sent }}</td>

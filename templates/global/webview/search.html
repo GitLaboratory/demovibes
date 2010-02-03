@@ -39,7 +39,7 @@
 {% if labels %}
  <h2><img class="icon_header" src="{{ MEDIA_URL }}transmit_blue.png" alt="" />Labels Found</h2>
  {% for lab in labels %}
-  {% with lab as L %}{% include "webview/t/label.html" %}{% endwith %}<br>
+  {% with lab as L %}{% include "webview/t/label.html" %}{% endwith %}<br />
  {% endfor %}
 {% endif %}
 

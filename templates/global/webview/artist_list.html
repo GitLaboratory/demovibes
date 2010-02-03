@@ -12,6 +12,6 @@
 Page Number:
 {% for p in page_range %}
 {% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% if letter %}{% url dv-artists_letter letter %}{% else %}{% url dv-artists %}{% endif %}?page={{ p }}">{{ p }}</a> {% endifequal %}
-{% endfor %}<br>
-Not Finding Who You're Looking For? <a href="{% url dv-createartist %}">Suggest A New Artist!</a><br>
+{% endfor %}<br />
+Not Finding Who You're Looking For? <a href="{% url dv-createartist %}">Suggest A New Artist!</a><br />
 {% endblock %}

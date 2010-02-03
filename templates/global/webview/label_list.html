@@ -12,7 +12,7 @@
 Page Number:
 {% for p in page_range %}
 {% ifequal page p %}<b>{{ p }}</b>{% else %}<a href="{% if letter %}{% url dv-labels_letter letter %}{% else %}{% url dv-labels %}{% endif %}?page={{ p }}">{{ p }}</a> {% endifequal %}
-{% endfor %}<br>
-Not Finding What You're Looking For? <a href="{% url dv-createlabel %}">Suggest A New Label!</a><br>
+{% endfor %}<br />
+Not Finding What You're Looking For? <a href="{% url dv-createlabel %}">Suggest A New Label!</a><br />
 
 {% endblock %}

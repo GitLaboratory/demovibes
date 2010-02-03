@@ -19,26 +19,26 @@
             <li id="groups"><a href="{% url dv-groups %}">Groups</a></li>
 	    <li id="labels"><a href="{% url dv-labels %}">Labels</a></li>
             <li id="compilations"><a href="{% url dv-compilations %}">Compilations</a></li>
-	    <li id="empty"></li>
+	    <li>&nbsp;</li>
             <li id="menuqueue"><a href="{% url dv-queue %}">Queue</a></li>
-	    <li id="empty"></li>
+	    <li>&nbsp;</li>
             <li id="search"><a href="{% url dv-search %}">Search</a></li>
             <li id="recent"><a href="{% url dv-recent %}">New Uploads</a></li>
-	    <li id="empty"></li>
+	    <li>&nbsp;</li>
 	    <li id="faq"><a href="{% url dv-faq %}">FAQ</a></li>
 	    <li id="links"><a href="{% url dv-links %}">Links</a></li>
         </ul>
         {% endblock %}
-        <br>
+        <br />
         <h3>Infamous OneLiner</h3>
         {% if user.is_authenticated %}
-        <form action="{% url dv-oneliner_submit %}" method="post" encoding="application/x-www-form-urlencoded"  onsubmit="apf('{% url dv-ax-oneliner_submit %}',this); this.Line.value = ''; return false;" >
+        <form action="{% url dv-oneliner_submit %}" method="post" enctype="application/x-www-form-urlencoded"  onsubmit="apf('{% url dv-ax-oneliner_submit %}',this); this.Line.value = ''; return false;" >
             <input id="blah" name="Line" autocomplete="off" maxlength="256" onkeydown="return tc(this,event.keyCode);" onkeypress="return canceltab(event.keyCode);" value="GURU MEDITATION" onfocus="if (this.value == 'GURU MEDITATION') { this.value=''; }" /><input id="makeitso" type="submit" value="" />
         </form>
         {% endif %}
         {% get_oneliner %}
         <a href="{% url dv-oneliner %}">Oneliner History</a>
-	<br><br>
+	<br /><br />
         <h3>Who's Online?</h3>
 	{% cache 60 whosonline %}
 	    {% get_online_users %}
@@ -90,7 +90,7 @@
 
 	<form>
 		<hr style="width: 80%; background-color: #000; height: 1px; border: 0px;" />
-		<input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onClick="window.open('{% url dv-play_stream %}','player','width=170,height=130,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')"> - <a href="{% url dv-streams %}">Streams</a>
+		<input type="button" style="border: 1px solid; border-color: #333;" value="Listen" onClick="window.open('{% url dv-play_stream %}','player','width=170,height=130,toolbar=no,scrollbars=no,resizable=no,location=no,directories=no,status=no,menubar=no,copyhistory=no')" /> - <a href="{% url dv-streams %}">Streams</a>
 	</form>
 
 	{% get_sidebar_news %}

@@ -1,9 +1,9 @@
 {% load dv_extend %}
 <tr class='postmain'>
 	<td class='djangoForumThreadPostDetail'>
-		{% with comment.user as U%}{% include "webview/t/user.html" %}{% endwith %}<br>
+		{% with comment.user as U%}{% include "webview/t/user.html" %}{% endwith %}<br />
 		{% if comment.user.get_profile.avatar %}
-		<img src="{{ comment.user.get_profile.avatar.url }}" alt="avatar"/><br />
+		<img src="{{ comment.user.get_profile.avatar.url }}" alt="avatar" /><br />
 		{% endif %}
 		{{ comment.user.get_profile.infoline }}
 	</td>
