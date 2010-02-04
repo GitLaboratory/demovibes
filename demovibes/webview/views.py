@@ -381,7 +381,7 @@ def add_favorite(request, id): # XXX Fix to POST
         f = Favorite(user=user, song=song)
         f.save()
     #return HttpResponseRedirect(reverse('dv-favorites'))
-    refer = 'HTTP_REFERER' in request.META['HTTP_REFERER'] and request.META['HTTP_REFERER'] or False
+    refer = 'HTTP_REFERER' in request.META and request.META['HTTP_REFERER'] or False
     return HttpResponseRedirect(refer or reverse("dv-favorites"))
 
 def oneliner(request):
