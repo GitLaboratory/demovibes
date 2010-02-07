@@ -1,5 +1,5 @@
 #include <cstdlib>
-/*
+
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -42,10 +42,10 @@ std::string BassTypeToString(DWORD channelType)
 		default: return "unknown";
 	}
 }
-*/
+
 int main(int argc, char* argv[])
 {
-/*	logror::LogSetConsoleLevel(logror::fatal);
+	logror::LogSetConsoleLevel(logror::fatal);
 	//logror::LogSetConsoleLevel(logror::debug);
 	if (argc < 2 || (*argv[1] == '-' && argc < 3)) 
 		logror::Fatal("not enough arguments");
@@ -84,5 +84,5 @@ int main(int argc, char* argv[])
 		std::cout << "replaygain:" << RG_GetTitleGain(context) << std::endl;
 		RG_FreeContext(context);
 	}
-*/	return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
