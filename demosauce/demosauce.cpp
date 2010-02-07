@@ -1,6 +1,6 @@
 /*
 	fancy streaming engine for scenemusic 
-	slapped together by maep, [put your names here]  2009, 2010
+	slapped together by maep 2009, 2010
 	
 	BEHOLD, A FUCKING PONY!
 	
@@ -39,14 +39,14 @@ using namespace logror;
 
 int main(int argc, char* argv[])
 {
-	std::cout << "demosauce 0.14 - Now with MORE flavor!\n";
+	std::cout << "demosauce 0.20 - Now with TWICE the BITS!\n";
 	try
 	{
 		InitSettings(argc, argv);
 		LogSetConsoleLevel(setting::log_console_level);
 		LogSetFile(setting::log_file, setting::log_file_level);
 		BassCast cast;
-		std::cout << "runniALL GLORY TO THE HYPNOTOAD!\n";
+		std::cout << "streamin'\n";
 		cast.Run();
 	} 
 	catch (std::exception & e)

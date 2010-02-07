@@ -81,16 +81,21 @@ Sockets::GetSong(SongInfo & info)
 		Error("socket command GETSONG failed");
 		info.fileName = setting::error_tune;
 	}
+	
 	if (!pimpl->SendCommand("GETMETA", info.title))
 		info.title = setting::error_title;
-	info.gain = 1; 
-	/* uncomment to enable GETGAIN command, remove line above
+	
 	string gain;
 	if (!pimpl->SendCommand("GETGAIN", gain))
-		gain = "1";
+		gain = "0"; // right, gain in db
 	try { info.gain = lexical_cast<float>(gain); }
-	catch (bad_lexical_cast &) { info.gain = 1; }
-	*/
+	catch (bad_lexical_cast &) { info.gain = 0; }
+	
+	string loopDuration;
+	if (!pimpl->SendCommand("GETLOOP", loopDuration))
+		loopDuration = "0";
+	try { info.loopDuration = lexical_cast<float>(gain); }
+	catch (bad_lexical_cast &) { info.loopDuration = 0; }
 }
 
 bool ResolveIp(string host, std::string &ipAddress)

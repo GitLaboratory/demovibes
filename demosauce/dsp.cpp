@@ -1,6 +1,10 @@
 #include <cmath>
+#include <cstring>
 #include <vector>
+#include <limits>
 #include <algorithm>
+
+#include<boost/static_assert.hpp>
 
 #include "logror.h"
 #include "dsp.h"
@@ -21,7 +25,7 @@ struct MachineStack::Pimpl
 MachineStack::MachineStack() : pimpl(new Pimpl) {}
 MachineStack::~MachineStack() {} // needed or scoped_ptr may start whining
 	
-uint32_t MachineStack::Process(int16_t * const buffer, uint32_t const frames)
+uint32_t MachineStack::Process(float * const buffer, uint32_t const frames)
 {
 	if (!source.get())
 		return frames;
@@ -77,123 +81,83 @@ void MachineStack::UpdateRouting()
 }
 	
 //-----------------------------------------------------------------------------
-struct MapChannels::Pimpl
-{
-	uint32_t outChannels;
-	std::vector<int16_t> mixbuffer;
-};
-
-MapChannels::MapChannels() : pimpl(new Pimpl) { pimpl->outChannels = 2; }
-MapChannels::~MapChannels() {}
-
-void MapChannels::SetOutChannels(uint32_t outChannels)
-{
-	pimpl->outChannels = outChannels == 1 ? 1 : 2;
-}
-
-uint32_t MapChannels::Process(int16_t * const buffer, uint32_t const frames)
+uint32_t MapChannels::Process(float * const buffer, uint32_t const frames)
 {
 	if (!source.get())
 		return frames;
-	uint32_t const inChannels = source->Channels() == 1 ? 1 : 2;
-	uint32_t const outChannels = pimpl->outChannels;
+	uint32_t const inChannels = source->Channels() == 2 ? 2 : 1;
 	if (inChannels == outChannels)
 		return source->Process(buffer, frames);
 	if (inChannels == 1 && outChannels == 2)
 	{
 		uint32_t const readFrames = source->Process(buffer, frames);
-		int16_t const * in = buffer + readFrames - 1;
-		int16_t * outl = buffer + readFrames * 2 - 2; 
-		int16_t * outr = buffer + readFrames * 2 - 1;
-		for (uint_fast32_t i = 0; i < readFrames; ++i)
-		{
-			*outl = *in; *outr = *in--; 
-			outl -= 2; outr -= 2;
-		}
+		size_t channelBytes = FramesInBytes<float>(readFrames, 1);
+		memcpy(buffer + readFrames, buffer, channelBytes); // ahhh the beauty of deinterlaced channels
 		return readFrames;
 	}
 	if (inChannels == 2 && outChannels == 1)
 	{
-		if (pimpl->mixbuffer.size() < frames * 2)
-			pimpl->mixbuffer.resize(frames * 2);
-		int16_t * in = & pimpl->mixbuffer[0];
-		uint32_t const readFrames = source->Process(in, frames);
-		int16_t * out = buffer;
-		for (uint_fast32_t i = 0; i < readFrames / 2; ++i)
-		{
-			int_fast32_t const value = in[0] + in[1]; // need 32 or we get clipping violation
-			*out++ = static_cast<int16_t>(value / 2); // any good compiler will potimize this
-			in += 2;
-		}
+		if (mixBuffer.Size() < frames * 2)
+			mixBuffer.Resize(frames * 2);
+		uint32_t const readFrames = source->Process(mixBuffer.Get(), frames);
+		float const * leftIn = mixBuffer.Get();
+		float const * rightIn = mixBuffer.Get() + readFrames;
+		float * out = buffer;
+		for (uint_fast32_t i = 0; i < readFrames; ++i)
+			*out++ = (*leftIn++ + *rightIn++) * .5; 
 		return readFrames;
 	}
 	return source->Process(buffer, frames);
 }
 
-uint32_t MapChannels::Channels() const
-{
-	return source.get() ? pimpl->outChannels : 1;
-}
-
 //-----------------------------------------------------------------------------
-struct LinearFade::Pimpl
-{
-	uint64_t startFrame;
-	uint64_t endFrame;
-	uint64_t currentFrame;
-	double amp;
-	double ampInc;
-};
-
-LinearFade::LinearFade() : pimpl(new Pimpl) {}
-LinearFade::~LinearFade() {}
-	
 void LinearFade::Set(uint64_t startFrame, uint64_t endFrame, float beginAmp, float endAmp)
 {
 	if (startFrame >= endFrame || beginAmp < 0 || endAmp < 0) 
 		return;	
-	pimpl->startFrame = startFrame;
-	pimpl->endFrame = endFrame;
-	pimpl->currentFrame = 0;
-	pimpl->amp = beginAmp;
-	pimpl->ampInc = (endAmp - beginAmp) / (endFrame - startFrame);
+	this->startFrame = startFrame;
+	this->endFrame = endFrame;
+	this->currentFrame = 0;
+	this->amp = beginAmp;
+	this->ampInc = (endAmp - beginAmp) / (endFrame - startFrame);
 }
 
-uint32_t LinearFade::Process(int16_t * const buffer, uint32_t const frames)
+uint32_t LinearFade::Process(float * const buffer, uint32_t const frames)
 {
-	if (!source.get())
+	if (!source.get() || source->Channels() == 0)
 		return frames;
 	uint32_t const readFrames = source->Process(buffer, frames);
-	uint32_t const channels = source->Channels();
-	uint32_t const endA = (pimpl->startFrame < pimpl->currentFrame) ? 0 :
-		unsigned_min<uint32_t>(frames, pimpl->startFrame - pimpl->currentFrame);
-	uint32_t const endB = (pimpl->endFrame < pimpl->currentFrame) ? 0 :
-		unsigned_min<uint32_t>(frames, pimpl->endFrame - pimpl->currentFrame);
-	float amp = pimpl->amp;
-	float const ampInc = pimpl->ampInc / channels;
-	int16_t * out = buffer;
-	uint_fast32_t i = 0;	
-	for (; i < endA * channels; ++i)
-		*out++ *= amp;
-	for (; i < endB * channels; ++i)
+	uint32_t const endA = (startFrame < currentFrame) ? 0 :
+		unsigned_min<uint32_t>(readFrames, startFrame - currentFrame);
+	uint32_t const endB = (endFrame < currentFrame) ? 0 :
+		unsigned_min<uint32_t>(readFrames, endFrame - currentFrame);
+	currentFrame += readFrames;
+	if (amp == 1 && (endA >= readFrames || endB == 0))
+		return readFrames; // amp mignt not be exacly on target, so proximity check would be better	
+	float * out = buffer;
+	for (uint32_t iChan = 0; iChan < source->Channels(); ++iChan)
 	{
-		*out++ *= amp;
-		amp += ampInc;
+		uint_fast32_t i = 0;
+		float a = amp;
+		for (; i < endA; ++i)
+			*out++ *= a;
+		for (; i < endB; ++i)
+			{ *out++ *= a; a += ampInc;	}
+		for (; i < readFrames; ++i)
+			*out++ *= a;
 	}
-	for (; i < readFrames * channels; ++i)
-		*out++ *= amp;
-	pimpl->amp += pimpl->ampInc * (endB - endA);
+	amp += ampInc * (endB - endA);
 	return readFrames;
 }
 
 //-----------------------------------------------------------------------------	
-uint32_t Gain::Process(int16_t * const buffer, uint32_t const frames)
+uint32_t Gain::Process(float * const buffer, uint32_t const frames)
 {
 	if (!source.get())
 		return frames;
 	uint32_t const readFrames = source->Process(buffer, frames);
 	uint32_t const channels = source->Channels();
-	int16_t * out = buffer;
+	float * out = buffer;
 	for (uint_fast32_t i = 0; i < readFrames * channels; ++i)
 		*out++ *= amp;
 	return readFrames;
@@ -207,40 +171,73 @@ void NoiseSource::Set(uint32_t channels, uint64_t duration)
 	currentFrame = 0;
 }
 
-uint32_t NoiseSource::Process(int16_t * const buffer, uint32_t const frames)
+uint32_t NoiseSource::Process(float * const buffer, uint32_t const frames)
 { 
 	if (currentFrame > duration)
 		return 0;
-	const uint32_t framesToWrite = std::min(duration - currentFrame, static_cast<uint64_t>(frames));
-	int16_t * out = buffer;
+	float const gah = 1.0 / RAND_MAX;
+	const uint32_t framesToWrite = unsigned_min<uint32_t>(duration - currentFrame, frames);
+	float * out = buffer;
 	for (uint_fast32_t i = 0; i < framesToWrite * channels; ++i)
-		*out++ = static_cast<int16_t>(rand() & 0x00ff);
+		*out++ = gah * rand();
 	currentFrame += framesToWrite;
 	return framesToWrite;
 }
 
 //-----------------------------------------------------------------------------
+void MixChannels::Set(float llAmp, float lrAmp, float rrAmp, float rlAmp)
+{
+	this->llAmp = llAmp;
+	this->lrAmp = lrAmp;
+	this->rrAmp = rrAmp;
+	this->rlAmp = rlAmp;
+}
 
-uint32_t MixChannels::Process(int16_t * const buffer, uint32_t const frames)
+uint32_t MixChannels::Process(float * const buffer, uint32_t const frames)
 {
 	if (!source.get())
 		return frames;
 	uint32_t const readFrames = source->Process(buffer, frames);
 	if (source->Channels() != 2)
 		return readFrames;
-	int16_t const * in = buffer;
-	int16_t * out = buffer;
+	float * left = buffer;
+	float * right = buffer + readFrames;
 	for (uint_fast32_t i = 0; i < readFrames; ++i)
 	{
-		int16_t const left = *in++;
-		int16_t const right = *in++;
-		*out++ = static_cast<int16_t>(llAmp * left + lrAmp * right);
-		*out++ = static_cast<int16_t>(rrAmp * right + rlAmp * left);
+		float const newLeft = llAmp * *left + lrAmp * *right;
+		float const newRight = rrAmp * *right + rlAmp * *left;
+		*left++ = newLeft;
+		*right++ = newRight;
 	}
 	return readFrames;
-}	
+}
 
-float llAmp;
-float lrAmp;
-float rrAmp;
-float rlAmp;
+//-----------------------------------------------------------------------------
+uint32_t Brickwall::Process(float * const buffer, uint32_t const frames)
+{
+	if (!source.get())
+		return frames;
+	uint32_t const readFrames = source->Process(buffer, frames);
+//	float * out = buffer;
+//	for (uint_fast32_t i = 0; i < readFrames; ++i)
+	return readFrames;
+}
+
+//-----------------------------------------------------------------------------
+uint32_t Peaky::Process(float * const buffer, uint32_t const frames)
+{
+	if (!source.get())
+		return frames;
+	uint32_t const readFrames = source->Process(buffer, frames);
+	uint_fast32_t const totalFrames = readFrames * source->Channels();
+	float const * in = buffer;
+	float max = peak;
+	for (uint_fast32_t i = 0; i < totalFrames; ++i)
+	{
+		float const value = fabs(*in++);
+		if (value > max)
+			max = value;
+	}
+	peak = max;
+	return readFrames;
+}

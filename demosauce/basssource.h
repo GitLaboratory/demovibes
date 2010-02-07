@@ -4,29 +4,33 @@
 #include <string>
 
 #include <boost/cstdint.hpp>
-#include <boost/utility.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include "dsp.h"
 
-class BassSource : public Machine, boost::noncopyable
+class BassSource : public Machine
 {
 public:
 	BassSource();
 	virtual ~BassSource();
-	//overwrite
 	bool Load(std::string fileName, bool prescan = false);
-	uint32_t Process(int16_t * const buffer, uint32_t const frames);
-	std::string Name() const {return "Bass Source"; }
+	static bool CheckExtension(std::string fileName);
 	
-	void SetSamplerate(uint32_t moduleSamplerate);
-	void SetLoopvogel(float duration);
+	//overwrite
+	uint32_t Process(float * const buffer, uint32_t const frames);
+	std::string Name() const {return "Bass Source"; }
+	uint32_t Channels() const;
+	
+	void SetSamplerate(uint32_t moduleSamplerate); // only applies to modules
+	void SetLoopDuration(float duration); // only applies to modules
+	bool IsModule() const;
+	bool IsAmigaModule() const;
+	float Loopiness() const;
 	
 	uint32_t BassChannelType() const;
-	uint32_t Channels() const;
 	uint32_t Samplerate() const;
 	uint32_t Bitrate() const;
-	float Duration() const;
+	double Duration() const;
 	
 private: 
 	struct Pimpl;

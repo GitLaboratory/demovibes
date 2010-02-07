@@ -32,6 +32,9 @@ namespace setting
 	string log_file				= "demosauce.log";
 	Level log_file_level		= info;
 	Level log_console_level		= warning;
+	float amiga_channel_ratio	= 0;
+	
+	string debug_file;
 }
 
 using namespace setting;
@@ -39,13 +42,13 @@ using namespace setting;
 string configFileName = "demosauce.conf";
 string castForcePassword;
 string logFileLevel;
-string logConsoleLevel;;
+string logConsoleLevel;
 
 void BuildDescriptions(options_description & settingsDesc, options_description & optionsDesc)
 {
 	settingsDesc.add_options()
 	("demovibes_host", value<string>(&demovibes_host))
-    ("demovibes_port", value<uint32_t>(&demovibes_port))
+	("demovibes_port", value<uint32_t>(&demovibes_port))
 	("encoder_samplerate", value<uint32_t>(&encoder_samplerate))
 	("encoder_bitrate", value<uint32_t>(&encoder_bitrate))
 	("encoder_channels", value<uint32_t>(&encoder_channels))
@@ -61,13 +64,15 @@ void BuildDescriptions(options_description & settingsDesc, options_description &
 	("error_title", value<string>(&error_title))
 	("log_file", value<string>(&log_file))
 	("log_file_level", value<string>(&logFileLevel))
-	("log_console_level",value<string>(&logConsoleLevel))
+	("log_console_level", value<string>(&logConsoleLevel))
+	("amiga_channel_ratio", value<float>(&amiga_channel_ratio))
 	;
 
 	optionsDesc.add_options()
-	("help", "what do you think? make a pizza maybe?")
+	("help", "what do you think this does? make you a pizza maybe?")
 	("config_file,c", value<string>(&configFileName), "use config file, default: demosauce.conf")
 	("cast_password,p", value<string>(&castForcePassword), "password for cast server, overwrites setting from config file")
+	("debug_file,f", value<string>(&debug_file), "load specific file, intended for testing and debugging")
 	;
 }
 
@@ -84,6 +89,9 @@ void CheckSanity()
 		e = 1, std::cout << "setting encoder_channels out of range (1-2)\n";
 	if (cast_port < 1 || cast_port > 65535)
 		e = 1, std::cout << "setting cast_port out of range (1-65535)\n";
+	if (amiga_channel_ratio < 0 || amiga_channel_ratio > 1)
+		e = 1, std::cout << "setting amiga_channel_ratio out of range (0-1)";
+	
 	if (e ==1)
 		exit(EXIT_FAILURE);
 }

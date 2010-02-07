@@ -1,4 +1,5 @@
 #include <cstdlib>
+/*
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -7,13 +8,14 @@
 #include "bass/bass_aac.h"
 #include "bass/bassflac.h"
 
-#include "replay_gain/replay_gain.h"
+#include "libreplaygain/replay_gain.h"
 
 #include "logror.h"
-#include "decoder_common.h"
+#include "misc.h"
 #include "basssource.h"
+#include "avsource.h"
 
-std::string TypeToString(DWORD channelType)
+std::string BassTypeToString(DWORD channelType)
 {
 	switch (channelType)
 	{
@@ -40,61 +42,47 @@ std::string TypeToString(DWORD channelType)
 		default: return "unknown";
 	}
 }
-
+*/
 int main(int argc, char* argv[])
 {
-	logror::LogSetConsoleLevel(logror::fatal);
+/*	logror::LogSetConsoleLevel(logror::fatal);
+	//logror::LogSetConsoleLevel(logror::debug);
 	if (argc < 2 || (*argv[1] == '-' && argc < 3)) 
 		logror::Fatal("not enough arguments");
 	const char * fileName = argv[argc - 1];
 	
 	// open file
-	BassSource source;
-	bool success = false;
-	switch(DecideDecoderType(fileName))
-	{
-		case decoder_codec_generic:
-		case decoder_codec_aac:
-		case decoder_codec_mp4:
-		case decoder_codec_flac:
-			success = source.Load(fileName, true);
-			break;
-		case decoder_module_generic:
-		case decoder_module_amiga:
-			success = source.Load(fileName, true);
-			break;
-		default:;
-	}
-	if (!success)
+	BassSource bassSource;
+	if (!bassSource.Load(fileName, true))
 	{
 		if (BASS_ErrorGetCode() == BASS_ERROR_NOTAVAIL)
-			logror::Fatal("unalbe to determine length");
+			logror::Fatal("unable to determine length");
 		else
 			logror::Fatal("failed to load file (code: %1%)"), BASS_ErrorGetCode();
 	}
-	if (source.Channels() < 1 || source.Channels() > 2)
+	if (bassSource.Channels() < 1 || bassSource.Channels() > 2)
 		logror::Fatal("usupported number of channels");
 
-	std::cout << "type:" << TypeToString(source.BassChannelType()) << std::endl;
-	std::cout << "length:" << source.Duration() << std::endl;
-	std::cout << "bitrate:" << source.Bitrate() << std::endl;
+	std::cout << "type:" << BassTypeToString(bassSource.BassChannelType()) << std::endl;
+	std::cout << "length:" << bassSource.Duration() << std::endl;
+	std::cout << "bitrate:" << bassSource.Bitrate() << std::endl;
+	std::cout << "loopiness:" << bassSource.Loopiness() << std::endl;
 	
 	if (strcmp(argv[1], "--no-replay_gain"))
 	{
 		RG_SampleFormat format;
-		format.sampleRate = source.Samplerate();
-		format.sampleFormat = RG_SIGNED_16_BIT;
-		format.numberChannels = source.Channels();
-		format.interleaved = TRUE;
+		format.sampleRate = bassSource.Samplerate();
+		format.sampleType = RG_FLOAT_32_BIT;
+		format.numberChannels = bassSource.Channels();
+		format.interleaved = FALSE;
 		RG_Context * context = RG_NewContext(&format);
-		int16_t buffer[48000 * 8];
-		static uint32_t const buffFrames = 
-			bytes2frames<uint32_t, int16_t>(sizeof(buffer), source.Channels());
+		float buffer[48000 * 4];
+		static uint32_t const buffFrames = 	BytesInFrames<uint32_t, float>(sizeof(buffer), bassSource.Channels());
 		uint32_t frames = 0;
-		while ((frames = source.Process(buffer, buffFrames)) == buffFrames)	
+		while ((frames = bassSource.Process(buffer, buffFrames)) == buffFrames)	
 			RG_Analyze(context, buffer, frames);
 		std::cout << "replaygain:" << RG_GetTitleGain(context) << std::endl;
 		RG_FreeContext(context);
 	}
-	return EXIT_SUCCESS;
+*/	return EXIT_SUCCESS;
 }

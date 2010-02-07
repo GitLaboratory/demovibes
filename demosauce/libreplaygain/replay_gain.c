@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "replay_gain.h"
 #include "gain_analysis.h"
 
@@ -13,6 +14,8 @@ struct _RG_CONTEXT
 
 RG_Context * RG_NewContext(RG_SampleFormat * format)
 {
+	if (format->numberChannels != 1 && format->numberChannels != 2)
+		return NULL;
 	Context_t * cxt = NewAnalyzeContext();
 	int val = InitGainAnalysis(cxt, format->sampleRate);
 	if (val == INIT_GAIN_ANALYSIS_ERROR)
@@ -39,26 +42,25 @@ size_t RG_FormatSize(uint32_t sampleFormat)
 {
 	switch (sampleFormat) 
 	{
-		case RG_UNSIGNED_8_BIT: return sizeof(uint8_t);
 		case RG_SIGNED_16_BIT: return sizeof(int16_t);
+		case RG_SIGNED_32_BIT: return sizeof(int32_t);
 		case RG_FLOAT_32_BIT: return sizeof(float);
 		case RG_FLOAT_64_BIT: return sizeof(double);
 		default: return 0; // hmm what is good value here?
 	}
 }
 
-void UpdateBuffer(RG_Context * context, uint32_t length)
+void UpdateBuffer(RG_Context * context, uint32_t frames)
 {
-	const size_t requiredSize = length * sizeof(Float_t) * context->format.numberChannels;
+	const size_t requiredSize = frames * sizeof(Float_t) * context->format.numberChannels;
 	if (context->bufferSize < requiredSize)
 		context->buffer = realloc(context->buffer, requiredSize);
 }
 
 void ConvertF64(RG_Context * context, void * data, uint32_t length)
 {
-	// the lib expexts the data in int_16 range
-	static Float_t const buttScratcher = 0x7fff; 
-	if (context->format.numberChannels == 2)
+	static Float_t const buttScratcher = 0x7fff;
+	if (context->format.numberChannels == 2 && context->format.interleaved)
 	{
 		double const *  in = (double *) data;
 		Float_t * outl = (Float_t *) context->buffer;
@@ -69,20 +71,19 @@ void ConvertF64(RG_Context * context, void * data, uint32_t length)
 			*outr++ = (Float_t) *in++ * buttScratcher;
 		}
 	}
-		else if (context->format.numberChannels == 1)
+	else
 	{
 		double const *  in = (double *) data;
 		Float_t * out = (Float_t *) context->buffer;
-		for (size_t i = 0; i < length; i++)
+		for (size_t i = 0; i < length * context->format.numberChannels; i++)
 			*out++ = (Float_t) *in++ * buttScratcher;
 	}
 }
 
 void ConvertF32(RG_Context * context, void * data, uint32_t length)
 {
-	// the lib expexts the data in int_16 range
 	static Float_t const buttScratcher = 0x7fff; 
-	if (context->format.numberChannels == 2)
+	if (context->format.numberChannels == 2 && context->format.interleaved)
 	{
 		float const *  in = (float *) data;
 		Float_t * outl = (Float_t *) context->buffer;
@@ -93,76 +94,81 @@ void ConvertF32(RG_Context * context, void * data, uint32_t length)
 			*outr++ = (Float_t) *in++ * buttScratcher;
 		}
 	}
-	else if (context->format.numberChannels == 1)
+	else
 	{
-		float const *  in = (float *) data;
-		Float_t * out = (Float_t *) context->buffer;
-		for (size_t i = 0; i < length; i++)
-			*out++ = (Float_t) * in++ * buttScratcher;
+		float const *  in = (float*) data;
+		Float_t * out = (Float_t*) context->buffer;
+		for (size_t i = 0; i < length * context->format.numberChannels; i++)
+			*out++ = (Float_t) *in++ * buttScratcher;
 	}
 }
 
-void ConvertS16(RG_Context * context, void * data, uint32_t length)
+void ConvertS32(RG_Context * context, void * data, uint32_t length)
 {
-	//static Float_t const buttScratcher = 1.0 / 0x8000;
-	if (context->format.numberChannels == 2)
+	static Float_t const buttScratcher = 0x7fff / 0x7fffffff; 
+	if (context->format.numberChannels == 2 && context->format.interleaved)
+	{
+		int32_t const *  in = (int32_t*) data;
+		Float_t * outl = (Float_t *) context->buffer;
+		Float_t * outr = (Float_t *) context->buffer + context->bufferSize / 2;
+		for (size_t i = 0; i < length; i++)
+		{
+			*outl++ = (Float_t) *in++ * buttScratcher;
+			*outr++ = (Float_t) *in++ * buttScratcher;
+		}
+	}
+	else
+	{
+		int32_t const *  in = (int32_t*) data;
+		Float_t * out = (Float_t *) context->buffer;
+		for (size_t i = 0; i < length * context->format.numberChannels; i++)
+			*out++ = (Float_t) *in++ * buttScratcher;
+	}
+}
+
+void ConvertS16(RG_Context * context, void* data, uint32_t length)
+{
+	if (context->format.numberChannels == 2 && context->format.interleaved)
 	{
 		int16_t const *  in = (int16_t *) data;
 		Float_t * outl = (Float_t *) context->buffer;
 		Float_t * outr = (Float_t *) context->buffer + context->bufferSize / 2;
 		for (size_t i = 0; i < length; i++)
 		{
-			*outl++ = (Float_t) *in++; // * buttScratcher;
-			*outr++ = (Float_t) *in++; // * buttScratcher;
+			*outl++ = (Float_t) *in++;
+			*outr++ = (Float_t) *in++;
 		}
 	}
-	else if (context->format.numberChannels == 1)
+	else
 	{
 		int16_t const *  in = (int16_t *) data;
 		Float_t * out = (Float_t *) context->buffer;
-		for (size_t i = 0; i < length; i++)
-			*out++ = (Float_t) *in++; // * buttScratcher;
+		for (size_t i = 0; i < length * context->format.numberChannels; i++)
+			*out++ = (Float_t) *in++;
 	}
 }
 
-void ConvertU8(RG_Context * context, void * data, uint32_t length)
+void RG_Analyze(RG_Context * context, void * data, uint32_t frames)
 {
-	static Float_t const buttScratcher = 0x101;
-	if (context->format.numberChannels == 2)
+	assert (context);
+	assert (data);
+	UpdateBuffer(context, frames);
+	switch (context->format.sampleType) 
 	{
-		int16_t const *  in = (int16_t *) data;
-		Float_t * outl = (Float_t *) context->buffer;
-		Float_t * outr = (Float_t *) context->buffer + context->bufferSize / 2;
-		for (size_t i = 0; i < length; i++)
-		{
-			*outl++ = (Float_t) *in++ * buttScratcher - 0x8000;
-			*outr++ = (Float_t) *in++ * buttScratcher - 0x8000;
-		}
-	}
-	else if (context->format.numberChannels == 1)
-	{
-		int16_t const *  in = (int16_t *) data;
-		Float_t * out = (Float_t *) context->buffer;
-		for (size_t i = 0; i < length; i++)
-			*out++ = (Float_t) *in++ * buttScratcher - 0x8000;
-	}
-}
-
-void RG_Analyze(RG_Context * context, void * data, uint32_t length)
-{
-	UpdateBuffer(context, length);
-	switch (context->format.sampleFormat) 
-	{
-		case RG_UNSIGNED_8_BIT: ConvertU8(context, data, length); break;
-		case RG_SIGNED_16_BIT: ConvertS16(context, data, length); break;
-		case RG_FLOAT_32_BIT: ConvertF32(context, data, length); break;
-		case RG_FLOAT_64_BIT: ConvertF64(context, data, length); break;
+		case RG_SIGNED_16_BIT: ConvertS16(context, data, frames); break;
+		case RG_SIGNED_32_BIT: ConvertS32(context, data, frames); break;
+		case RG_FLOAT_32_BIT: ConvertF32(context, data, frames); break;
+		case RG_FLOAT_64_BIT: ConvertF64(context, data, frames); break;
 		default: return;
 	}
 	if (context->format.numberChannels == 2)
-		AnalyzeSamples(context->cxt, context->buffer, context->buffer + context->bufferSize / 2, length, 2);
+	{
+		void* leftBuffer = context->buffer;
+		void* rightBuffer = (float*)leftBuffer + frames;
+		AnalyzeSamples(context->cxt, leftBuffer, rightBuffer, frames, 2);
+	}
 	else if (context->format.numberChannels == 1)
-		AnalyzeSamples(context->cxt, context->buffer, NULL, length, 1);
+		AnalyzeSamples(context->cxt, context->buffer, NULL, frames, 1);
 }
 
 double RG_GetTitleGain(RG_Context * context)

@@ -19,6 +19,8 @@ struct SongInfo
 	std::string fileName;
 	std::string title;
 	float gain;
+	float loopDuration;
+	SongInfo() : gain(0), loopDuration(0) {}
 };
 
 class Sockets : boost::noncopyable

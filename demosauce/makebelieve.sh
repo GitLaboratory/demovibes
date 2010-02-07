@@ -3,11 +3,17 @@
 
 flags='-Wall -Wfatal-errors'
 flags_debug='-g -DDEBUG'
-flags_release='-s -O2'
-source_files='basscast.cpp dsp.cpp basssource.cpp scan.cpp sockets.cpp demosauce.cpp settings.cpp logror.cpp'
-link_scan='logror.o basssource.o scan.o'
-flags_scan='-lbass -lbass_aac -lbassflac -lboost_date_time-mt'
-link_demosauce='dsp.o logror.o basssource.o basscast.o sockets.o settings.o demosauce.o'
+flags_release='-s -O3 -mtune=native -msse2 -mfpmath=sse'
+
+replaygain_a='libreplaygain/libreplaygain.a'
+samplerate_a='libsamplerate/libsamplerate.a'
+
+source_files='convert.cpp basscast.cpp dsp.cpp basssource.cpp scan.cpp sockets.cpp misc.cpp demosauce.cpp settings.cpp logror.cpp'
+
+link_scan="dsp.o misc.o logror.o basssource.o scan.o $replaygain_a"
+flags_scan='-lbass -lbass_aac -lbassflac -lboost_system-mt -lboost_date_time-mt'
+
+link_demosauce="convert.o misc.o dsp.o logror.o basssource.o basscast.o sockets.o settings.o demosauce.o $samplerate_a"
 flags_demosauce='-lbass -lbassenc -lbass_aac -lbassflac -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_date_time-mt'
 
 build_debug=
@@ -41,10 +47,14 @@ else
 	dir_bass='bass/bin_linux'
 fi
 
-# libreplay_gain
-replaygain_a='replay_gain/libreplay_gain.a'
+# libreplaygain
 if test ! -f "$replaygain_a" -o "$do_rebuild"; then
-	cd replay_gain;	./build.sh ${build_debug:+debug}; cd ..
+	cd libreplaygain; ./build.sh ${build_debug:+debug}; cd ..
+fi
+
+# libsamplerate
+if test ! -f "$samplerate_a" -o "$do_rebuild"; then
+	cd libsamplerate; ./build.sh; cd ..
 fi
 
 did_something=
@@ -59,12 +69,12 @@ do
 	fi
 done
 
-if test ! $did_something; then echo 'nothing to do'; exit 0; fi
+if test ! $did_something; then echo 'did nothing'; fi
 
-flags_bass="-L$dir_bass -Wl,-rpath=$dir_bass" #test without ./
+flags_bass="-L$dir_bass -Wl,-rpath=$dir_bass"
 
 echo 'linking scan'
-g++ $flags $flags_scan $flags_bass $link_scan -o scan $replaygain_a
+g++ $flags $flags_scan $flags_bass $link_scan -o scan
 if test $? -ne 0; then exit 1; fi
 
 echo 'linking demosauce'

@@ -26,8 +26,9 @@ namespace setting
 	extern std::string		log_file;
 	extern logror::Level	log_file_level;
 	extern logror::Level	log_console_level;
+	
+	extern float			amiga_channel_ratio;
+	extern std::string		debug_file;
 }
-
-#define SAMPLE_SIZE 2 // 16 bit processing, baby! thats TWICE the BITS!
 
 #endif
