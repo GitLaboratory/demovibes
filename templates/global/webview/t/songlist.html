@@ -21,4 +21,7 @@
   <span name="a_queue_{{ song.id }}">
    {% include "webview/t/songlist_span.html" %}
   </span>
+ </td>
+ <td>
+   <span class="lastreqdate">{% ifnotequal song.last_queued "Never" %}{{ song.last_queued|date:"Y-m-d"}}{% else %}Never!{% endifnotequal %}</span>
  </td>{% endspaceless %}

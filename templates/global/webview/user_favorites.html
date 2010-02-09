@@ -7,14 +7,9 @@
 {% block main %}
 <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />{{ favuser.username }}'s Favourite Songs</h2>
 {% with favuser as U%}{% include "webview/t/user.html" %}{% endwith %} Has The Following Favourite Songs:
-{% cache 600 favuser.favorites favuser.username %}
-<table class="songlist">
- <tr>
-  <th>Song Title</th>
-  <th>Artist</th>
-  <th>Song Length</th>
-  <th>Status</th>
- </tr>
+
+{% include "webview/t/songheader.html" %}
+
 {% for favorite in favorites %}
  <tr class="{% cycle 'row1' 'row2' %}">
   {% with favorite.song as song %}
@@ -23,7 +18,5 @@
  </tr>
 {% endfor %}
 </table>
-<p><em>Contents of this page are being cached.<br />
-Last Updated: {% now "d-m-Y, H:i:s" %}</em></p>
-{% endcache %}
+
 {% endblock %}

@@ -362,6 +362,10 @@ p.pmtitle {
 	font-family: "snap", "rez ascii", "Lucida Console", monospace;
 }
 
+.lastreqdate {
+	white-space:nowrap;
+}
+
 .onelinertext {
 	font-family: "snap", "rez ascii", "Lucida Console", monospace;
 	margin: 7px;
