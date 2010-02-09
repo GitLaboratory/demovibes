@@ -19,7 +19,11 @@
  {% endcache %}
  <td>
   <span name="a_queue_{{ song.id }}">
-   {% include "webview/t/songlist_span.html" %}
+   {% if user.is_authenticated %}
+    {% include "webview/t/songlist_span.html" %}
+   {% else %}
+    <img class="song_head" src="/static/lock.png" title="Song Locked" />
+   {% endif %}
   </span>
  </td>
  <td>
