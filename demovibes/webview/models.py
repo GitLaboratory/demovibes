@@ -117,7 +117,7 @@ class Userprofile(models.Model):
     visible_to = models.CharField(max_length=1, default = "A", choices = VISIBLE_TO)
     last_active = models.DateTimeField(blank = True, null = True)
     email_on_pm = models.BooleanField(default=True, verbose_name = "Send email on new PM")
-    email_on_group_add = models.BooleanField(default=True, verbose_name = "Send email on group approval")
+    email_on_group_add = models.BooleanField(default=True, verbose_name = "Send email on group/label approval")
     email_on_artist_add = models.BooleanField(default=True, verbose_name = "Send email on artist approval")
     email_on_artist_comment = models.BooleanField(default = True, verbose_name="Send email on artist comments")
     pm_accepted_upload = models.BooleanField(default=True, verbose_name = "Send PM on accepted upload")

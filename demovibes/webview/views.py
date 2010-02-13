@@ -660,7 +660,7 @@ def activate_groups(request):
         group.save()
         
         # Send the email to inform the user of their request status
-        if song.uploader.get_profile().email_on_group_add and status == 'A' or status == 'R':
+        if group.created_by.get_profile().email_on_group_add and status == 'A' or status == 'R':
             PrivateMessage.objects.create(sender = request.user, to = group.created_by,\
              message = mail_tpl.render(c), subject = "Group Request Status Changed To: %s" % stat)
 
@@ -723,7 +723,7 @@ def activate_labels(request):
         this_label.save()
         
         # Send the email to inform the user of their request status
-        if song.uploader.get_profile().email_on_label_add and status == 'A' or status == 'R':
+        if this_label.created_by.get_profile().email_on_group_add and status == 'A' or status == 'R':
             PrivateMessage.objects.create(sender = request.user, to = this_label.created_by,\
              message = mail_tpl.render(c), subject = "Label Request Status Changed To: %s" % stat)
 
