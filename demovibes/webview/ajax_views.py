@@ -3,6 +3,7 @@ from demovibes.webview.common import *
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.http import HttpResponse
+from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response
 import socket
@@ -51,13 +52,16 @@ def monitor(request, event_id):
     return HttpResponse("")
 
 #This might need to be uncached later on, if per-user info is sent.
+@cache_control(must_revalidate=True, max_age=30)
 def nowplaying(request):
     song = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
     return render_to_response('webview/js/now_playing.html', { 'now_playing' : song },  context_instance=RequestContext(request))
 
+@cache_control(must_revalidate=True, max_age=30)
 def history(request):
     return HttpResponse(get_history())
 
+@cache_control(must_revalidate=True, max_age=30)
 def queue(request):
     return HttpResponse(get_queue())
 
@@ -72,9 +76,11 @@ def oneliner_submit(request):
         add_event(event='oneliner')
     return HttpResponse("OK")
 
+@cache_control(must_revalidate=True, max_age=30)
 def oneliner(request):
     return HttpResponse(get_oneliner())
 
+@cache_control(must_revalidate=True, max_age=30)
 def songupdate(request, song_id):
     song = Song.objects.get(id=song_id)
     return render_to_response('webview/js/generic.html', { 
