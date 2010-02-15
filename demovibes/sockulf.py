@@ -1,7 +1,6 @@
 import socket
 import logging
-import pyAdder
-
+import queuefetcher
 
 Log = logging.getLogger("Sockulf")
 
@@ -15,6 +14,7 @@ class pyWhisperer:
 		}
 		self.host = host
 		self.port = port
+		self.player = queuefetcher.song_finder()
 		self.running = True
 		self.timeout = timeout
 		self.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -23,7 +23,6 @@ class pyWhisperer:
 
 	def listen(self):
 		Log.debug("Starting loop")
-		pyAdder.ices_init()
 		while self.running:
 			self.listener.listen(1)
 			Log.debug("Listening for connections..")
@@ -47,13 +46,12 @@ class pyWhisperer:
 			self.conn.close()
 		Log.debug("Closing down listener")
 		self.listener.close()
-		pyAdder.ices_shutdown()
 
 	def command_getsong(self):
-		return pyAdder.ices_get_next()
+		return self.player.get_next_song()
 
 	def command_getmeta(self):
-		return pyAdder.ices_get_metadata()
+		return self.player.get_metadata()
 
 	def command_die(self):
 		self.running = False
