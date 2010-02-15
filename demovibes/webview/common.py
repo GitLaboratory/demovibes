@@ -125,7 +125,7 @@ def get_profile(user):
     """
     try:
         profile = user.get_profile()
-    except Userprofile.DoesNotExist:
+    except:
         profile = Userprofile(user = user)
         profile.save()
     return profile
