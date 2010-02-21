@@ -28,6 +28,7 @@ class song_finder:
         
         self.meta = None
         self.timestamp = None
+        self.song = None
         
         self.log = logging.getLogger("pyAdder")
         
@@ -58,6 +59,9 @@ class song_finder:
         }
         
     def findQueued(self):
+        """
+        Return next queued song, or a random song, or a jingle.
+        """
         songs = Queue.objects.filter(played=False, playtime__lte = datetime.datetime.now()).order_by('-priority', 'id')
         if not songs: # Since OR queries have been problematic on production server earlier, we do this hack..
             songs = Queue.objects.filter(played=False, playtime = None).order_by('-priority', 'id')
@@ -76,6 +80,9 @@ class song_finder:
         return self.meta.encode(self.sysenc, 'replace')
         
     def get_next_song(self):
+        """
+        Return next song filepath to be played
+        """
         if self.timestamp:
             delta = datetime.datetime.now() - self.timestamp
             if delta < timedelta(seconds=3):
@@ -87,6 +94,7 @@ class song_finder:
     
         self.meta = "%s - %s" % (song.artist(), song.title)
         self.log.debug("Now playing \"%s\" [ID %s]" % (song.title, song.id))
+        self.song = song
     
         try:
             filepath = song.file.path.decode('utf8').encode(self.sysenc)

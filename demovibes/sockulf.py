@@ -6,11 +6,13 @@ Log = logging.getLogger("Sockulf")
 
 class pyWhisperer:
 	def __init__(self, host, port, timeout):
-		Log.debug("Initiating listener with values HOST='%s', PORT='%s', TIMEOUT='%s'." % (host, port, timeout))
+		Log.debug("Initiating listener with values HOST='%s', PORT='%s'." % (host, port))
 		self.COMMANDS = {
 			'GETSONG': self.command_getsong,
 			'GETMETA': self.command_getmeta,
 			'DIE': self.command_die,
+			'GETTITLE': self.command_title,
+			'GETARTIST': self.command_artist,
 		}
 		self.host = host
 		self.port = port
@@ -46,6 +48,12 @@ class pyWhisperer:
 			self.conn.close()
 		Log.debug("Closing down listener")
 		self.listener.close()
+
+	def command_artist(self):
+		return self.player.song.artist()
+		
+	def command_title(self):
+		return self.player.song.title
 
 	def command_getsong(self):
 		return self.player.get_next_song()
