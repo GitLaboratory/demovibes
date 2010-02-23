@@ -47,7 +47,7 @@ read hostn
 #Packages to install
 database="mysql-server"
 web="libapache2-mod-wsgi apache2"
-python="python-imaging python-django python-mysqldb python-flup python-pymad python-setuptools"
+python="python-imaging python-django python-mysqldb python-flup python-pymad python-setuptools python-openid"
 memcache="python-memcache memcached"
 lame_support="libmp3lame0 libmp3lame-dev"
 icecast="icecast2"

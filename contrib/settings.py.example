@@ -233,4 +233,5 @@ INSTALLED_APPS = (
     'demovibes.forum',
     'django.contrib.markup',
     'south',
+    'openid_provider',
 )

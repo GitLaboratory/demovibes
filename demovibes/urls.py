@@ -12,6 +12,7 @@ urlpatterns = patterns('',
     (r'^accounts/profile/$', 'django.views.generic.simple.redirect_to', {'url': '/demovibes/'}),
     (r'^accounts/logout/$', 'webview.views.log_out'),
     (r'^demovibes/', include('demovibes.webview.urls')),
+    (r'^openid/', include('demovibes.openid_provider.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:

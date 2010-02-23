@@ -36,7 +36,7 @@ read hostn
 #Packages to install
 database="mysql-server"
 web="libapache2-mod-wsgi apache2"
-python="python-imaging python-mysqldb python-django python-flup python-pymad python-setuptools"
+python="python-imaging python-mysqldb python-django python-flup python-pymad python-setuptools python-openid"
 memcache="python-memcache memcached"
 icecast="icecast2"
 ices_compile="build-essential python-dev libshout3-dev"
