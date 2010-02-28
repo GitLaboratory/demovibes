@@ -49,6 +49,7 @@ def create_env():
                        cache_size=getattr(settings, 'JINJA2_CACHE_SIZE', 50),
                        extensions=getattr(settings, 'JINJA2_EXTENSIONS', ()))
     ENV.globals.update(jinja2_funcs.GLOBALS)
+    ENV.filters.update(jinja2_funcs.FILTERS)
     return ENV
 
 

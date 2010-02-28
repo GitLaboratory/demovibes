@@ -1,6 +1,6 @@
-from demovibes.webview.models import *
-from demovibes.webview.forms import *
-from demovibes.webview.common import *
+from webview.models import *
+from webview.forms import *
+from webview import common
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
@@ -94,7 +94,7 @@ def addqueue(request, song_id): # XXX Fix to POST
     except:
         return HttpResponseNotFound()
     #song.queue_by(request.user)
-    queue_song(song, request.user)
+    common.queue_song(song, request.user)
     return direct_to_template(request, template = "webview/song_queued.html")
 
 @login_required
@@ -121,8 +121,8 @@ def list_queue(request):
     Display the current song, the next songs in queue, and the latest 20 songs in history.
     """
     now_playing = ""
-    history = get_history()
-    queue = get_queue()
+    history = common.get_history()
+    queue = common.get_queue()
     return j2shim.r2r('webview/queue_list.html', \
         {'now_playing': now_playing, 'history': history, 'queue': queue}\
         , request)
@@ -142,7 +142,7 @@ def list_song(request, song_id):
 
 def view_user_favs(request, user):
     U = get_object_or_404(User, username = user)
-    profile = get_profile(U)
+    profile = common.get_profile(U)
     if not profile.viewable_by(request.user):
         return j2shim.r2r('base/error.html', { 'error' : "Sorry, you're not allowed to see this" }, request=request)
     favorites = Favorite.objects.filter(user = U)
@@ -156,7 +156,7 @@ def my_profile(request):
     Display the logged in user's profile.
     """
     user = request.user
-    profile = get_profile(user)
+    profile = common.get_profile(user)
     if request.method == 'POST':
         form = ProfileForm(request.POST, request.FILES, instance = profile)
         if form.is_valid():
@@ -172,7 +172,7 @@ def view_profile(request, user):
     Display a user's profile.
     """
     ProfileUser = get_object_or_404(User,username = user)
-    profile = get_profile(User.objects.get(username=user))
+    profile = common.get_profile(User.objects.get(username=user))
     if profile.viewable_by(request.user):
         return j2shim.r2r('webview/view_profile.html', \
             {'profile' : profile}, \

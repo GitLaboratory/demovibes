@@ -2,6 +2,8 @@ from django.template.defaulttags import URLNode
 from django.conf import settings
 from jinja2.filters import contextfilter
 from django.utils import translation
+from django.template import defaultfilters
+from jinja2 import Markup, escape, environmentfilter
 
 from webview.templatetags import dv_extend
 
@@ -36,6 +38,17 @@ def timeuntil(date):
     from datetime import datetime
     return timesince(datetime.now(),datetime(date.year, date.month, date.day))
 
+def mksafe(arg):
+    """
+    Force escaping of html
+    
+    First turn it into a Markup() type with escape, then force it into unicode again,
+    so other modifications to the string won't be automatically escaped.
+    """
+    result = escape(arg)
+    result = unicode(result)
+    return result
+
 def truncate(text,arg):
     import re
     from django.utils.encoding import force_unicode
@@ -58,6 +71,17 @@ def truncate(text,arg):
         else:
             return ' '.join(arr[:count]) + '&hellip;'
 
+
+#dict of filters
+FILTERS = {
+    'time': defaultfilters.time,
+    'date': defaultfilters.date,
+    'smileys': dv_extend.smileys,
+    'oneliner_mediaparse': dv_extend.oneliner_mediaparse,
+    'bbcode_oneliner': dv_extend.bbcode_oneliner,
+    'dv_urlize': dv_extend.dv_urlize,
+    'mksafe': mksafe,
+}
 
 # Dictionary over globally avaliable variables and functions
 GLOBALS = {

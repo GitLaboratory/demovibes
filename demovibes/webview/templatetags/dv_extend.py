@@ -9,7 +9,7 @@ from django.template import Context, Template
 from django.template.loader import get_template
 from forum.models import Forum, Thread, Post, Subscription
 import os.path, random
-import j2shim
+import j2shim as js
 
 register = template.Library()
 
