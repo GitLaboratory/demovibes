@@ -1,22 +1,23 @@
-<tr class="{% cycle 'row1' 'row2' %}">{% load cache%}{% cache 3600 hilist req.id %}
+{% set row_class = cycler('row1', 'row2') -%}
+<tr class="{{ row_class.next() }}">{# {% cache 3600 hilist req.id %} #}
  <td align="left">
-  {% with req.song as song %}{% include "webview/t/songname.html" %}{% endwith %}
+  {% set song = req.song %}{% include "webview/t/songname.html" %}
  </td>
  <td align="left">
-  {% for artist in req.song.artists.all %}
-   {% with artist as A%}{% include "webview/t/artist.html" %}{% endwith %}{% if forloop.last %} {% else %}, {% endif %}
+  {% for artist in req.song.artists.all() %}
+   {% set A = artist%}{% include "webview/t/artist.html" %}{% if loop.last %} {% else %}, {% endif %}
   {% endfor %}
  </td>
  <td align="center">
   {{ req.song.length }}
  </td>
  <td align="center">
-  {{ req.requested|time:"H:i" }}
+  {{ req.requested|time("H:i") }}
  </td>
  <td align="center">
-  {{ req.time_played|time:"H:i" }}
+  {{ req.time_played|time("H:i") }}
  </td>
  <td align="left">
-  {% with req.requested_by as U%}{% include "webview/t/user.html" %}{% endwith %}
- </td>{% endcache %}
+  {% set U = req.requested_by %}{% include "webview/t/user.html" %}
+ </td>{# {% endcache %} #}
 </tr>
