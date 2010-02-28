@@ -49,28 +49,6 @@ def mksafe(arg):
     result = unicode(result)
     return result
 
-def truncate(text,arg):
-    import re
-    from django.utils.encoding import force_unicode
-    text = force_unicode(text)
-    matches = re.match('(\d+)([cw]{1})',arg)
-    if not matches:
-        return text
-    count = int(matches.group(1))
-    type = matches.group(2)
-
-    if type == 'c':
-        if count > len(text):
-            return text
-        else:
-            return text[:count] + '&hellip;'
-    elif type == 'w':
-        arr = text.strip().split()
-        if count > len(arr):
-            return ' '.join(arr)
-        else:
-            return ' '.join(arr[:count]) + '&hellip;'
-
 
 #dict of filters
 FILTERS = {
