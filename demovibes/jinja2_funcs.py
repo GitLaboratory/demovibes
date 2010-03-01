@@ -54,6 +54,7 @@ def mksafe(arg):
 FILTERS = {
     'time': defaultfilters.time,
     'date': defaultfilters.date,
+    'floatformat': defaultfilters.floatformat,
     'smileys': dv_extend.smileys,
     'oneliner_mediaparse': dv_extend.oneliner_mediaparse,
     'bbcode_oneliner': dv_extend.bbcode_oneliner,

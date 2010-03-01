@@ -21,17 +21,30 @@
 from itertools import chain
 from django.conf import settings
 from django.http import HttpResponse
+import jinja2
 from django.core.exceptions import ImproperlyConfigured
 from django.template.context import get_standard_processors
 from django.template import TemplateDoesNotExist
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from jinja2.defaults import DEFAULT_NAMESPACE
+from django.template.context import Context
 import jinja2_funcs
 
 
 # the environment is unconfigured until the first template is loaded.
 _jinja_env = None
 
+#So generic views can use jinja via 'template_loader': djangojinja2._jinja_env
+class DjangoTemplate(jinja2.Template):
+    def render(self, *args, **kwargs):
+        if args and isinstance(args[0], Context):
+            for d in reversed(args[0].dicts):
+                kwargs.update(d)
+            args = []
+        return super(DjangoTemplate, self).render(*args, **kwargs)
+
+class DjangoEnvironment(jinja2.Environment):
+    template_class = DjangoTemplate
 
 def get_env():
     """Get the Jinja2 env and initialize it if necessary."""
@@ -44,8 +57,8 @@ def get_env():
 def create_env():
     """Create a new Jinja2 environment."""
     searchpath = list(settings.JINJA2_TEMPLATE_DIRS)
-    ENV = Environment(loader=FileSystemLoader(searchpath),
-                       auto_reload=settings.TEMPLATE_DEBUG,
+    ENV = DjangoEnvironment(loader=FileSystemLoader(searchpath),
+                       auto_reload=settings.DEBUG,
                        cache_size=getattr(settings, 'JINJA2_CACHE_SIZE', 50),
                        extensions=getattr(settings, 'JINJA2_EXTENSIONS', ()))
     ENV.globals.update(jinja2_funcs.GLOBALS)
@@ -87,3 +100,5 @@ def render_to_response(template_name, context=None, request=None,
     """Render a template into a response object."""
     return HttpResponse(render_to_string(template_name, context, request,
                                          processors), mimetype=mimetype)
+
+get_env()

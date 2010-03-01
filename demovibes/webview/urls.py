@@ -1,10 +1,12 @@
 from django.conf.urls.defaults import *
 from demovibes.webview.models import *
 from django.conf import settings
+import djangojinja2        
         
 song_dict = {
     'queryset': Song.objects.select_related(depth=1).all(),
     'extra_context': {  'a_test' : "True", 'vote_range': [1, 2, 3, 4, 5]}, 
+    'template_loader': djangojinja2._jinja_env,
 }
 
 oneliner_dict = {
