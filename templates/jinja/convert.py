@@ -19,6 +19,9 @@ class changer:
         (r'{%\s*endifnotequal\s*%}', r'{% endif %}'),
         (r'{%\s*ifequal\s+([^\s]+)\s+([^\s]+)\s*%}', r'{% if \1 == \2 %}'),
         (r'{%\s*endifequal\s*%}', r'{% endif %}'),
+        (r'(|\w+):(".+?")', r'\1(\2)'),
+        (r'.get_absolute_url', r'.get_absolute_url()'),
+        (r'{%\s*url\s+([^\s]+)\s+([^\s]+)\s*%}', r'{{ url ("\1", \2) }}'),
     )
     def __init__(self):
         temp = []
@@ -33,7 +36,9 @@ class changer:
 
 
 if __name__ == "__main__":
-    F = open(sys.argv[1]).read()
+    OO = open(sys.argv[1])
+    F = OO.read()
+    OO.close()
     conv = changer()
     F = conv.convert(F)
     print F
