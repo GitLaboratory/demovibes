@@ -1,6 +1,6 @@
 {% extends "base/base.html" %}
 
-{% block title %}{{ object.artist }} - {{ object.title }}{% endblock %} 
+{% block title %}{{ object.artist() }} - {{ object.title }}{% endblock %} 
  
 {% block main %}
 
@@ -34,7 +34,7 @@ Uploaded By: {% set U = object.uploader %}{% include "webview/t/user.html" %}
 <p>
  Last Queued : 
  {% if object.last_queued != "Never" %}
-  {{ object.last_queued|timesince }} ago
+  {{ object.last_queued()|timesince }} ago
  {% else %}
   Never Been Queued!
  {% endif %}
@@ -45,9 +45,9 @@ Extra Resources:
 <br />
 
 <p>
-Song Length: {{ object.length }}<br />
+Song Length: {{ object.length() }}<br />
 {% if object.release_year %}Release Year: {{ object.release_year }}<br />{% endif %}
-Song Status: {{ object.get_status_display }}
+Song Status: {{ object.get_status_display() }}
 {% if object.bitrate %}<br />Song Bitrate: {{ object.bitrate }} kbps{% endif %}
 {% if object.type %}<br />Song Source: {{ object.type }}{% endif %}
 {% if object.platform %}<br />Song Platform: {% set P = object.platform %}{% include "webview/t/platformname.html" %}{% endif %}
@@ -60,14 +60,13 @@ Song Status: {{ object.get_status_display }}
 
 
 {% if user.is_authenticated() %}
- {% is_favorite object user %}
   <p>
- {% if object.is_locked %}
+ {% if object.is_locked() %}
   <img class="song_head" src="/static/lock.png" title="Song Locked" /> <i>Song is currently locked for queuing. It will be available for request in {{ object.locked_until|timeuntil }}</i>
  {% else %}
   <img class="song_head" src="{{ MEDIA_URL }}add.png" title="Add To Queue!" /> <a href="{{ object.get_absolute_url() }}queue/">Add To Queue</a>
  {% endif %}<br />
- {% if is_favorite %}
+ {% if object.is_favorite(user) %}
   <img class="song_head" src="{{ MEDIA_URL }}heart.png" title="Already Loved!" /> Already In Your Favourites List!
  {% else %}
   <img class="song_head" src="{{ MEDIA_URL }}heart_add.png" title="Add To Faves" /> <a href="{{ url ("dv-add_fav", object.id) }}/">Add To Favorites</a>
@@ -81,8 +80,8 @@ It was added {{ object.added|timesince }} ago.
 </p>
 {# {% cache 86400 object.title object.pouetid %} #}
  {% if object.pouetid %}
-  {{ object.get_pouet_screenshot }}
-  {{ object.get_pouet_download }}
+  {{ object.get_pouet_screenshot() }}
+  {{ object.get_pouet_download() }}
  {% endif %}
 {# {% endcache %} #}
 
@@ -103,8 +102,7 @@ It was added {{ object.added|timesince }} ago.
 {% endif %}
 
 {% if user.is_authenticated() %}
- {% get_vote object user %}
- Your Vote : {{ vote_value|default("You have not voted yet!!") }} <br/>
+ Your Vote : {{ object.get_vote(user)|default("You have not voted yet!!") }} <br/>
   <form action="{{ url ("dv-vote", object.id) }}" method="post">
  {% for v in vote_range %}
    <input type="radio" name="Rating" value="{{ v }}" {% if vote_value == v %}checked{% endif %} />{{ v }}
@@ -116,16 +114,16 @@ It was added {{ object.added|timesince }} ago.
 A total of {{ object.num_favorited }} users have this song on their favourites list.<br />
 
 <h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Compilation / Remix Information</h2>
-{% if object.remix_of_id %}This song is a remix of: {% get_song_queuetag object.remix_of_id %}<br />{% endif %}
-{% if comps.count != 0 %}
+{% if object.remix_of_id %}This song is a remix of: {{ dv.get_song_queue_tag(object.remix_of_id) }}<br />{% endif %}
+{% if comps.count() != 0 %}
  <p><strong>This Song Is Listed In The Following Compilations:</strong><br /><br />
  {% for comp in comps.all() %}{% set C = comp %}{% include "webview/t/compilation.html" %}<br />{% endfor %}
  </p>
 {% endif %}
 
-{% if remix.count != 0 %}
+{% if remix.count() != 0 %}
 <br /><strong>Remixes Based On This Song:</strong><br /><br />
-{% for mix in remix.all() %}{% get_song_queuetag mix.id %}<br />{% endfor %}
+{% for mix in remix.all() %}{{ dv.get_song_queue_tag(mix) }}<br />{% endfor %}
 {% endif %}
 
 <h2>
@@ -133,9 +131,11 @@ A total of {{ object.num_favorited }} users have this song on their favourites l
 </h2>
 
 <p>
+{% if object.songcomment_set.count() > 5 %}
  Displaying Last 5 User Comments.
  There are a total of {{ object.songcomment_set.all()|length }} comments for this song.
  <a href="{{ url ("dv-song_comment", object.id) }}">See All Comments For This Song</a>
+{% endif %}
 </p>
 
 <table id="djangoForumThreadPosts">
@@ -143,7 +143,7 @@ A total of {{ object.num_favorited }} users have this song on their favourites l
   <th>User</th>
   <th>Song Comment</th>
  </tr>
- {% for comment in object.songcomment_set.all()|slice(":5") %}
+ {% for comment in object.songcomment_set.all()[:5] %}
  {% include "webview/t/song_comment.html" %}
  {% endfor %}
 </table>

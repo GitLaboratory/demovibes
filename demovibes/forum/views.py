@@ -15,6 +15,7 @@ from django.conf import settings
 from django.template.defaultfilters import striptags, wordwrap
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext as _
 from django.core.paginator import Paginator, EmptyPage, InvalidPage
 
 def forum_email_notification(post):

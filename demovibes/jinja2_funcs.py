@@ -54,10 +54,14 @@ def mksafe(arg):
 FILTERS = {
     'time': defaultfilters.time,
     'date': defaultfilters.date,
+    'timesince': timesince,
+    'timeuntil': timeuntil,    
     'floatformat': defaultfilters.floatformat,
+    'linebreaks': defaultfilters.linebreaks,    
     'smileys': dv_extend.smileys,
     'oneliner_mediaparse': dv_extend.oneliner_mediaparse,
     'bbcode_oneliner': dv_extend.bbcode_oneliner,
+    'bbcode': dv_extend.bbcode,    
     'dv_urlize': dv_extend.dv_urlize,
     'mksafe': mksafe,
 }

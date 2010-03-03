@@ -106,9 +106,7 @@ def current_song():
     """
     Returns the current song playing. Ties into right-panel on all views.
     """
-    T = get_template('webview/t/now_playing.html')
-    R = T.render(Context({ 'now_playing' : songname }))
-    return R
+    return common.get_now_playing()
 
 @register.simple_tag
 def ajaxevent():
@@ -501,6 +499,11 @@ class IsFavoriteNode(template.Node):
             pass
         return ''
     
+def get_song_queue_tag(remix_id):
+    origsong = Song.objects.get(id = song.remix_of_id)
+    artists = origsong.artists
+    return js.r2s('webview/queue_tag.html', { 'song' : origsong, 'artists' : artists })
+
 class GetSongQueueTag(template.Node):
     def __init__(self, song):
         self.song = song
