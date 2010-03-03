@@ -22,7 +22,7 @@ class changer:
         (r'(|\w+):(".+?")', r'\1(\2)'),
         (r'.get_absolute_url', r'.get_absolute_url()'),
         (r'{%\s*url\s+([^\s]+)\s+([^\s]+)\s*%}', r'{{ url ("\1", \2) }}'),
-        (r'|slice:"(.*?)"', '[\1]'),
+        (r'|slice:"(.*?)"', r'[\1]'),
     )
     def __init__(self):
         temp = []
