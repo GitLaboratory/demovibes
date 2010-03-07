@@ -47,6 +47,7 @@ class CompilationAdmin(admin.ModelAdmin):
 	list_display = ('name', 'rel_date', 'date_added', 'created_by', 'status')
 	search_fields = ['name'] # For now, we only need to search by the name of the compilation
 	filter_horizontal = ['songs', 'prod_groups', 'prod_artists']
+	raw_id_fields = ["songs", "prod_artists", "prod_groups"]
 	
 class LabelAdmin(admin.ModelAdmin):
 	search_fields =  ['name']
