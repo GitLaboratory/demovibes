@@ -5,8 +5,8 @@
 {% block main %}
 <h2><img class="icon_header" src="/static/sound.png" alt="" />Song Platforms</h2>
 {% for p in object_list %}
- {% if p.song_set.count != 0 %}
-  {% set P = p %}{% include "webview/t/platformname.html" %} ({{ p.song_set.count }} Songs)<br />
+ {% if p.song_set.count() != 0 %}
+  {% set P = p %}{% include "webview/t/platformname.html" %} ({{ p.song_set.count() }} Songs)<br />
  {% endif %}
 {% endfor%}
 {% endblock %}

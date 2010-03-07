@@ -6,7 +6,7 @@
 <h2><img class="icon_header" src="{{ MEDIA_URL }}newspaper.png" alt="" />Read Private Message</h2>
 Message From: {% set U = pm.sender %}{% include "webview/t/user.html" %}<br/>
 Sent On: {{ pm.sent }}
-<p class="pmtitle">{{ pm.subject }}</p>
+<p class="pmtitle">{{ pm.subject|e }}</p>
 <div class="pmview">
 {{ pm.message|mksafe|linebreaks|bbcode|smileys }}
 </div>

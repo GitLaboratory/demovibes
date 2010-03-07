@@ -1,6 +1,6 @@
 {% extends "base/base.html" %}
 
-{% block title %}History For {{ song.title }}{% endblock %}
+{% block title %}History For {{ song.title|e }}{% endblock %}
 
 {% block main %}
 <h2>{{ song.title }} - History</h2>

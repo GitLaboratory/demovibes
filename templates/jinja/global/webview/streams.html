@@ -8,13 +8,13 @@
 <br />
 {% for stream in object_list %}
 <div class="bubbleInfo">
-    {{ stream.country_code|flag|safe }} <a href="{{ stream.url }}" class="trigger">{{stream.name}}</a> ({{ stream.bitrate }} kbps {{ stream.get_streamtype_display }})
+    {{ flag(stream.country_code) }} <a href="{{ stream.url|e }}" class="trigger">{{stream.name|e}}</a> ({{ stream.bitrate }} kbps {{ stream.get_streamtype_display() }})
 <div class="popup">
-    <b>Stream Name:</b> {{ stream.country_code|flag|safe }} {{stream.name}}<br />
-    <b>Direct Stream Link:</b> <a href="{{ stream.url }}">{{stream.name}}</a><br />
-    {% if stream.streamtype != 'S' %}<b>PlayList File:</b> <a href="{{ stream.url }}.m3u">M3U</a><br />{% endif %}
-    <b>Stream Info:</b> {{ stream.get_streamtype_display }} - {{ stream.bitrate }} kbps<br />
-    {% if stream.description %}{{ stream.description|linebreaks }}{% endif %}
+    <b>Stream Name:</b> {{ flag(stream.country_code) }} {{stream.name|e}}<br />
+    <b>Direct Stream Link:</b> <a href="{{ stream.url|e }}">{{stream.name|e}}</a><br />
+    {% if stream.streamtype != 'S' %}<b>PlayList File:</b> <a href="{{ stream.url|e }}.m3u">M3U</a><br />{% endif %}
+    <b>Stream Info:</b> {{ stream.get_streamtype_display() }} - {{ stream.bitrate }} kbps<br />
+    {% if stream.description %}{{ stream.description|urlize|linebreaks }}{% endif %}
     </div>
 </div><br/>
 {% endfor %}

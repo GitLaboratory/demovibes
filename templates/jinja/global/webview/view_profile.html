@@ -9,9 +9,12 @@
  <img src="{{ profile.avatar.url }}" title="[{{ profile.user|e }}'s Avatar]" alt="[{{ profile.user|e }}'s Avatar]" /><br />
 {% endif %}
 
+{# This is... not working well at the moment.
+ # if user have no artist link, it crashes. Disabled for now..
 {% if profile.user.artist is defined %}
  <a href="{{ profile.user.artist.get_absolute_url() }}">View User's Artist Page</a><br />
 {% endif %}
+#}
 
 {% if profile.location %}
  {{ dv.flag(profile.user.get_profile().country) }} {{ profile.location|e }}<br />

@@ -1,6 +1,6 @@
 {% extends "base/base.html" %}
 
-{% block title %}{{ object.artist() }} - {{ object.title }}{% endblock %} 
+{% block title %}{{ object.artist()|e }} - {{ object.title|e }}{% endblock %} 
  
 {% block main %}
 
@@ -23,7 +23,7 @@ Author:
 {% endfor %}
 </p>
 
-{% if object.labels.count != 0 %}
+{% if object.labels.count() != 0 %}
  Production Label: {% for label in object.labels.all() %}{% set L = label %}{% include "webview/t/label.html" %}{% if loop.last %} {% else %}, {% endif %}{% endfor %}<br />
 {% endif %}
 
@@ -49,7 +49,7 @@ Song Length: {{ object.length() }}<br />
 {% if object.release_year %}Release Year: {{ object.release_year }}<br />{% endif %}
 Song Status: {{ object.get_status_display() }}
 {% if object.bitrate %}<br />Song Bitrate: {{ object.bitrate }} kbps{% endif %}
-{% if object.type %}<br />Song Source: {{ object.type }}{% endif %}
+{% if object.type %}<br />Song Source: {{ object.type|e }}{% endif %}
 {% if object.platform %}<br />Song Platform: {% set P = object.platform %}{% include "webview/t/platformname.html" %}{% endif %}
 </p>
 
@@ -89,7 +89,7 @@ It was added {{ object.added|timesince }} ago.
  <h2>Download Links</h2>
  <ul>
  {% for dl in object.songdownload_set.all() %}
-  <li><a href="{{ dl.download_url }}">{{ dl.title }}</a></li>
+  <li><a href="{{ dl.download_url|e }}">{{ dl.title|e }}</a></li>
  {% endfor %}
  </ul>
 {% endif %}
