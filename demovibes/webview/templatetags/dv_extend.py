@@ -101,12 +101,26 @@ def logo():
         alt = "Logo"
     return '<img id="logo" src="%s" title="%s" alt="%s" />' % (logo, alt, alt)
 
-@register.simple_tag
-def current_song():
+def current_song(user = None):
     """
     Returns the current song playing. Ties into right-panel on all views.
     """
-    return common.get_now_playing()
+    now = common.get_now_playing()
+    if user:
+        Q = common.get_now_playing_song()
+        if user.is_authenticated():
+            vote = Q.song.get_vote(user) or 0
+        else:
+            vote = 0
+        c = {
+            'song': Q.song,
+            'myvote': vote,
+            'voterange': [1, 2, 3, 4, 5],
+            'user': user,
+        }
+        voteinfo = js.r2s("webview/t/now_playing_vote.html", c)
+        now = now + voteinfo
+    return now
 
 @register.simple_tag
 def ajaxevent():
@@ -350,6 +364,35 @@ class GetSongRatingStarsAvgNode(template.Node):
         # Return the newly computed images html string
         return htmltxt
 
+
+def get_text_link_entries(slug):
+        try:
+            # Look for the identifiying slug
+            slug_id = LinkCategory.objects.get(id_slug = slug)
+        except:
+            # No matching slug was found!
+            return None
+        
+        # We have a slug; Now to see if it has any links
+        try:
+            site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
+            
+            # Filter out categories which have no links in them!
+            if len(site_links) == 0:
+                return " " # Prevents 'None' from being displayed
+            
+            # We got the goods, let's go with it!
+            T = loader.get_template('webview/t/link_category_header.html')
+            C = Context({ 'LC' : slug_id })
+            header = T.render(C)
+            
+            T = loader.get_template('webview/links_text_all.html')
+            C = Context({ 'text_links' : site_links })
+            return header + T.render(C)
+        except:
+            # Something borked!
+            return None
+
 """
 Simple tag to suck all text link entries out of the system for the specified
 Category slug. Should work in any template.
@@ -503,6 +546,14 @@ def get_song_queue_tag(remix_id):
     origsong = Song.objects.get(id = song.remix_of_id)
     artists = origsong.artists
     return js.r2s('webview/queue_tag.html', { 'song' : origsong, 'artists' : artists })
+
+def get_song_queue_tag(song_id):
+    song_obj = Song.objects.get(id = song_id)
+    artists = song_obj.artists
+
+    T = loader.get_template('webview/queue_tag.html')
+    C = Context({ 'song' : song_obj, 'artists' : artists })
+    return T.render(C)
 
 class GetSongQueueTag(template.Node):
     def __init__(self, song):

@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db.models import Q
 import time, datetime
 from django.core.cache import cache
+import j2shim
 
 def monitor(request, event_id):
     if request.user.is_authenticated():
@@ -51,11 +52,11 @@ def monitor(request, event_id):
             time.sleep(2)
     return HttpResponse("")
 
-#This might need to be uncached later on, if per-user info is sent.
+
 @cache_control(must_revalidate=True, max_age=30)
 def nowplaying(request):
     song = Queue.objects.select_related(depth=2).filter(played=True).order_by('-time_played')[0]
-    return render_to_response('webview/js/now_playing.html', { 'now_playing' : song },  context_instance=RequestContext(request))
+    return j2shim.r2r('webview/js/now_playing.html', { 'now_playing' : song },  request)
 
 @cache_control(must_revalidate=True, max_age=30)
 def history(request):
@@ -83,11 +84,11 @@ def oneliner(request):
 @cache_control(must_revalidate=True, max_age=30)
 def songupdate(request, song_id):
     song = Song.objects.get(id=song_id)
-    return render_to_response('webview/js/generic.html', { 
+    return j2shim.r2r('webview/js/generic.html', { 
         'song' : song,
         'event' : "a_queue_%i" % song.id,
         'template' : 'webview/t/songlist_span.html',
-        },  context_instance=RequestContext(request))
+        },  request)
 
 def words(request, prefix): 
     extrawords=['boobies','boobietrap','nectarine']; 

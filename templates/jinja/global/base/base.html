@@ -57,25 +57,25 @@
             <li id="menuqueue"><a href="{{ url ("dv-uploads") }}">Unapproved Uploads</a></li>
         {% endif %}
         {% if user.is_staff %}
-	    <li></li>
-	    {% if perms.webview.change_artist %}
-	        <li id="unap-artists"><a href="{{ url ("dv-newartists") }}">Pending Artists</a></li>
-	    {% endif %}
-	    {% if perms.webview.change_group %}
-	        <li id="unap-groups"><a href="{{ url ("dv-newgroups") }}">Pending Groups</a></li>
-	    {% endif %}
-	    {% if perms.webview.change_label %}
-	        <li id="unap-labels"><a href="{{ url ("dv-newlabels") }}">Pending Labels</a></li>
-	    {% endif %}
-	    {% if perms.webview.change_link %}
-	        <li id="unap-links"><a href="{{ url ("dv-newlinks") }}">Pending Links</a></li>
-	    {% endif %}
+	        <li></li>
+	        {% if perms.webview.change_artist %}
+	            <li id="unap-artists"><a href="{{ url ("dv-newartists") }}">Pending Artists</a></li>
+	        {% endif %}
+	        {% if perms.webview.change_group %}
+	            <li id="unap-groups"><a href="{{ url ("dv-newgroups") }}">Pending Groups</a></li>
+	        {% endif %}
+	        {% if perms.webview.change_label %}
+	            <li id="unap-labels"><a href="{{ url ("dv-newlabels") }}">Pending Labels</a></li>
+	        {% endif %}
+	        {% if perms.webview.change_link %}
+	            <li id="unap-links"><a href="{{ url ("dv-newlinks") }}">Pending Links</a></li>
+	        {% endif %}
         {% endif %}
         </ul>
         <br />
         <h3>Currently Playing</h3>
         <div name="nowplaying">
-	    {{ dv.current_song() }}
+	    {{ dv.current_song(user) }}
 	    <div align="center">
 	    </div>
         </div>

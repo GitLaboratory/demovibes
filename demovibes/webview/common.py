@@ -55,20 +55,30 @@ def queue_song(song, user, event = True, force = False):
     return Q
 
 
-def get_now_playing(create_new=True):
+def get_now_playing_song(create_new=False):
+    queueobj = cache.get("nowplaysong")
+    if not queueobj or create_new:
+        queueobj = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
+        cache.set("nowplaysong", queueobj, 300)
+    return queueobj
+
+def get_now_playing(create_new=False):
     logging.debug("Getting now playing")
     key = "nnowplaying"
+    
+    try:
+        songtype = get_now_playing_song(create_new)
+        song = songtype.song
+    except:
+        return ""
+       
     R = cache.get(key)
     if not R or create_new:
-        try:
-            songtype = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
-            song = songtype.song
-        except:
-            return ""
         comps = models.Compilation.objects.filter(songs__id = song.id)
         R = j2shim.r2s('webview/t/now_playing_song.html', { 'now_playing' : songtype, 'comps' : comps })
         cache.set(key, R, 300)
         logging.debug("Now playing generated")
+    R = R % songtype.timeleft()
     return R
 
 def get_history(create_new=False):

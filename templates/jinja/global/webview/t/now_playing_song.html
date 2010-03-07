@@ -10,7 +10,7 @@
  {% endif %}
  {% set S = now_playing.song %}{% include "webview/t/song-icons.html" %}<br />
  
- <p>Time Left: <span name="counter" sec="{{ now_playing.timeleft() }}" inc="-1">{{ now_playing.song.length() }}</span></p>
+ <p>Time Left: <span name="counter" sec="%s" inc="-1">{{ now_playing.song.length() }}</span></p>
  
 {% else %}
  No Song Playing!!

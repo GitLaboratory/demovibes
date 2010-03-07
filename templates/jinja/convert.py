@@ -9,7 +9,7 @@ class changer:
         (r'{%\s*with\s+([\w\.]+)\s+as\s+(\w+)\s*%}', r'{% set \2 = \1 %}'),
         (r'{%\s*endwith\s*%}', r''),
         (r'forloop.', r'loop.'),
-        (r'{%\s*url\s+(\w+)\s*%}', r'{{ url("\1") }}'),
+        (r'{%\s*url\s+([^\s]+)\s*%}', r'{{ url("\1") }}'),
         (r'{%\s*load.*?%}', r''),
         (r'({%\s*cache\s+.*?%})', r'{# \1 #}'),
         (r'({%\s*endcache\s*%})', r'{# \1 #}'),
@@ -19,10 +19,12 @@ class changer:
         (r'{%\s*endifnotequal\s*%}', r'{% endif %}'),
         (r'{%\s*ifequal\s+([^\s]+)\s+([^\s]+)\s*%}', r'{% if \1 == \2 %}'),
         (r'{%\s*endifequal\s*%}', r'{% endif %}'),
+        #(r'|slice:"(.+?)"', r'[\1]'),
         (r'(|\w+):(".+?")', r'\1(\2)'),
         (r'.get_absolute_url', r'.get_absolute_url()'),
         (r'{%\s*url\s+([^\s]+)\s+([^\s]+)\s*%}', r'{{ url ("\1", \2) }}'),
-        (r'|slice:"(.*?)"', r'[\1]'),
+        (r'.as_table', r'.as_table()'),
+        (r'{%\s*site_(\w+)\s*%}', r'{{ dv.site_\1() }}'),
     )
     def __init__(self):
         temp = []
