@@ -2,7 +2,7 @@
 
 {% block content %}
     <div id="sidebar">
-        <h3>Welcome, {% if user.is_authenticated %}{{ user }}{% else %}Visitor{% endif %}!</h3>
+        <h3>Welcome, {% if user.is_authenticated() %}{{ user }}{% else %}Visitor{% endif %}!</h3>
         {% block sidebar %}
         <ul>
             <li id="home"><a href="{{ url("dv-root") }}">Home</a></li>
@@ -26,7 +26,7 @@
         {% endblock %}
         <br />
         <h3>Infamous OneLiner</h3>
-        {% if user.is_authenticated %}
+        {% if user.is_authenticated() %}
         <form action="{{ url ("dv-oneliner_submit") }}" method="post" enctype="application/x-www-form-urlencoded"  onsubmit="apf('{{ url ("dv-ax-oneliner_submit") }}',this); this.Line.value = ''; return false;" >
             <input id="blah" name="Line" autocomplete="off" maxlength="256" onkeydown="return tc(this,event.keyCode);" onkeypress="return canceltab(event.keyCode);" value="GURU MEDITATION" onfocus="if (this.value == 'GURU MEDITATION') { this.value=''; }" /><input id="makeitso" type="submit" value="" />
         </form>
@@ -41,7 +41,7 @@
     <div id="rightside">
         <h3>User Menu</h3>
         <ul>
-        {% if user.is_authenticated %}
+        {% if user.is_authenticated() %}
             <li id="profile"><a href="{{ url ("dv-my_profile") }}">Edit My Profile</a></li>
             <li id="favorites"><a href="{{ url ("dv-favorites") }}">My Favourites</a></li>
             <li id="inbox"><a href="{{ url ("dv-inbox") }}">My Inbox</a></li>

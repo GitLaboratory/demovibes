@@ -9,7 +9,7 @@
  <img src="{{ profile.avatar.url }}" title="[{{ profile.user|e }}'s Avatar]" alt="[{{ profile.user|e }}'s Avatar]" /><br />
 {% endif %}
 
-{% if profile.user.artist %}
+{% if profile.user.artist is defined %}
  <a href="{{ profile.user.artist.get_absolute_url() }}">View User's Artist Page</a><br />
 {% endif %}
 

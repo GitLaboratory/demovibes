@@ -1,4 +1,3 @@
-{% set row_class = cycler('row1', 'row2') -%}
 <tr class="{{ row_class.next() }}">{# {% cache 3600 hilist req.id %} #}
  <td align="left">
   {% set song = req.song %}{% include "webview/t/songname.html" %}
