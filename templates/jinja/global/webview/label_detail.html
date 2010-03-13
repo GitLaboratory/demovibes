@@ -1,5 +1,5 @@
 {% extends "base/base.html" %}
-
+{% import "macro/display.html" as display -%}
 {% block title %}Production / Label Info For {{ object.name|e }}{% endblock %}
 
 {% block main %}
@@ -30,14 +30,14 @@ Links:{% if object.webpage %} <a href="{{ object.webpage|e }}" target="_new">[We
 {% if object.artist_set.count() != 0 %}
  <b>Associated Artists:</b><br />
  {% for artist in object.artist_set.all() %}
-  {% set A = artist %}{% include "webview/t/artist.html" %}<br />
+  {{ display.artist(artist) }}<br />
  {% endfor %}<br />
 {% endif %}
 
 {% if object.song_set.count() != 0 %}
  <b>Associated Songs:</b><br />
  {% for song in object.song_set.all() %}
-  {% include "webview/t/songname.html" %} by {% for artist in song.artists.all() %}{% set A = artist %}{% include "webview/t/artist.html" %}{% if loop.last %} {% else %}, {% endif %} {% endfor %}
+  {{ display.song(song) }} by {% for artist in song.artists.all() %}{{ display.artist(artist) }}{% if loop.last %} {% else %}, {% endif %} {% endfor %}
   <span name="a_queue_{{ song.id }}">{% include "webview/t/songlist_span_noauth.html" %}</span><br />
  {% endfor %}<br />
 {% endif %}

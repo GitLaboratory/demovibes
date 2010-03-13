@@ -31,9 +31,7 @@ def get_online_users():
     userlist = Userprofile.objects.filter(last_activity__gt=timefrom).order_by('user__username')
     
     # Stuff this into an object
-    T = get_template('webview/whos_online_sb.html')
-    C = Context ({ 'userlist' : userlist })
-    result = T.render(C)
+    result = js.r2s('webview/whos_online_sb.html', { 'userlist' : userlist })
     return result
 
 @register.tag
@@ -134,9 +132,8 @@ def get_oneliner():
     """
     Renders the oneliner html
     """
-    T = get_template('webview/oneliner2.html')
     oneliner = common.get_oneliner()
-    R = T.render(Context({'oneliner' : oneliner}))
+    R = js.r2s('webview/oneliner2.html', {'oneliner' : oneliner})
     return R
 
 @register.tag
@@ -467,6 +464,9 @@ class GetCss(template.Node):
         except:
             return getattr(settings, 'DEFAULT_CSS', "%sthemes/default/style.css" % settings.MEDIA_URL)
 
+def j_get_post_count(user):
+    return Post.objects.filter(author=user).count()
+
 class GetPostCount(template.Node):
     """
     Returns the numeric post count for the user in the passed arguments.
@@ -481,6 +481,12 @@ class GetPostCount(template.Node):
             return len(obj)
         except:
             return 0
+
+def get_unread_count(user):
+    nr = PrivateMessage.objects.filter(to=user, unread=True, visible = True).count()
+    if not nr:
+        return ""
+    return "(%s)" % nr
 
 class GetInboxNode(template.Node):
     def __init__(self, user):

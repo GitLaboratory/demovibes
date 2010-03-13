@@ -10,6 +10,10 @@ from webview.templatetags import dv_extend
 def dummy(dummystuff):
     return "Dummy for %s" % dummystuff
 
+def mkstr(*args):
+    args = [str(x) for x in args]
+    return ''.join(args)
+
 def url(view_name, *args, **kwargs):
     from django.core.urlresolvers import reverse, NoReverseMatch
     try:
@@ -54,6 +58,7 @@ def mksafe(arg):
 FILTERS = {
     'time': defaultfilters.time,
     'date': defaultfilters.date,
+    'pluralize': defaultfilters.pluralize,
     'timesince': timesince,
     'timeuntil': timeuntil,    
     'floatformat': defaultfilters.floatformat,
@@ -69,6 +74,7 @@ FILTERS = {
 # Dictionary over globally avaliable variables and functions
 GLOBALS = {
     'url': url,
+    'mkstr': mkstr,
     'dummy': dummy,
     'dv': dv_extend,
 }

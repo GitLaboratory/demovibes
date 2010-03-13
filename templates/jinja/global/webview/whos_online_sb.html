@@ -1,3 +1,4 @@
+{% import "macro/display.html" as display -%}
 There {{ userlist.count()|pluralize("is,are") }} a total of {{ userlist.count() }} user{{ userlist.count()|pluralize }} online now:<br /><br />
 
 {% if userlist.count() != 0 %}
@@ -5,10 +6,9 @@ There {{ userlist.count()|pluralize("is,are") }} a total of {{ userlist.count() 
  <table>
     <tr><td>
      {% for U in userlist.all() %}
-      {{ flag(U.user.get_profile.country) }}<a href="/demovibes/user/{{ U.user.username|e }}/" title="{{ U.user.get_profile().get_stat() }}">{{ U.user.username|e }}</a>{% if loop.last %} {% else %}, {% endif %}{{ loop.cycle('', '<br />') }}
+      {{ display.user(U.user) }}{% if loop.last %} {% else %}, {% endif %}{{ loop.cycle('', '<br />') }}
      {% endfor %}
     </td></tr>
  </table>
  </div>
 {% endif %}
-

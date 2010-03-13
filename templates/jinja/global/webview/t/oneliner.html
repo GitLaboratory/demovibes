@@ -1,5 +1,4 @@
-{% for line in oneliner -%}
-<p><span class="onelinerpre">{% set U = line.user %}{% include "webview/t/user.html" %} <span style="color: #777; float: right; margin: auto; text-align: right;">({{ line.added|time("H:i:s") }})</span></span><br /><span class="onelinertext">{{ line.message|mksafe|bbcode_oneliner|smileys|oneliner_mediaparse|bbcode_oneliner|dv_urlize }}</span></p>
+{% import "macro/display.html" as display -%}
+{%- for line in oneliner -%}
+<p><span class="onelinerpre">{{ display.user(line.user) }}<span style="color: #777; float: right; margin: auto; text-align: right;">({{ line.added|time("H:i:s") }})</span></span><br /><span class="onelinertext">{{ line.message|mksafe|bbcode_oneliner|smileys|oneliner_mediaparse|bbcode_oneliner|dv_urlize }}</span></p>
 {%- endfor -%}
-
-{# <span class="onelinertext">{{line.message|mksafe| }}</span> #}

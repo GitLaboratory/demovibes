@@ -1,5 +1,6 @@
 {% extends "base/base.html" %}
 {% block title %}Compilation: {{ comp.name|e }}{% if comp.label %} from {{ comp.label|e }}{% endif %}{% endblock %}
+{% import "macro/display.html" as display -%}
 
 {% block main %}
 <h2><img class="icon_header" {% if comp.comp_icon %}src="{{ comp.comp_icon.url }}"{% else %}src="/static/recplay_ico.png"{% endif %} alt="Compilation" />Compilation: {{ comp.name|e }}{% if user.is_staff %} [<a href="/admin/webview/compilation/{{ comp.id }}/">Edit Info</a>]{% endif %}</h2>
@@ -26,7 +27,7 @@ Name: {{ comp.name|e }}<br />
 {% if comp.download_link %}Download Link: <a href="{{ comp.download_link|e }}" target="_new">Download Info</a><br />{% endif %}
 {% if comp.bar_code %}UPC: {{ comp.bar_code|e }}<br />{% endif %}
 {% if comp.pouet %}Pouet Info: <a href="http://www.pouet.net/prod.php?which={{ comp.pouet }}" target="_new">Pouet Link</a><br />{% endif %}
-{% if comp.date_added %}<br />Added On: {{ comp.date_added|date("F j, Y") }} <br />By: {% if comp.created_by %}{% set U = comp.created_by %}{% include "webview/t/user.html" %}{% endif %}<br />{% endif %}
+{% if comp.date_added %}<br />Added On: {{ comp.date_added|date("F j, Y") }} <br />By: {% if comp.created_by %} {{ display.user(comp.created_by) }}{% endif %}<br />{% endif %}
 </p>
 </td>
 <td class="compilation_description" valign="top">
@@ -35,7 +36,7 @@ Name: {{ comp.name|e }}<br />
 {% if comp.prod_artists.count != 0 %}
  <b><i>Compilation Artists: </i></b>
  {% for artist in comp.prod_artists.all() %}
-  {% set A = artist %}{% include "webview/t/artist.html" %}
+  {{ display.artist(artist) }}
  {% endfor %}
  <br /><br />
 {% endif %}
@@ -43,7 +44,7 @@ Name: {{ comp.name|e }}<br />
 {% if comp.prod_groups.count() != 0 %}
  <b><i>Compilation Groups: </i></b>
  {% for group in comp.prod_groups.all() %}
-  {% set G = group %}{% include "webview/t/group.html" %}
+  {{ display.group(group) }}
  {% endfor %}
  <br /><br />
 {% endif %}
@@ -51,7 +52,7 @@ Name: {{ comp.name|e }}<br />
 {% if comp.songs.count != 0 %}
  <b><i>Songs In This Production ({{ comp.songs.count() }} Total):</i></b><br /><br />
  {% for song in comp.songs.all() %}
-  {% include "webview/t/songname.html" %} by {% for artist in song.artists.all() %}{% set A = artist %}{% include "webview/t/artist.html" %}{% if loop.last %} {% else %}, {% endif %} {% endfor %}
+  {{ display.song(song) }} by {% for artist in song.artists.all() %} {{ display.artist(artist) }}{% if loop.last %} {% else %}, {% endif %} {% endfor %}
   <span name="a_queue_{{ song.id }}">{% include "webview/t/songlist_span_noauth.html" %}</span><br />
  {% endfor %}
 {% endif %}<br />

@@ -1,4 +1,5 @@
 {% extends "base/base.html" %}
+{% import "macro/display.html" as display -%}
 
 {% block title %}{{ object.handle|e }}{% endblock %}
 
@@ -24,15 +25,15 @@
 {% endif %}
 
 {% if object.alias_of %}
- <strong>This is an alias of : {% set A = object.alias_of %}{% include "webview/t/artist.html" %}!</strong><br />
+ <strong>This is an alias of : {{ display.artist(object.alias_of) }}!</strong><br />
 {% endif %}
 
 {% if object.groups.all() %}
- Groups : {% for group in object.groups.all() %}{% set G = group %}{% include "webview/t/group.html" %} {% endfor %}<br />
+ Groups : {% for group in object.groups.all() %}{{ display.group(group) }}{% endfor %}<br />
 {% endif %}
 
 {% if object.aliases.all() %}
- Aliases: {% for alias  in object.aliases.all() %}<a href="{{ alias.get_absolute_url() }}">{{ alias }}</a>{% if loop.last %}{% else %}, {% endif %}{% endfor %}<br />
+ Aliases: {% for alias  in object.aliases.all() %}{{ display.artist(alias)}}{% if loop.last %}{% else %}, {% endif %}{% endfor %}<br />
 {% endif %}
 <br />
 
@@ -51,7 +52,7 @@ Date Of Death: {{ object.deceased_date|date("F j, Y") }}<br />
 {% endif %}
 
 {% if object.labels.count() != 0 %}
- Associated Labels: {% for labels in object.labels.all() %}{% set L = labels %}{% include "webview/t/label.html" %}{% if loop.last %} {% else %}, {% endif %}{% endfor %}<br />
+ Associated Labels: {% for labels in object.labels.all() %}{{ display.label(labels) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}<br />
 {% endif %}
 
 {% if object.info %}
@@ -70,7 +71,7 @@ Date Of Death: {{ object.deceased_date|date("F j, Y") }}<br />
 {% endif %}
 <br />
 {% if object.last_updated %}Last Updated: {{ object.last_updated|date("F j, Y") }}<br />{% endif %}
-{% if object.created_by %}Added By: {% set U = object.created_by %}{% include "webview/t/user.html" %}<br />{% endif %}
+{% if object.created_by %}Added By: {{ display.user(object.created_by) }}<br />{% endif %}
 </td>
 </tr>
 </table>

@@ -1,6 +1,6 @@
 {% extends "base/base.html" %}
-
-{% block title %}History For {{ song.title|e }}{% endblock %}
+{% import "macro/display.html" as display -%}
+{% block title %}History For {{ display.song(song) }}{% endblock %}
 
 {% block main %}
 <h2>{{ song.title }} - History</h2>
@@ -15,7 +15,7 @@
 </tr>
 {% for request in requests %}
 <tr>
-<td>{% set U = request.requested_by %}{% include "webview/t/user.html" %}</td>
+<td>{{ display.user(request.requested_by) }}</td>
 <td>{{ request.requested|date("j.N Y G:i")}}</td>
 </tr>
 {% endfor %}

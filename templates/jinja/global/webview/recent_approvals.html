@@ -1,5 +1,5 @@
 {% extends "base/base.html" %}
-
+{% import "macro/display.html" as display -%}
 {% block title %}Recent Song Approvals{% endblock %}
 
 {% block main %}
@@ -16,14 +16,14 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br /><b
   <th>Status</th>
 </tr>
 {% if songs %}
-    {% for songr in songs %}{# {% cache 604800 recsongs song.id %} #}
+    {% for songr in songs %}{% cache 604800 mkstr(recsongs, song.id) %}
         <tr>
             <td>
-                {% set song = songr.song %}{% include "webview/t/songname.html" %}
+                {{ display.song(songr.song) }}
             </td>
             <td>
-                {% for artist in song.artists.all() %}{% set A = artist %}{% include "webview/t/artist.html" %}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
-                {% for group in song.groups.all() %}{% set G = group %}{% include "webview/t/group.html" %}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
+                {% for artist in songr.song.artists.all() %} {{ display.artist(artist) }} {% if loop.last %} {% else %}, {% endif %}{% endfor %}
+                {% for group in songr.song.groups.all() %} {{ display.group(group) }} {% if loop.last %} {% else %}, {% endif %}{% endfor %}
             </td>
             <td>
                 {{ songr.approved|date("d M Y") }}
@@ -32,9 +32,9 @@ Displaying the latest {{ settings.UPLOADED_SONG_COUNT }} uploaded songs:<br /><b
                 {{ songr.song.length() }}
             </td>
 	    <td align="center">
-		{% set U = songr.uploaded_by %}{% include "webview/t/user.html" %}
+    		{{ display.user(songr.uploaded_by) }}
 	    </td>
-	    {# {% endcache %} #}{# Otherwise, Locked/Unlocked State Is Cached #}
+	    {% endcache %} {# Otherwise, Locked/Unlocked State Is Cached #}
             <td align="center">
                 <span name="a_queue_{{ song.id }}">{% include "webview/t/songlist_span_noauth.html" %}</span>
                 {% include "webview/t/fav_icon.html" %}

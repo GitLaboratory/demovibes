@@ -128,6 +128,12 @@ class Userprofile(models.Model):
     web_page = models.URLField(blank = True, verbose_name="Website", help_text="Your personal website address. Must be a valid URL")
     yahoo_id = models.CharField(blank = True, max_length = 40, verbose_name = "Yahoo! ID", help_text="Yahoo! IM ID, for people to contact you (optional)")
 
+    def have_artist(self):
+        try:
+            return self.user.artist
+        except:
+            return False
+
     def __unicode__(self):
         return self.user.username
 

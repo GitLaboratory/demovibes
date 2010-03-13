@@ -1,5 +1,5 @@
 {% extends "base/base.html" %}
-
+{% import "macro/display.html" as display -%}
 {% block title %}Inbox{% endblock %}
 
 {% block main %}
@@ -10,8 +10,8 @@
 {% for mail in mails %}
 <tr class="{{ loop.cycle('row1', 'row2') }}">
  <td><a href="{{ mail.get_absolute_url() }}">{{ mail.subject|e }}</a>{% if mail.unread %} <img src="{{ MEDIA_URL }}new.png" alt="[New Message]" />{% endif %}</td>
- <td>{% set U = mail.sender %}{% include "webview/t/user.html" %}</td>
- <td>{% set U = mail.to %}{% include "webview/t/user.html" %} </td>
+ <td>{{ display.user(mail.sender) }}</td>
+ <td>{{ display.user(mail.to) }}</td>
  <td>{{ mail.sent }}</td>
  {% if pms != "sent" %}<td><a href=".?delete={{ mail.id }}">Delete</a></td>{% endif %}
 </tr>

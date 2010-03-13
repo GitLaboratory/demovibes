@@ -1,5 +1,7 @@
 {% extends "base/base.html" %}
 
+{% import "macro/display.html" as display %}
+
 {% block title %}{{ object.artist()|e }} - {{ object.title|e }}{% endblock %} 
  
 {% block main %}
@@ -11,24 +13,24 @@
 {% endif %}
 </h2>
 
-{% set song = object %}{% include "webview/t/songname.html" %}
+{{ display.song(object) }}
  
 <p>
 Author: 
 {% for artist in object.artists.all() %}
- {% set A = artist %}{% include "webview/t/artist.html" %}{% if loop.last %} {% else %}, {% endif %} 
+ {{ display.artist(artist) }}{% if loop.last %} {% else %}, {% endif %} 
 {% endfor %}
 {% for group in object.groups.all() %}
- {% set G = group %}{% include "webview/t/group.html" %} 
+ {{ display.group(group) }}
 {% endfor %}
 </p>
 
 {% if object.labels.count() != 0 %}
- Production Label: {% for label in object.labels.all() %}{% set L = label %}{% include "webview/t/label.html" %}{% if loop.last %} {% else %}, {% endif %}{% endfor %}<br />
+ Production Label: {% for label in object.labels.all() %}{{ display.label(label) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}<br />
 {% endif %}
 
 {% if object.uploader %}
-Uploaded By: {% set U = object.uploader %}{% include "webview/t/user.html" %}
+Uploaded By: {{ display.user(object.uploader) }}
 {% endif %}
 
 <p>
@@ -40,8 +42,7 @@ Uploaded By: {% set U = object.uploader %}{% include "webview/t/user.html" %}
  {% endif %}
 </p>
 
-Extra Resources:
-{% set S = object %}{% include "webview/t/song-icons.html" %}
+Extra Resources: {{ display.songicons(object) }}
 <br />
 
 <p>
@@ -78,12 +79,12 @@ Song Status: {{ object.get_status_display() }}
 This song has been played {{ object.times_played }} times. [<a href="{{object.get_absolute_url()}}queue_history">See Request History</a>]<br />
 It was added {{ object.added|timesince }} ago.
 </p>
-{# {% cache 86400 object.title object.pouetid %} #}
+{% cache 86400 mkstr(object.title, object.pouetid) %}
  {% if object.pouetid %}
   {{ object.get_pouet_screenshot() }}
   {{ object.get_pouet_download() }}
  {% endif %}
-{# {% endcache %} #}
+{% endcache %}
 
 {% if object.songdownload_set.all()  %}
  <h2>Download Links</h2>
@@ -102,7 +103,8 @@ It was added {{ object.added|timesince }} ago.
 {% endif %}
 
 {% if user.is_authenticated() %}
- Your Vote : {{ object.get_vote(user)|default("You have not voted yet!!") }} <br/>
+{% set vote_value = object.get_vote(user) %}
+ Your Vote : {{ vote_value|default("You have not voted yet!!") }} <br/>
   <form action="{{ url ("dv-vote", object.id) }}" method="post">
  {% for v in vote_range %}
    <input type="radio" name="Rating" value="{{ v }}" {% if vote_value == v %}checked{% endif %} />{{ v }}
@@ -117,7 +119,7 @@ A total of {{ object.num_favorited }} users have this song on their favourites l
 {% if object.remix_of_id %}This song is a remix of: {{ dv.get_song_queue_tag(object.remix_of_id) }}<br />{% endif %}
 {% if comps.count() != 0 %}
  <p><strong>This Song Is Listed In The Following Compilations:</strong><br /><br />
- {% for comp in comps.all() %}{% set C = comp %}{% include "webview/t/compilation.html" %}<br />{% endfor %}
+ {% for comp in comps.all() %}{{ display.compilation(comp) }}<br />{% endfor %}
  </p>
 {% endif %}
 

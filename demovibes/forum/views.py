@@ -17,6 +17,7 @@ from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext as _
 from django.core.paginator import Paginator, EmptyPage, InvalidPage
+import j2shim
 
 def forum_email_notification(post):
     try:
@@ -56,8 +57,7 @@ def edit(request, post_id):
             return HttpResponseRedirect(t.get_absolute_url())
     else:
         edit_form = EditForm(instance=P)
-    return render_to_response('forum/post_edit.html',
-        RequestContext(request, {'edit_form' : edit_form}))
+    return j2shim.r2r('forum/post_edit.html',{'edit_form' : edit_form, 'thread': t, 'forum': t.forum}, request)
 
 def forum(request, slug):
     """
@@ -99,14 +99,14 @@ def forum(request, slug):
     except (EmptyPage, InvalidPage):
         threads = paginator.page(paginator.num_pages)
 
-    return render_to_response('forum/thread_list.html',
-        RequestContext(request, {
+    return j2shim.r2r('forum/thread_list.html',
+        {
             'forum': f,
             'threads': threads.object_list,
             'page_range': paginator.page_range,
             'page': page,
             'thread_form': thread_form
-        }))
+        }, request)
 
 def thread(request, thread):
     """
@@ -155,15 +155,15 @@ def thread(request, thread):
     t.views += 1
     t.save()
     #{'object_list' : artistic.object_list, 'page_range' : paginator.page_range, 'page' : page, 'letter' : letter, 'al': alphalist}, \
-    return render_to_response('forum/thread.html',
-        RequestContext(request, {
+    return j2shim.r2r('forum/thread.html',
+            {
             'forum': t.forum,
             'thread': t,
             'posts': posts.object_list,
-	    'page_range': paginator.page_range,
+	        'page_range': paginator.page_range,
             'page': page,
             'reply_form': reply_form
-        }))
+        }, request)
 
 def updatesubs(request):
     """
@@ -182,8 +182,8 @@ def updatesubs(request):
                 s.delete()
         return HttpResponseRedirect(reverse('forum_subscriptions'))
 
-    return render_to_response('forum/updatesubs.html',
-        RequestContext(request, {
+    return j2shim.r2r('forum/updatesubs.html',
+        {
             'subs': subs,
-        }))
+        }, request)
        

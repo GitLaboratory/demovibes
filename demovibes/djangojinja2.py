@@ -30,9 +30,11 @@ from jinja2.defaults import DEFAULT_NAMESPACE
 from django.template.context import Context
 import jinja2_funcs
 
-
 # the environment is unconfigured until the first template is loaded.
 _jinja_env = None
+
+from jinja2_cacher import FragmentCacheExtension
+from django.core.cache import cache
 
 #So generic views can use jinja via 'template_loader': djangojinja2._jinja_env
 class DjangoTemplate(jinja2.Template):
@@ -60,9 +62,11 @@ def create_env():
     ENV = DjangoEnvironment(loader=FileSystemLoader(searchpath),
                        auto_reload=settings.DEBUG,
                        cache_size=getattr(settings, 'JINJA2_CACHE_SIZE', 50),
-                       extensions=getattr(settings, 'JINJA2_EXTENSIONS', ()))
+                       extensions=[FragmentCacheExtension] + getattr(settings, 'JINJA2_EXTENSIONS', []))
     ENV.globals.update(jinja2_funcs.GLOBALS)
     ENV.filters.update(jinja2_funcs.FILTERS)
+    ENV.fragment_cache = cache
+    ENV.fragment_cache_prefix = "fcache"
     return ENV
 
 

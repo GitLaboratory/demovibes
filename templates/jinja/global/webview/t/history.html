@@ -1,10 +1,11 @@
+{% import "macro/display.html" as display -%}
 <tr class="{{ row_class.next() }}">{# {% cache 3600 hilist req.id %} #}
  <td align="left">
-  {% set song = req.song %}{% include "webview/t/songname.html" %}
+  {{ display.song(req.song) }}
  </td>
  <td align="left">
   {% for artist in req.song.artists.all() %}
-   {% set A = artist%}{% include "webview/t/artist.html" %}{% if loop.last %} {% else %}, {% endif %}
+   {{ display.artist(artist) }} {% if loop.last %} {% else %}, {% endif %}
   {% endfor %}
  </td>
  <td align="center">
@@ -17,6 +18,6 @@
   {{ req.time_played|time("H:i") }}
  </td>
  <td align="left">
-  {% set U = req.requested_by %}{% include "webview/t/user.html" %}
+  {{ display.user(req.requested_by) }}
  </td>{# {% endcache %} #}
 </tr>

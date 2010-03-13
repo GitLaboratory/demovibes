@@ -1,11 +1,11 @@
-
- {# {% cache 43200 "song_row" song.id song.last_changed %} #}
+{% import "macro/display.html" as display -%}
+{% cache 43200 mkstr("song_row", song.id, song.last_changed) %}
  <td>
-  {% include "webview/t/songname.html" %}
+  {{ display.song(song) }}
  </td>
  <td>
-  {% for artist in song.artists.all() %}{% set A = artist %}{% include "webview/t/artist.html" %}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
-  {% for group in song.groups.all() %}{% set G = group %}{% include "webview/t/group.html" %}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
+  {% for artist in song.artists.all() %}{{ display.artist(artist) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
+  {% for group in song.groups.all() %}{{ display.group(group) }}{% if loop.last %} {% else %}, {% endif %}{% endfor %}
  </td>
  <td align="center">
   {{ song.length() }}
@@ -16,7 +16,7 @@
  <td>
   {{ song.rating|floatformat(1) }}
  </td>
- {# {% endcache %} #}
+ {% endcache %}
  <td>
   <span name="a_queue_{{ song.id }}">
    {% if user.is_authenticated() %}

@@ -44,7 +44,7 @@
         {% if user.is_authenticated() %}
             <li id="profile"><a href="{{ url ("dv-my_profile") }}">Edit My Profile</a></li>
             <li id="favorites"><a href="{{ url ("dv-favorites") }}">My Favourites</a></li>
-            <li id="inbox"><a href="{{ url ("dv-inbox") }}">My Inbox</a></li>
+            <li id="inbox"><a href="{{ url ("dv-inbox") }}">My Inbox</a> {{ dv.get_unread_count(user) }}</li>
             <li id="logout"><a href="{{ url ("webview.views.log_out") }}">Log Me Out</a></li>
         {% else %}
             <li id="login"><a href="{{ url ("auth_login") }}">Log In</a></li>

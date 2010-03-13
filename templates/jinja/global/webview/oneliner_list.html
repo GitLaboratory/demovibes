@@ -1,5 +1,5 @@
 {% extends "base/base.html" %}
-
+{% import "macro/display.html" as display -%}
 {% block title %}Oneliner{% endblock %}
 
 {% block main %}
@@ -7,17 +7,17 @@
 
 <div class="olh_wrapper">
 
-{% for line in object_list %}{# {% cache 86400 olhistory line.id %} #}
+{% for line in object_list %}{% cache 86400 mkstr(olhistory, line.id) %}
 <div class="olh_item">
 <div class="olh_user">
-    <p>{% set U = line.user %}{% include "webview/t/user.html" %}<br />
+    <p>{{ display.user(line.user) }}<br />
     {{ line.added|date("j M y H:i") }}</p>
 </div>
 
 <div class="olh_message">
     <p>{{ line.message|urlize|wordwrap(100)|smileys|oneliner_mediaparse|bbcode_oneliner|dv_urlize|safe }}</p>
 </div>
-</div>{# {% endcache %} #}
+</div>{% endcache %}
 {% endfor %}
 
 </div>
