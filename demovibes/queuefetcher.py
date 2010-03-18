@@ -48,7 +48,7 @@ class song_finder:
         self.twitter_password = getattr(settings, 'TWITTER_PASSWORD', False)
         
         self.base_url = self.get_site_url()
-        
+        self.init_jt()
         self.weight_table = {
             'N' : 0,
             1 : 0,
@@ -165,6 +165,7 @@ class song_finder:
         return False
 
     def JingleTime(self):
+        jt = self.jt
         if jt['timelast'] + jt['min'] < datetime.datetime.now():
             if jt['count'] >= 10 or jt['max'] + jt['timelast'] < datetime.datetime.now():
                 jt['count'] = 0
@@ -174,6 +175,7 @@ class song_finder:
                 self.log.debug("JingleTime! ID %s" % S.id)
                 return S
         jt['count'] += 1
+        self.jt = jt
         return False
 
     def send_to_twitter(self, song):

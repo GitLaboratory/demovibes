@@ -992,11 +992,14 @@ post_save.connect(create_profile, sender=User)
 
 def set_song_values(sender, **kwargs):
     if kwargs["created"]:
-        song = kwargs["instance"]
-        mf = mad.MadFile(song.file.path)
-        song.song_length = mf.total_time() / 1000
-        song.bitrate = mf.bitrate() / 1000
-        song.samplerate = mf.samplerate()
-        song.save()
-        del mf
+        try:
+            song = kwargs["instance"]
+            mf = mad.MadFile(song.file.path)
+            song.song_length = mf.total_time() / 1000
+            song.bitrate = mf.bitrate() / 1000
+            song.samplerate = mf.samplerate()
+            song.save()
+            del mf
+        except:
+            pass
 post_save.connect(set_song_values, sender = Song)
