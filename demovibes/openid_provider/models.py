@@ -46,6 +46,9 @@ class TrustedRoot(models.Model):
 
 def add_openid(sender, **kwargs):
     if kwargs["created"]:
-        user = kwargs["instance"]
-        user.openid_set.create(openid=user.username)
+        try:
+            user = kwargs["instance"]
+            user.openid_set.create(openid=user.username)
+        except:
+            pass
 post_save.connect(add_openid, sender = User)

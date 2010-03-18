@@ -127,7 +127,7 @@ def get_profile(user):
     try:
         profile = user.get_profile()
     except:
-        profile = Userprofile(user = user)
+        profile = models.Userprofile(user = user)
         profile.save()
     return profile
 
