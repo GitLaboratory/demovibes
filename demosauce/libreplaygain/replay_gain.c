@@ -12,7 +12,7 @@ struct _RG_CONTEXT
 	size_t bufferSize;
 };
 
-RG_Context * RG_NewContext(RG_SampleFormat * format)
+RG_Context* RG_NewContext(RG_SampleFormat* format)
 {
 	if (format->numberChannels != 1 && format->numberChannels != 2)
 		return NULL;
@@ -23,7 +23,7 @@ RG_Context * RG_NewContext(RG_SampleFormat * format)
 		FreeAnalyzeContext(cxt);
 		return NULL;
 	}
-	RG_Context * context = malloc(sizeof(RG_Context));
+	RG_Context* context = malloc(sizeof(RG_Context));
 	memset(context, 0, sizeof(RG_Context));
 	context->format = *format;
 	context->cxt = cxt;
@@ -50,42 +50,47 @@ size_t RG_FormatSize(uint32_t sampleFormat)
 	}
 }
 
-void UpdateBuffer(RG_Context * context, uint32_t frames)
+void UpdateBuffer(RG_Context* context, uint32_t frames)
 {
 	const size_t requiredSize = frames * sizeof(Float_t) * context->format.numberChannels;
 	if (context->bufferSize < requiredSize)
 		context->buffer = realloc(context->buffer, requiredSize);
 }
 
-void ConvertF64(RG_Context * context, void * data, uint32_t length)
+void ConvertF64(RG_Context* context, void* data, uint32_t length)
 {
 	static Float_t const buttScratcher = 0x7fff;
+	double** buffer = (double**) data;
 	if (context->format.numberChannels == 2 && context->format.interleaved)
 	{
-		double const *  in = (double *) data;
-		Float_t * outl = (Float_t *) context->buffer;
-		Float_t * outr = (Float_t *) context->buffer + context->bufferSize / 2;
+		double const * in = buffer[0];
+		Float_t* outl = (Float_t*) context->buffer;
+		Float_t* outr = (Float_t*) context->buffer + context->bufferSize / 2;
 		for (size_t i = 0; i < length; i++)
 		{
 			*outl++ = (Float_t) *in++ * buttScratcher;
 			*outr++ = (Float_t) *in++ * buttScratcher;
 		}
 	}
-	else
-	{
-		double const *  in = (double *) data;
-		Float_t * out = (Float_t *) context->buffer;
-		for (size_t i = 0; i < length * context->format.numberChannels; i++)
-			*out++ = (Float_t) *in++ * buttScratcher;
+	else 
+	{	
+		Float_t* out = (Float_t*) context->buffer;
+		for (uint32_t iChan = 0; iChan < context->format.numberChannels; ++iChan)		
+		{
+			double const * in = buffer[iChan];
+			for (size_t i = 0; i < length; i++)
+				*out++ = (Float_t) *in++ * buttScratcher;
+		}
 	}
 }
 
-void ConvertF32(RG_Context * context, void * data, uint32_t length)
+void ConvertF32(RG_Context* context, void* data, uint32_t length)
 {
-	static Float_t const buttScratcher = 0x7fff; 
+	static Float_t const buttScratcher = 0x7fff;
+	float** buffer = (float**) data;
 	if (context->format.numberChannels == 2 && context->format.interleaved)
 	{
-		float const *  in = (float *) data;
+		float const * in = buffer[0];
 		Float_t * outl = (Float_t *) context->buffer;
 		Float_t * outr = (Float_t *) context->buffer + context->bufferSize / 2;
 		for (size_t i = 0; i < length; i++)
@@ -96,19 +101,23 @@ void ConvertF32(RG_Context * context, void * data, uint32_t length)
 	}
 	else
 	{
-		float const *  in = (float*) data;
-		Float_t * out = (Float_t*) context->buffer;
-		for (size_t i = 0; i < length * context->format.numberChannels; i++)
-			*out++ = (Float_t) *in++ * buttScratcher;
+		Float_t* out = (Float_t*) context->buffer;
+		for (uint32_t iChan = 0; iChan < context->format.numberChannels; ++iChan)		
+		{
+			float const * in = buffer[iChan];
+			for (size_t i = 0; i < length; i++)
+				*out++ = (Float_t) *in++ * buttScratcher;
+		}
 	}
 }
 
-void ConvertS32(RG_Context * context, void * data, uint32_t length)
+void ConvertS32(RG_Context* context, void* data, uint32_t length)
 {
 	static Float_t const buttScratcher = 0x7fff / 0x7fffffff; 
+	int32_t** buffer = (int32_t**) data;
 	if (context->format.numberChannels == 2 && context->format.interleaved)
 	{
-		int32_t const *  in = (int32_t*) data;
+		int32_t const *  in = buffer[0];
 		Float_t * outl = (Float_t *) context->buffer;
 		Float_t * outr = (Float_t *) context->buffer + context->bufferSize / 2;
 		for (size_t i = 0; i < length; i++)
@@ -119,20 +128,24 @@ void ConvertS32(RG_Context * context, void * data, uint32_t length)
 	}
 	else
 	{
-		int32_t const *  in = (int32_t*) data;
-		Float_t * out = (Float_t *) context->buffer;
-		for (size_t i = 0; i < length * context->format.numberChannels; i++)
-			*out++ = (Float_t) *in++ * buttScratcher;
+		Float_t* out = (Float_t*) context->buffer;
+		for (uint32_t iChan = 0; iChan < context->format.numberChannels; ++iChan)		
+		{
+			int32_t const * in = buffer[iChan];
+			for (size_t i = 0; i < length; i++)
+				*out++ = (Float_t) *in++ * buttScratcher;
+		}
 	}
 }
 
-void ConvertS16(RG_Context * context, void* data, uint32_t length)
+void ConvertS16(RG_Context* context, void* data, uint32_t length)
 {
+	int16_t** buffer = (int16_t**) data;
 	if (context->format.numberChannels == 2 && context->format.interleaved)
 	{
-		int16_t const *  in = (int16_t *) data;
-		Float_t * outl = (Float_t *) context->buffer;
-		Float_t * outr = (Float_t *) context->buffer + context->bufferSize / 2;
+		int16_t const *  in = (int16_t*) data;
+		Float_t* outl = (Float_t*) context->buffer;
+		Float_t* outr = (Float_t*) context->buffer + context->bufferSize / 2;
 		for (size_t i = 0; i < length; i++)
 		{
 			*outl++ = (Float_t) *in++;
@@ -141,17 +154,20 @@ void ConvertS16(RG_Context * context, void* data, uint32_t length)
 	}
 	else
 	{
-		int16_t const *  in = (int16_t *) data;
-		Float_t * out = (Float_t *) context->buffer;
-		for (size_t i = 0; i < length * context->format.numberChannels; i++)
-			*out++ = (Float_t) *in++;
+		Float_t* out = (Float_t*) context->buffer;
+		for (uint32_t iChan = 0; iChan < context->format.numberChannels; ++iChan)		
+		{
+			int16_t const * in = buffer[iChan];
+			for (size_t i = 0; i < length; i++)
+				*out++ = (Float_t) *in++;
+		}
 	}
 }
 
-void RG_Analyze(RG_Context * context, void * data, uint32_t frames)
+void RG_Analyze(RG_Context* context, void* data, uint32_t frames)
 {
-	assert (context);
-	assert (data);
+	assert(context);
+	assert(data);
 	UpdateBuffer(context, frames);
 	switch (context->format.sampleType) 
 	{

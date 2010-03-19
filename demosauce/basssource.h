@@ -17,20 +17,20 @@ public:
 	static bool CheckExtension(std::string fileName);
 	
 	//overwrite
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const {return "Bass Source"; }
-	uint32_t Channels() const;
 	
 	void SetSamplerate(uint32_t moduleSamplerate); // only applies to modules
-	void SetLoopDuration(float duration); // only applies to modules
+	void SetLoopDuration(double duration); // only applies to modules
+	
 	bool IsModule() const;
 	bool IsAmigaModule() const;
 	float Loopiness() const;
-	
-	uint32_t BassChannelType() const;
+	uint32_t Channels() const;
 	uint32_t Samplerate() const;
 	uint32_t Bitrate() const;
 	double Duration() const;
+	std::string CodecType() const;
 	
 private: 
 	struct Pimpl;

@@ -1,6 +1,7 @@
 #ifndef _H_DSP_
 #define _H_DSP_
 
+#include <cassert>
 #include <string>
 #include <boost/cstdint.hpp>
 #include <boost/utility.hpp>
@@ -8,24 +9,193 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
-#include "misc.h"
+void* _Realloc(void* ptr, size_t size);
+void _Free(void* ptr);
 
+//-----------------------------------------------------------------------------
+template <typename T>
+class AlignedBuffer : boost::noncopyable
+{
+public:
+	AlignedBuffer() : buffer(0), size(0) {}
+
+	AlignedBuffer(size_t const size) : buffer(0), size(size)
+	{
+		Resize(size);
+	}
+
+	~AlignedBuffer() 
+	{
+		_Free(buffer); 
+	}
+
+	T* Resize(size_t const size)
+	{
+		buffer = _Realloc(buffer, size * sizeof(T));
+		this->size = size;
+		return reinterpret_cast<T*>(buffer);
+	}
+
+	T* Get() const 
+	{ 
+		return reinterpret_cast<T*>(buffer); 
+	}
+
+	size_t Size() const 
+	{
+		return size;
+	}
+	
+	void Zero()
+	{
+		memset(buffer, 0, size * sizeof(T));
+	}
+
+private:
+	void* buffer;
+	size_t size;
+};
+
+// currently only supports max two channels
+class AudioStream : boost::noncopyable
+{
+public:
+	AudioStream() :
+		endOfStream(false),
+		frames(0),
+		maxFrames(0),
+		channels(2)
+	{
+		buffer[0] = 0;
+		buffer[1] = 0;
+	}
+
+	virtual ~AudioStream()
+	{
+		_Free(buffer[0]);
+		_Free(buffer[1]);
+	}
+
+	void Resize(uint32_t frames)
+	{
+		size_t bufferSize = sizeof(float) * frames;
+		maxFrames = frames;
+		for (uint32_t i = 0; i < channels; ++i)
+		{
+			void* buf = _Realloc(buffer[i], bufferSize + 1);
+			buffer[i] = reinterpret_cast<float*>(buf);
+			buffer[i][maxFrames] = magicNumber;
+		}
+	}
+
+	float* Buffer(uint32_t channel) const
+	{	
+		assert(channel < channels);
+		return buffer[channel];
+	}
+
+	uint8_t* BytifiedBuffer(uint32_t channel) const
+	{
+		return reinterpret_cast<uint8_t*>(Buffer(channel));
+	}
+
+	uint32_t Channels() const
+	{
+		return channels;
+	}
+
+	uint32_t Frames() const
+	{
+		return frames;
+	}
+	
+	uint32_t MaxFrames() const
+	{
+		return maxFrames;
+	}
+	
+	void SetChannels(uint32_t const channels)
+	{
+		assert(channels == 1 || channels == 2);
+		if (channels != this->channels)
+		{
+			this->channels = channels;
+			Resize(maxFrames);
+		}
+	}
+
+	void SetFrames(uint32_t frames)
+	{
+		assert(frames <= maxFrames);
+		this->frames = frames;
+	}
+
+	size_t ChannelBytes() const
+	{
+		return frames * sizeof(float);
+	}
+
+	bool IsOverrun() const
+	{
+		for (uint32_t i = 0; i < channels; ++i)
+			if (buffer[i][maxFrames] != magicNumber)
+				return true;
+		return false;
+	}
+
+	void Append(AudioStream & stream)
+	{
+		if (frames + stream.Frames() > maxFrames)
+			Resize(frames + stream.Frames());
+		for (uint32_t i = 0; i < channels && i < stream.Channels(); ++i)
+			memcpy(buffer[i] + frames, stream.Buffer(i), stream.ChannelBytes());
+		frames += stream.Frames();
+	}
+
+	void Drop(uint32_t frames)
+	{
+		assert(frames <= this->frames);
+		uint32_t remainingFrames = this->frames - frames;
+		if (remainingFrames > 0)
+			for (uint32_t i = 0; i < channels; ++i)
+				memmove(buffer[i], buffer[i] + frames, remainingFrames * sizeof(float));
+		this->frames = remainingFrames;
+	}
+	
+	void Zero(uint32_t frames)
+	{
+		assert(frames <= this->frames);
+		for (uint32_t iChan = 0; iChan < channels; ++iChan)
+			memset(buffer[iChan], 0, frames * sizeof(float));
+		this->frames = frames;
+	}
+
+	bool endOfStream;
+
+private:
+	uint32_t frames;
+	uint32_t maxFrames;
+	uint32_t channels;
+	float* buffer[2]; // meh i'd rather have arbitrary number of chans
+	static float const magicNumber = 567.89;
+};
+
+//-----------------------------------------------------------------------------
 class Machine : boost::noncopyable
 {
 public:
-	Machine() : bypass(false) {}
+	Machine() : enabled(true) {}
 	typedef boost::shared_ptr<Machine> MachinePtr;
-	
-	virtual uint32_t Process(float * const buffer, uint32_t const frames) = 0;
+
+	virtual void Process(AudioStream & stream, uint32_t const frames) = 0;
 	virtual std::string Name() const = 0;
-	virtual uint32_t Channels() const { return source.get() ? source->Channels() : 1; }
-	
+
 	void SetSource(MachinePtr & machine) { if (machine.get() != this) source = machine; }
-	void SetBypass(bool bypass) { this->bypass = bypass; }
- 	bool Bypass() const { return bypass; }
+	void SetEnabled(bool enabled) { this->enabled = enabled; }
+ 	bool Enabled() const { return enabled; }
 protected:
 	MachinePtr source;
-	bool bypass;
+	bool enabled;
 };
 
 //-----------------------------------------------------------------------------
@@ -35,11 +205,11 @@ public:
 	static size_t const add = static_cast<size_t>(-1);
 	MachineStack();
 	virtual ~MachineStack();
-	
+
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Machine Stack"; }
-	
+
 	template<typename T> void AddMachine(T & machine, size_t position = add);
 	template<typename T> void RemoveMachine(T & machine);
 	void UpdateRouting();
@@ -50,16 +220,16 @@ private:
 	boost::scoped_ptr<Pimpl> pimpl;
 };
 
-template<typename T> 
+template<typename T>
 inline void MachineStack::AddMachine (T & machine, size_t position)
-{ 
+{
 	MachinePtr baseMachine = boost::static_pointer_cast<Machine>(machine);
-	AddMachine(baseMachine, position);	
+	AddMachine(baseMachine, position);
 }
 
 template<typename T>
 inline void MachineStack::RemoveMachine(T & machine)
-{	
+{
 	MachinePtr baseMachine = boost::static_pointer_cast<Machine>(machine);
 	RemoveMachine(baseMachine);
 }
@@ -69,17 +239,16 @@ class MapChannels : public Machine
 {
 public:
 	MapChannels() : outChannels(2) {}
-	
+
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Map Channels"; }
-	uint32_t Channels() const { return source.get() ? outChannels : 0; }
-	
+	uint32_t Channels() const { return outChannels; }
+
 	void SetOutChannels(uint32_t channels) { outChannels = channels == 1 ? 1 : 2; }
 
-private:	
+private:
 	uint32_t outChannels;
-	AlignedBuffer<float> mixBuffer;	
 };
 
 //-----------------------------------------------------------------------------
@@ -87,9 +256,9 @@ class LinearFade : public Machine
 {
 public:
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Linear Fade"; }
-	
+
 	void Set(uint64_t startFrame, uint64_t endFrame, float beginAmp, float endAmp);
 private:
 	uint64_t startFrame;
@@ -104,11 +273,11 @@ class Gain : public Machine
 {
 public:
 	Gain() : amp(1) {}
-	
+
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Gain"; }
-	
+
 	void SetAmp(float amp) { if (amp >= 0) this->amp = amp; }
 private:
 	float amp;
@@ -119,13 +288,14 @@ class NoiseSource : public Machine
 {
 public:
 	NoiseSource() : channels(2), duration(0), currentFrame(0) {}
-	
+
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Noise"; }
-	uint32_t Channels() const { return channels; }
+
+	void SetDuration(uint64_t duration);
+	void SetChannels(uint32_t channels) { this->channels = channels; }
 	
-	void Set(uint32_t channels, uint64_t duration);
 private:
 	uint32_t channels;
 	uint64_t duration;
@@ -133,15 +303,24 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+class DummySource : public Machine
+{
+public:
+	// overwriting
+	void Process(AudioStream & stream, uint32_t const frames) { stream.Zero(frames); }
+	std::string Name() const { return "Dummy"; }
+};
+
+//-----------------------------------------------------------------------------
 class MixChannels : public Machine
 {
 public:
 	MixChannels() : llAmp(1), lrAmp(0), rrAmp(1), rlAmp(0) {}
-	
+
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Mix Channels"; }
-	
+
 	// left = left*llAmp + left*lrAmp; rigt = right*rrAmp + left*rlAmp;
 	void Set(float llAmp, float lrAmp, float rrAmp, float rlAmp);
 private:
@@ -155,11 +334,28 @@ private:
 class Brickwall : public Machine
 {
 public:
+	Brickwall();
+	virtual ~Brickwall() {}
+
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Brickwall"; }
 
+	void Set(uint32_t attackFrames, uint32_t releaseFrames);
 private:
+	AudioStream stream0;
+	AudioStream stream1;
+	AlignedBuffer<float> ampBuffer;
+	AlignedBuffer<float> mixBuffer;
+	float peak;
+	float gain;
+	float gainInc;
+	uint32_t attackLength;
+	uint32_t releaseLength;
+	uint64_t streamPos;
+	uint64_t attackEnd;
+	uint64_t sustainEnd;
+	uint64_t releaseEnd;
 };
 
 //-----------------------------------------------------------------------------
@@ -167,13 +363,14 @@ class Peaky : public Machine
 {
 public:
 	Peaky() : peak(0) {}
-	
+
 	// overwriting
-	uint32_t Process(float * const buffer, uint32_t const frames);
+	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Peaky"; }
-	
+
 	void Reset() { peak = 0; }
 	float Peak() const { return peak; }
+
 private:
 	float peak;
 };
@@ -184,16 +381,24 @@ private:
 double DbToAmp(double db);
 double AmpToDb(double amp);
 
-template<typename FrameType, typename SampleType> 
-inline FrameType BytesInFrames(size_t const bytes, uint32_t const channels) 
-{ return boost::numeric_cast<FrameType>(bytes / sizeof(SampleType) / channels); }
+template<typename FrameType, typename SampleType, typename ByteType, typename ChannelType>
+inline FrameType BytesInFrames(ByteType const bytes, ChannelType const channels)
+{ 
+	if (channels == 0)
+		return 0;
+	return boost::numeric_cast<FrameType>(bytes / sizeof(SampleType) / channels); 
+}
 
-template<typename SampleType, typename FrameType> 
-inline size_t FramesInBytes(FrameType const frames, uint32_t const channels) 
-{ return boost::numeric_cast<size_t>(frames * sizeof(SampleType) * channels); }
+template<typename SampleType, typename FrameType, typename ChannelType>
+inline size_t FramesInBytes(FrameType const frames, ChannelType const channels)
+{ 
+	return boost::numeric_cast<size_t>(frames * sizeof(SampleType) * channels);
+}
 
 template<typename ReturnType> // unsigned min
 inline ReturnType unsigned_min(uint64_t const value0, uint64_t const value1)
-{ return static_cast<ReturnType>(value0 < value1 ? value0 : value1); }
+{ 	
+	return static_cast<ReturnType>(value0 < value1 ? value0 : value1); 
+}
 
 #endif

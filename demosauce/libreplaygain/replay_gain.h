@@ -38,13 +38,14 @@ typedef struct
 
 typedef struct _RG_CONTEXT RG_Context;
 
-RG_Context * RG_NewContext(RG_SampleFormat * format);
-void RG_FreeContext(RG_Context * context);
+RG_Context* RG_NewContext(RG_SampleFormat* format);
+void RG_FreeContext(RG_Context* context);
 
-void RG_Analyze(RG_Context * context, void * data, uint32_t frames);
+// data must contain pointer one or more pointers, depending on channels and format
+void RG_Analyze(RG_Context* context, void* data, uint32_t frames);
 
-double RG_GetTitleGain(RG_Context * context);
-double RG_GetAlbumGain(RG_Context * context);
+double RG_GetTitleGain(RG_Context* context);
+double RG_GetAlbumGain(RG_Context* context);
 
 size_t RG_FormatSize(uint32_t sampleFormat);
 

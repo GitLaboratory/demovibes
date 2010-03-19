@@ -35,11 +35,20 @@
 #include "settings.h"
 #include "basscast.h"
 
+#ifdef REVISION_NR
+	#define REVISION -REVISION_NR
+#else
+	#define REVISION
+#endif
+
+#define STR(arg) #arg
+#define EXPAND(arg) STR(arg)
+
 using namespace logror;
 
 int main(int argc, char* argv[])
 {
-	std::cout << "demosauce 0.20 - Now with TWICE the BITS!\n";
+	std::cout << "demosauce 0.2.2" EXPAND(REVISION) " - Now with TWICE the BITS!\n";
 	try
 	{
 		InitSettings(argc, argv);

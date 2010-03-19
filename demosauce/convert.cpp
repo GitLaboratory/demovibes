@@ -16,7 +16,7 @@ struct Resample::Pimpl
 	void UpdateChannels(uint32_t channels);
 	void Reset();
 	double ratio;
-	AlignedBuffer<float> inBuffer;
+	AudioStream inStream;
 	vector<SRC_STATE*> states;
 	Pimpl() : ratio(1) {}
 };
@@ -50,57 +50,35 @@ void Resample::Pimpl::UpdateChannels(uint32_t channels)
 	}
 }
 
-uint32_t Resample::Process(float * const buffer, uint32_t const frames)
+void Resample::Process(AudioStream & stream, uint32_t const frames)
 {
-	if (!source.get())
-		return frames;
-		
 	if (pimpl->ratio == 1)
-		return source->Process(buffer, frames);
-	pimpl->UpdateChannels(source->Channels());
+		return source->Process(stream, frames);
+
+	AudioStream & inStream = pimpl->inStream;
+	source->Process(inStream, frames / pimpl->ratio);
+	pimpl->UpdateChannels(inStream.Channels());
 	
-	uint32_t const framesToRead = frames / pimpl->ratio;
+	stream.SetChannels(inStream.Channels());
+	if (stream.MaxFrames() < frames)
+		stream.Resize(frames);
 	
-	if (pimpl->inBuffer.Size() < framesToRead * source->Channels())
-		pimpl->inBuffer.Resize(framesToRead * source->Channels());
-	
-	uint32_t const inFrames = source->Process(pimpl->inBuffer.Get(), framesToRead);
-	bool const eos = inFrames != framesToRead;
-	uint32_t outFrames = 0;
-	
+	SRC_DATA data;
+	data.src_ratio = pimpl->ratio;
+	data.input_frames = inStream.Frames();
+	data.output_frames = frames;
+	data.end_of_input = inStream.endOfStream ? 1 : 0;
+
 	for (size_t i = 0; i < pimpl->states.size(); ++i)
 	{
-		SRC_DATA data;
-		data.src_ratio = pimpl->ratio;
-   		data.data_in = pimpl->inBuffer.Get() + i * inFrames;
-   		data.data_out = buffer + i * frames;
-		data.input_frames = inFrames;
-		data.output_frames = frames;
-		data.end_of_input = eos ? 1 : 0;
-				
-		SRC_STATE* state = pimpl->states[i];
-	
-		int const err = src_process(state, &data);
-		
-//		LogDebug("%1% %2% %3% %4%"), i, framesToRead, inFrames, frames;
-//		LogDebug("%1% %2%"), data.input_frames_used, data.output_frames_gen;
+   		data.data_in = inStream.Buffer(i);
+   		data.data_out = stream.Buffer(i);
+		int const err = src_process(pimpl->states[i], &data);
 		if (err)
-		{
 			Error("src_process error: %1%"), src_strerror(err);
-			return 0;
-		}
-		outFrames = data.output_frames_gen;
-		if (outFrames < frames && !eos) 
-		{
-			// happens on first processing block...
-			// align data to buffer end and zero the front
-			size_t outBytes = FramesInBytes<float>(outFrames, 1);
-			uint32_t gapFrames = frames - outFrames;
-			memmove(data.data_out + gapFrames, data.data_out, outBytes);
-			memset(data.data_out, 0, FramesInBytes<float>(gapFrames, 1));
-		}
-	}	
-	return eos ? outFrames : frames;
+	}
+	stream.endOfStream = inStream.endOfStream;
+	stream.SetFrames(data.output_frames);
 }
 
 void Resample::Pimpl::Reset()

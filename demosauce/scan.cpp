@@ -1,8 +1,13 @@
 #include <cstdlib>
-
 #include <cstring>
 #include <string>
 #include <iostream>
+
+#include <boost/format.hpp>
+
+extern "C" { 
+#include <libavcodec/avcodec.h>
+}
 
 #include "bass/bass.h"
 #include "bass/bass_aac.h"
@@ -11,78 +16,93 @@
 #include "libreplaygain/replay_gain.h"
 
 #include "logror.h"
-#include "misc.h"
 #include "basssource.h"
 #include "avsource.h"
 
-std::string BassTypeToString(DWORD channelType)
+
+std::string ScanSong(std::string fileName, bool doReplayGain)
 {
-	switch (channelType)
+	BassSource bassSource;
+	AvSource avSource;
+	bool bassLoaded = bassSource.Load(fileName, true);
+	bool avLoaded = bassLoaded ? false : avSource.Load(fileName);
+	
+	uint32_t channels = 0;
+	std::string type;
+	double length = 0;
+	uint32_t samplerate = 0;
+	uint32_t bitrate = 0;
+	Machine* decoder = 0;
+	
+	if (bassLoaded)
 	{
-		case BASS_CTYPE_STREAM_OGG: return "ogg";
-		case BASS_CTYPE_STREAM_MP1: return "mp1";
-		case BASS_CTYPE_STREAM_MP2: return "mp2";
-		case BASS_CTYPE_STREAM_MP3: return "mp3";
-		case BASS_CTYPE_STREAM_AIFF: return "aiff";
-		case BASS_CTYPE_STREAM_CA: return "ca";
-		case BASS_CTYPE_STREAM_WAV_PCM:
-		case BASS_CTYPE_STREAM_WAV_FLOAT:
-		case BASS_CTYPE_STREAM_WAV: return "wav";
-		case BASS_CTYPE_STREAM_AAC: return "aac";
-		case BASS_CTYPE_STREAM_MP4: return "mp4";
-		case BASS_CTYPE_STREAM_FLAC: return "flac";
-		case BASS_CTYPE_STREAM_FLAC_OGG: return "flac-ogg";
-		
-		case BASS_CTYPE_MUSIC_MOD: return "mod";
-		case BASS_CTYPE_MUSIC_MTM: return "mtm";
-		case BASS_CTYPE_MUSIC_S3M: return "s3m";
-		case BASS_CTYPE_MUSIC_XM: return "xm";
-		case BASS_CTYPE_MUSIC_IT: return "it";
-		case BASS_CTYPE_MUSIC_MO3: return "mo3";
-		default: return "unknown";
+		channels = bassSource.Channels();
+		type = bassSource.CodecType();
+		length = bassSource.Duration();
+		samplerate = bassSource.Samplerate();
+		bitrate = bassSource.Bitrate();
+		decoder = static_cast<Machine*>(&bassSource);
 	}
+
+	if (avLoaded)
+	{
+		channels = avSource.Channels();
+		type = avSource.CodecType();
+		samplerate = avSource.Samplerate();
+		bitrate = avSource.Bitrate();
+		decoder = static_cast<Machine*>(&avSource);
+	}
+
+	if (!avLoaded && !bassLoaded)
+		logror::Fatal("unknown format");
+	if (samplerate == 0)
+		logror::Fatal("samplerate is zero");
+	if (channels < 1 || channels > 2)
+		logror::Fatal("unsupported number of channels");
+
+	uint64_t frameCounter = 0;
+	RG_SampleFormat format = {samplerate, RG_FLOAT_32_BIT, channels, FALSE};
+	RG_Context* context = RG_NewContext(&format);
+	AudioStream stream;
+	
+	if (doReplayGain || avLoaded)
+		while (!stream.endOfStream)
+		{
+			decoder->Process(stream, 48000);
+			float* buffers[2] = {stream.Buffer(0), channels == 2 ? stream.Buffer(1) : NULL};
+			if (doReplayGain)
+				RG_Analyze(context, buffers, stream.Frames());
+			frameCounter += stream.Frames();
+		}
+
+	double replayGain = RG_GetTitleGain(context);
+	RG_FreeContext(context);
+
+	std::string msg = "library: %1%\ntype/codec: %2%\nlength: %3%\n";
+	if (doReplayGain)
+		msg.append("replay gain: %4%\n");
+	if (bassSource.IsModule())
+		msg.append("loopiness: %7%");
+	else
+		msg.append("bitrate: %5%\nsamplerate: %6%");
+	
+	length = avLoaded ? static_cast<double>(frameCounter) / samplerate : length;
+	std::string decoder_name = bassLoaded ? "bass" : "avcodec";
+	boost::format formater(msg);
+	formater.exceptions(boost::io::no_error_bits);
+	return str(formater % decoder_name % type % length % replayGain 
+		% bitrate % samplerate % bassSource.Loopiness());
 }
 
 int main(int argc, char* argv[])
 {
-	logror::LogSetConsoleLevel(logror::fatal);
-	//logror::LogSetConsoleLevel(logror::debug);
+	logror::LogSetConsoleLevel(logror::nothing);
 	if (argc < 2 || (*argv[1] == '-' && argc < 3)) 
 		logror::Fatal("not enough arguments");
-	const char * fileName = argv[argc - 1];
 	
-	// open file
-	BassSource bassSource;
-	if (!bassSource.Load(fileName, true))
-	{
-		if (BASS_ErrorGetCode() == BASS_ERROR_NOTAVAIL)
-			logror::Fatal("unable to determine length");
-		else
-			logror::Fatal("failed to load file (code: %1%)"), BASS_ErrorGetCode();
-	}
-	if (bassSource.Channels() < 1 || bassSource.Channels() > 2)
-		logror::Fatal("usupported number of channels");
-
-	std::cout << "type:" << BassTypeToString(bassSource.BassChannelType()) << std::endl;
-	std::cout << "length:" << bassSource.Duration() << std::endl;
-	std::cout << "bitrate:" << bassSource.Bitrate() << std::endl;
-	std::cout << "loopiness:" << bassSource.Loopiness() << std::endl;
+	std::string fileName = argv[argc - 1];
+	bool doReplayGain = strcmp(argv[1], "--no-replaygain");
+	std::cout << ScanSong(fileName, doReplayGain) << std::endl;
 	
-	if (strcmp(argv[1], "--no-replay_gain"))
-	{
-		RG_SampleFormat format;
-		format.sampleRate = bassSource.Samplerate();
-		format.sampleType = RG_FLOAT_32_BIT;
-		format.numberChannels = bassSource.Channels();
-		format.interleaved = FALSE;
-		RG_Context * context = RG_NewContext(&format);
-		float buffer[48000 * 4];
-		static uint32_t const buffFrames = 	BytesInFrames<uint32_t, float>(sizeof(buffer), bassSource.Channels());
-		uint32_t frames = 0;
-		while ((frames = bassSource.Process(buffer, buffFrames)) == buffFrames)	
-			RG_Analyze(context, buffer, frames);
-		std::cout << "replaygain:" << RG_GetTitleGain(context) << std::endl;
-		RG_FreeContext(context);
-	}
 	return EXIT_SUCCESS;
 }

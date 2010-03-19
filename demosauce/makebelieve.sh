@@ -1,39 +1,51 @@
 #!/bin/bash
 #builds the backend
 
-flags='-Wall -Wfatal-errors'
+svn_revision=`svnversion .`
+flags="-Wall -Wfatal-errors -Iffmpeg -DREVISION_NR=$svn_revision"
 flags_debug='-g -DDEBUG'
 flags_release='-s -O3 -mtune=native -msse2 -mfpmath=sse'
+libs_ffmpeg='-Lffmpeg -Wl,-rpath=ffmpeg -lavcodec -lavformat -lavutil'
 
 replaygain_a='libreplaygain/libreplaygain.a'
 samplerate_a='libsamplerate/libsamplerate.a'
+avcodec_so='ffmpeg/libavcodec.so'
 
-source_files='convert.cpp basscast.cpp dsp.cpp basssource.cpp scan.cpp sockets.cpp misc.cpp demosauce.cpp settings.cpp logror.cpp'
+src_common='avsource.cpp convert.cpp basscast.cpp dsp.cpp basssource.cpp sockets.cpp logror.cpp'
 
-link_scan="dsp.o misc.o logror.o basssource.o scan.o $replaygain_a"
-flags_scan='-lbass -lbass_aac -lbassflac -lboost_system-mt -lboost_date_time-mt'
+src_scan='scan.cpp'
+input_scan="avsource.o dsp.o logror.o basssource.o $replaygain_a"
+libs_scan="$libs_ffmpeg -lbass -lbass_aac -lbassflac -lboost_system-mt -lboost_date_time-mt"
 
-link_demosauce="convert.o misc.o dsp.o logror.o basssource.o basscast.o sockets.o settings.o demosauce.o $samplerate_a"
-flags_demosauce='-lbass -lbassenc -lbass_aac -lbassflac -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_date_time-mt'
+src_demosauce='settings.cpp  demosauce.cpp'
+input_demosauce="avsource.o convert.o dsp.o logror.o basssource.o sockets.o basscast.o $samplerate_a"
+libs_demosauce="$libs_ffmpeg -lbass -lbassenc -lbass_aac -lbassflac -lboost_system-mt -lboost_thread-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_date_time-mt"
+
+src_applejuice='applejuice.cpp'
+input_applejuice="avsource.o dsp.o convert.o logror.o basssource.o $replaygain_a $samplerate_a"
+libs_applejuice="$libs_ffmpeg -lSDL -lSDL_image -lbass -lbass_aac -lbassflac -lboost_system-mt -lboost_date_time-mt"
+res_applejuice='res/background.png res/buttons.png res/icon.png res/font_synd.png'
 
 build_debug=
-do_rebuild=
-do_lazy=
+build_rebuild=
+build_lazy=
+build_applejuice=
 
 for var in "$@"
 do
 	case "$var" in
 	'debug') build_debug=1;;
-	'rebuild') do_rebuild=1;;
-	'lazy') do_lazy=1;;
+	'rebuild') build_rebuild=1;;
+	'lazy') build_lazy=1;;
+	'aj') build_applejuice=1;;
 	'clean') rm -f *.o; exit 0;;
 	esac
 done
 
-echo -n "demovibes configuration: "
+echo -n "configuration: "
 if test $build_debug; then
 	echo -n 'debug'
-	flags="$flags $flags_debug" #-pedantic 
+	flags="$flags $flags_debug" #-pedantic
 else
 	echo -n 'release'
 	flags="$flags $flags_release"
@@ -48,37 +60,56 @@ else
 fi
 
 # libreplaygain
-if test ! -f "$replaygain_a" -o "$do_rebuild"; then
-	cd libreplaygain; ./build.sh ${build_debug:+debug}; cd ..
+if test ! -f "$replaygain_a" -o "$build_rebuild"; then
+	cd libreplaygain 
+	./build.sh ${build_debug:+debug} 
+	if test $? -ne 0; then exit 1; fi
+	cd ..
 fi
 
 # libsamplerate
-if test ! -f "$samplerate_a" -o "$do_rebuild"; then
-	cd libsamplerate; ./build.sh; cd ..
+if test ! -f "$samplerate_a" -o "$build_rebuild"; then
+	cd libsamplerate
+	./build.sh
+	if test $? -ne 0; then exit 1; fi
+	cd ..
 fi
 
-did_something=
-for input in $source_files
+# ffmpeg
+if test ! -f "$avcodec_so" -o "$build_rebuild"; then
+	cd ffmpeg 
+	./build.sh
+	if test $? -ne 0; then exit 1; fi
+	cd ..
+fi
+
+echo "building common"
+for input in $src_common
 do
 	output=${input/%.cpp/.o}
-	if test "$input" -nt "$output" -o ! "$do_lazy"; then
-		echo "compiling $input"
+	if test "$input" -nt "$output" -o ! "$build_lazy"; then
 		g++ $flags -c $input -o $output
 		if test $? -ne 0; then exit 1; fi
-		did_something=1
 	fi
 done
 
-if test ! $did_something; then echo 'did nothing'; fi
-
 flags_bass="-L$dir_bass -Wl,-rpath=$dir_bass"
 
-echo 'linking scan'
-g++ $flags $flags_scan $flags_bass $link_scan -o scan
-if test $? -ne 0; then exit 1; fi
+if test $build_applejuice; then
+	echo 'building applejuice'
+	ld -r -b binary -o res.o $res_applejuice
+	g++ -o applejuice -Wl,-rpath=. $src_applejuice $flags $flags_bass `sdl-config --cflags` $libs_applejuice $input_applejuice res.o
+	if test $? -ne 0; then exit 1; fi
 
-echo 'linking demosauce'
-g++ $flags $flags_demosauce $flags_bass $link_demosauce -o demosauce
-if test $? -ne 0; then exit 1; fi
+else
+	echo 'building scan'
+	g++ -o scan $src_scan $flags $flags_bass $libs_scan $input_scan
+	if test $? -ne 0; then exit 1; fi
 
-if test ! $do_lazy; then rm -f *.o; fi
+	echo 'building demosauce'
+	g++ -o demosauce $src_demosauce $flags $flags_bass $libs_demosauce $input_demosauce
+	if test $? -ne 0; then exit 1; fi
+
+fi
+
+if test ! $build_lazy; then rm -f *.o; fi
