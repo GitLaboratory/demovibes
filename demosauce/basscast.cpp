@@ -110,7 +110,7 @@ void BassCastPimpl::InitMachines()
 void BassCast::Run()
 {
     const size_t buffSize = setting::encoder_samplerate * 2;
-    char * buff = new char[buffSize]; // don't like buffers on stack
+    char * buff = new char[buffSize]; // TODO: change to aligned buffer
 	for (;;)
 	{
 		const DWORD bytesRead = BASS_ChannelGetData(pimpl->sink, buff, buffSize);
@@ -219,21 +219,16 @@ void BassCastPimpl::ChangeSong()
 // this is where most of the shit happens
 DWORD FillBuffer(HSTREAM handle, void * buffer, DWORD length, void * user)
 {
-	BassCastPimpl & pimpl = * reinterpret_cast<BassCastPimpl*>(user);
+	BassCastPimpl& pimpl = *reinterpret_cast<BassCastPimpl*>(user);
 	uint32_t const channels = setting::encoder_channels;
 	uint32_t const frames = BytesInFrames<uint32_t, sample_t>(length, channels);
-	sample_t * const outBuffer = reinterpret_cast<sample_t*>(buffer);
-	AudioStream const & stream = pimpl.converter.SourceStream();
-	
-	pimpl.converter.Process(outBuffer, frames);
+	sample_t* const outBuffer = reinterpret_cast<sample_t*>(buffer);
+	uint32_t const procFrames = pimpl.converter.Process(outBuffer, frames);
 
-	if (stream.IsOverrun() || stream.Frames() > frames)
-		Fatal("Buffer Overrun(tm). Yeeeeeeeah!");
-
-	if (stream.endOfStream) // implicates end of stream
+	if (procFrames != frames) // implicates end of stream
 	{
 		Log(info, "end of stream");
-		size_t const bytesRead = FramesInBytes<sample_t>(stream.Frames(), channels);
+		size_t bytesRead = FramesInBytes<sample_t>(procFrames, channels);
 		memset(reinterpret_cast<char*>(buffer) + bytesRead, 0, length - bytesRead);
 		pimpl.ChangeSong();
 	}

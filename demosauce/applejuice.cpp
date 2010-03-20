@@ -137,7 +137,9 @@ size_t buffer_offset = 0;
 
 Mutex read_mutex;
 Mutex write_mutex;
-AtomicValue<bool> stream_end(true);
+AtomicValue<bool> playbeack_stopped(true);
+bool stream_ended = true;
+int remaining_bytes = 0; 
 
 // font functions
 
@@ -369,7 +371,7 @@ bool LoadSong(std::string fileName)
 		boost::shared_ptr<LinearFade> fade = new_shared<LinearFade>();
 		double duration = std::max(bassSource->Duration(), 120.0);
 		bassSource->SetLoopDuration(duration);
-		fade->Set(SAMPLERATE * (duration - 4), SAMPLERATE * duration, 1, 0);
+		fade->Set(SAMPLERATE * (duration - 5), SAMPLERATE * (duration - 1), 1, 0);
 		machineStack->AddMachine(fade);
 	}
 	
@@ -381,45 +383,38 @@ bool LoadSong(std::string fileName)
 	}
 	
 	boost::shared_ptr<Brickwall> brickwall = new_shared<Brickwall>();
-//	machineStack->AddMachine(gain);
+	machineStack->AddMachine(gain);
 	machineStack->AddMachine(brickwall);
 	machineStack->UpdateRouting();
 	return true;
 }
 
-#include <fstream>
-std::ofstream strmdmp("__.raw", std::ios::binary);
-
 bool StreamWriter()
 {
-	if (stream_end.Get())
-		return false;
-
 	uint32_t frames = BytesInFrames<uint32_t, int16_t>(BUFFER_SIZE, CHANNELS);
 	int16_t* buffer = reinterpret_cast<int16_t*>(convert_buffer.Get());
 	gain->SetAmp(amp_replaygain.Get()); // in case playback was started before scan finished
-	AudioStream const & stream = converter.SourceStream();	
 	
-	converter.Process(buffer, frames);
-	size_t read_bytes = FramesInBytes<int16_t>(stream.Frames(), CHANNELS);
-	strmdmp.write((char*)buffer, read_bytes);
+	uint32_t procFrames = converter.Process(buffer, frames);
+	size_t read_bytes = FramesInBytes<int16_t>(procFrames, CHANNELS);
 	
 	write_mutex.Lock(); // unlocked by reader when more data is needed
 	read_mutex.Lock();
-	memcpy(play_buffer_b, buffer, read_bytes);	
+	memcpy(play_buffer_b, buffer, read_bytes);
+	stream_ended = procFrames != frames;
 	read_mutex.Unlock();
-
-	stream_end.Set(stream.endOfStream);	
-	return !stream.endOfStream;
+	
+	return procFrames == frames;
 }
 
 void AudioCallback(void* userdata, Uint8* buffer, int len)
 {
 	assert(len <= BUFFER_SIZE);
 	
-	if (stream_end.Get())
+	if (playbeack_stopped.Get() || remaining_bytes < 0)
 		SDL_PauseAudio(1);
-
+	remaining_bytes -= len;
+	
 	if (buffer_offset + len <= BUFFER_SIZE)
 	{
 		memcpy(buffer, play_buffer_a + buffer_offset, len);
@@ -432,9 +427,12 @@ void AudioCallback(void* userdata, Uint8* buffer, int len)
 		memset(play_buffer_a, 0, BUFFER_SIZE);  // in case writer isnt't ready
 	
 		read_mutex.Lock();
+
+		remaining_bytes += stream_ended ? 0 : BUFFER_SIZE;
 		memcpy(buffer + rest, play_buffer_b, len - rest);
 		buffer_offset = len - rest;
-		std::swap(play_buffer_a, play_buffer_b);	
+		std::swap(play_buffer_a, play_buffer_b);
+		
 		read_mutex.Unlock();
 		write_mutex.Unlock(); // tell writer we need moar data
 	}
@@ -484,7 +482,9 @@ void StartPlayback()
 		return;
 	}
 
-	stream_end.Set(false);		
+	playbeack_stopped.Set(false);	
+	stream_ended = false;
+	remaining_bytes = BUFFER_SIZE * 3;
 	gain->SetAmp(amp_replaygain.Get());
 	play_buffer.Zero();
 	convert_buffer.Zero();
@@ -495,7 +495,7 @@ void StartPlayback()
 
 void StopPlayback()
 {
-	stream_end.Set(true);
+	playbeack_stopped.Set(true);
 }
 
 void Exit()
@@ -566,7 +566,7 @@ int main(int argc, char* argv[])
 			quit = event.key.keysym.sym == SDLK_ESCAPE;
 			if (event.key.keysym.sym == SDLK_SPACE)
 			{
-				if (stream_end.Get())
+				if (playbeack_stopped.Get())
 					StartPlayback();
 				else 
 					StopPlayback();

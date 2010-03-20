@@ -107,32 +107,41 @@ public:
 	}
 	
 	template <typename SampleType>
-	void Process(SampleType* const outSamples, uint32_t const frames);
-
-	AudioStream const & SourceStream() const { return inStream; }
+	uint32_t Process(SampleType* const outSamples, uint32_t const frames);
 	
 private:
 	Machine::MachinePtr source;
 	AudioStream inStream;
 };
 
-template <> inline void ConvertToInterleaved
+// guarantees to return number of requested frames unless eos
+template <> inline uint32_t ConvertToInterleaved
 ::Process(int16_t* const outSamples, uint32_t const frames)
 {
  	static int16_t const range = std::numeric_limits<int16_t>::max();
-	source->Process(inStream, frames);
-	
-	uint32_t const channels = inStream.Channels();
-	for (uint_fast32_t iChan = 0; iChan < channels; ++iChan)
+
+	bool moreFrames = true;
+	uint32_t procFrames = 0;
+	while (moreFrames && procFrames < frames)
 	{
-		float* in = inStream.Buffer(iChan);
-		int16_t* out = outSamples + iChan;
-		for (uint_fast32_t i = frames; i; --i)
-		{ 
-			*out = static_cast<int16_t>(range * *in++); 
-			out += channels; 
+		source->Process(inStream, frames);
+		uint32_t const channels = inStream.Channels();
+		for (uint_fast32_t iChan = 0; iChan < channels; ++iChan)
+		{
+			float* in = inStream.Buffer(iChan);
+			int16_t* out = outSamples + procFrames + iChan;
+			for (uint_fast32_t i = inStream.Frames(); i; --i)
+			{ 
+				*out = static_cast<int16_t>(range * *in++); 
+				out += channels; 
+			}
 		}
+		moreFrames = !inStream.endOfStream;
+		procFrames += inStream.Frames();
+		assert(procFrames <= frames);
+		assert(!inStream.IsOverrun());
 	}
+	return procFrames;
 }
 
 #endif

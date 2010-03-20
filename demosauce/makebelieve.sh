@@ -5,7 +5,7 @@ svn_revision=`svnversion .`
 flags="-Wall -Wfatal-errors -Iffmpeg -DREVISION_NR=$svn_revision"
 flags_debug='-g -DDEBUG'
 flags_release='-s -O3 -mtune=native -msse2 -mfpmath=sse'
-libs_ffmpeg='-Lffmpeg -Wl,-rpath=ffmpeg -lavcodec -lavformat -lavutil'
+libs_ffmpeg='-Lffmpeg -Wl,-rpath=ffmpeg -lavcodec -lavformat'
 
 replaygain_a='libreplaygain/libreplaygain.a'
 samplerate_a='libsamplerate/libsamplerate.a'
