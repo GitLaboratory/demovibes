@@ -14,6 +14,8 @@ class pyWhisperer:
     		'GETTITLE': self.command_title,
     		'GETARTIST': self.command_artist,
             'MEMDUMP': self.command_memdump,
+            'GETGAIN': self.command_getgain,
+            'GETLOOP': self.command_getloop,
     	}
     	self.host = host
     	self.port = port
@@ -58,6 +60,12 @@ class pyWhisperer:
 
     def command_getsong(self):
     	return self.player.get_next_song()
+    	
+    def command_getloop(self):
+        return str(self.player.song.loopfade_time)
+        
+    def command_getgain(self):
+        return str(self.player.song.replay_gain)
 
     def command_getmeta(self):
     	return self.player.get_metadata()

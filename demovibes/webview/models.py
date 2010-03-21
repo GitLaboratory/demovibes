@@ -370,6 +370,7 @@ class Song(models.Model):
     last_changed = models.DateTimeField(auto_now = True)
     lemon_id = models.IntegerField(blank=True, null = True, verbose_name="Lemon64 ID", help_text="Lemon64 Game ID (C64 Only) - See http://www.lemon64.com")
     locked_until = models.DateTimeField(blank = True, null = True)
+    loopfade_time = models.PositiveIntegerField(default = 0, verbose_name = "Loop fade time", help_text = "In seconds, 0 = disabled")
     necta_id = models.IntegerField(blank = True, null = True, verbose_name = "Necta SongID", help_text="SongID on Nectarine (Link will be provided)")
     num_favorited = models.IntegerField(default = 0)
     platform = models.ForeignKey(SongPlatform, null = True, blank = True)
@@ -378,7 +379,7 @@ class Song(models.Model):
     rating = models.FloatField(blank = True, null = True)
     rating_total = models.IntegerField(default = 0)
     rating_votes = models.IntegerField(default = 0)
-    #release_date = models.DateField(blank = True, null = True, verbose_name="Release Date", help_text="Release date (YYYY-MM-DD - Ex. 1986-05-26)")
+    replay_gain = models.FloatField(default = 0, verbose_name = _("Replay gain"))
     release_year = models.CharField(blank = True, null = True, verbose_name="Release Year", help_text="Year the song was released (Ex: 1985)", max_length="4", db_index=True)
     remix_of_id = models.IntegerField(blank = True, null = True, verbose_name = "Mix SongID", help_text="Song number (such as: 252) of the original song this is mixed from.")
     samplerate = models.IntegerField(blank = True, null = True)
@@ -433,6 +434,12 @@ class Song(models.Model):
                 
             except:
                 return "Couldn't pull Pouet info!"
+    
+    def get_scan_info(self):
+        scantool = getattr(settings, 'SCAN_PATH', False)
+        if scantool:
+            pass
+            #Dummy holder for now
             
     def get_pouet_download(self):
         """
