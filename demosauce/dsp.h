@@ -9,8 +9,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
-void* _Realloc(void* ptr, size_t size);
-void _Free(void* ptr);
+#include "mem.h"
 
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -26,12 +25,12 @@ public:
 
 	~AlignedBuffer()
 	{
-		_Free(buffer);
+		free(buffer);
 	}
 
 	T* Resize(size_t const size)
 	{
-		buffer = _Realloc(buffer, size * sizeof(T));
+		buffer = aligned_realloc(buffer, size * sizeof(T));
 		this->size = size;
 		return reinterpret_cast<T*>(buffer);
 	}
@@ -73,8 +72,8 @@ public:
 
 	virtual ~AudioStream()
 	{
-		_Free(buffer[0]);
-		_Free(buffer[1]);
+		free(buffer[0]);
+		free(buffer[1]);
 	}
 
 	void Resize(uint32_t frames)
@@ -85,7 +84,7 @@ public:
 		size_t bufferSize = sizeof(float) * (frames + 1);
 		for (uint32_t i = 0; i < channels; ++i)
 		{
-			void* buf = _Realloc(buffer[i], bufferSize);
+			void* buf = aligned_realloc(buffer[i], bufferSize);
 			buffer[i] = reinterpret_cast<float*>(buf);
 			buffer[i][maxFrames] = magicNumber;
 		}

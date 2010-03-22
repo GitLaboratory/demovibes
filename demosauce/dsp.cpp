@@ -4,13 +4,10 @@
 #include <limits>
 #include <algorithm>
 
-#include <malloc.h>
-
 #include<boost/static_assert.hpp>
 
 #include "logror.h"
 #include "dsp.h"
-
 
 using namespace logror;
 
@@ -22,36 +19,6 @@ double DbToAmp(double db)
 double AmpToDb(double amp)
 {
 	return log10(amp) * 20;
-}
-
-void* _Realloc(void* ptr, size_t size)
-{
-	LogDebug("realloc %1%, %2% bytes"), ptr, size;
-	void* new_ptr = 0;
-	if (ptr)
-	{
-		void* tmp_ptr = realloc(ptr, size);
-		// ffmpeg(sse) needs mem aligned to 16 byetes
-		if (tmp_ptr != ptr && reinterpret_cast<size_t>(tmp_ptr) % 16 != 0)
-		{
-			new_ptr = memalign(16, size);
-			memcpy(new_ptr, tmp_ptr, size);
-			free(tmp_ptr);
-		}
-		else
-			new_ptr = tmp_ptr;
-	}
-	else
-		new_ptr = memalign(16, size);
-
-	assert(new_ptr);
-	LogDebug("realloc `-> %1%"), new_ptr;
-	return new_ptr;
-}
-
-void _Free(void* ptr)
-{
-	free(ptr);
 }
 
 //-----------------------------------------------------------------------------

@@ -208,7 +208,8 @@ void BassCastPimpl::ChangeSong()
 	// maybe this won't work have to check, alternative:
 	// http://ip:port/admin/metadata?mount=/mystream&mode=updinfo&song=ACDC+Back+In+Black
 	// other keys title, artist and charset=UTF-8"
-	BASS_Encode_CastSetTitle(encoder, songInfo.title.c_str(), NULL);
+	string msg = str(format("%1%&charset=UTF-8") % songInfo.title);
+	BASS_Encode_CastSetTitle(encoder, msg.c_str(), NULL);
 }
 
 // this is where most of the shit happens
