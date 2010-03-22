@@ -18,7 +18,7 @@ public:
 	// overwriting
 	void Process(AudioStream & stream, uint32_t const frames);
 	std::string Name() const { return "Resample"; }
-	
+
 	void Set(uint32_t sourceRate, uint32_t outRate);
 private:
 	struct Pimpl;
@@ -33,17 +33,17 @@ class ConvertFromInterleaved : boost::noncopyable
 public:
 
 	ConvertFromInterleaved() : channels(0) {}
-		
+
 	SampleType* Buffer(uint32_t frames, uint32_t channels)
 	{
 		this->channels = channels;
 		if (buffer.Size() < frames * channels)
 			buffer.Resize(frames * channels);
-		return buffer.Get(); 
+		return buffer.Get();
 	}
-	
+
 	void Process(AudioStream & stream, uint32_t const frames);
-	
+
 private:
 	uint32_t channels;
 	AlignedBuffer<SampleType> buffer;
@@ -53,45 +53,47 @@ template<> inline void ConvertFromInterleaved<int16_t>
 ::Process(AudioStream & stream, uint32_t const frames)
 {
 	assert(buffer.Size() >= frames * channels);
-	
+
 	stream.SetChannels(channels);
-    if (stream.MaxFrames() < frames)
-        stream.Resize(frames);
-    stream.SetFrames(frames);
-	
+	if (stream.MaxFrames() < frames)
+		stream.Resize(frames);
+	stream.SetFrames(frames);
+
 	static float const range = 1.0 / -std::numeric_limits<int16_t>::min(); //2's complement
 	for (uint_fast32_t iChan = 0; iChan < channels; ++iChan)
-	{	
+	{
 		int16_t const * in = buffer.Get() + iChan;
 		float* out = stream.Buffer(iChan);
 		for (uint_fast32_t i = frames; i; --i)
-		{ 
-			*out++ = range * *in; 
-			in += channels; 
+		{
+			*out++ = range * *in;
+			in += channels;
 		}
 	}
+	assert(!stream.IsOverrun());
 }
 
 template<> inline void ConvertFromInterleaved<float>
 ::Process(AudioStream & stream, uint32_t const frames)
 {
 	assert(buffer.Size() >= frames * channels);
-	
+
 	stream.SetChannels(channels);
-    if (stream.MaxFrames() < frames)
-        stream.Resize(frames);
-    stream.SetFrames(frames);
+	if (stream.MaxFrames() < frames)
+		stream.Resize(frames);
+	stream.SetFrames(frames);
 
 	for (uint_fast32_t iChan = 0; iChan < channels; ++iChan)
-	{	
+	{
 		float const * in = buffer.Get() + iChan;
 		float* out = stream.Buffer(iChan);
 		for (uint_fast32_t i = frames; i; --i)
-		{ 
-			*out++ = *in; 
-			in += channels; 
+		{
+			*out++ = *in;
+			in += channels;
 		}
 	}
+	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -99,16 +101,16 @@ template<> inline void ConvertFromInterleaved<float>
 class ConvertToInterleaved
 {
 public:
-	
-	template <typename MachineType> 
-	void SetSource(MachineType & machine) 
-	{ 
-		source = boost::static_pointer_cast<Machine>(machine); 
+
+	template <typename MachineType>
+	void SetSource(MachineType & machine)
+	{
+		source = boost::static_pointer_cast<Machine>(machine);
 	}
-	
+
 	template <typename SampleType>
 	uint32_t Process(SampleType* const outSamples, uint32_t const frames);
-	
+
 private:
 	Machine::MachinePtr source;
 	AudioStream inStream;
@@ -120,26 +122,25 @@ template <> inline uint32_t ConvertToInterleaved
 {
  	static int16_t const range = std::numeric_limits<int16_t>::max();
 
-	bool moreFrames = true;
 	uint32_t procFrames = 0;
-	while (moreFrames && procFrames < frames)
+	while (procFrames < frames)
 	{
-		source->Process(inStream, frames);
+		source->Process(inStream, frames - procFrames);
 		uint32_t const channels = inStream.Channels();
+
 		for (uint_fast32_t iChan = 0; iChan < channels; ++iChan)
 		{
-			float* in = inStream.Buffer(iChan);
-			int16_t* out = outSamples + procFrames + iChan;
-			for (uint_fast32_t i = inStream.Frames(); i; --i)
-			{ 
-				*out = static_cast<int16_t>(range * *in++); 
-				out += channels; 
-			}
+			float const * in = inStream.Buffer(iChan);
+			int16_t* out = outSamples + procFrames * channels + iChan;
+			for (uint_fast32_t i = inStream.Frames(); i; --i, out += channels)
+				*out = static_cast<int16_t>(*in++ * range);
 		}
-		moreFrames = !inStream.endOfStream;
 		procFrames += inStream.Frames();
 		assert(procFrames <= frames);
-		assert(!inStream.IsOverrun());
+		if (inStream.endOfStream)
+			break;
+		if (procFrames < frames)
+			LogDebug("converter wanted %1%, got %2% frames"), frames, procFrames;
 	}
 	return procFrames;
 }

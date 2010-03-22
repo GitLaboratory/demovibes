@@ -29,7 +29,7 @@ Resample::~Resample()
 }
 
 void Resample::Pimpl::UpdateChannels(uint32_t channels)
-{	
+{
 	if (states.size() > channels)
 		for (size_t i = channels; i < states.size(); ++i)
 			src_delete(states[i]);
@@ -38,7 +38,7 @@ void Resample::Pimpl::UpdateChannels(uint32_t channels)
 	{
 		for (size_t i = states.size(); i < channels; ++i)
 		{
-			LogDebug("new resampler");
+			LogDebug("new resampler %1%"), i;
 			int err = 0;
 			SRC_STATE* state = src_new(SRC_SINC_FASTEST, 1, &err);
 			if (err)
@@ -56,13 +56,14 @@ void Resample::Process(AudioStream & stream, uint32_t const frames)
 		return source->Process(stream, frames);
 
 	AudioStream & inStream = pimpl->inStream;
-	source->Process(inStream, frames / pimpl->ratio);
+	uint32_t const inFrames = (frames / pimpl->ratio) + .5;
+	source->Process(inStream, inFrames);
+
 	pimpl->UpdateChannels(inStream.Channels());
-	
 	stream.SetChannels(inStream.Channels());
 	if (stream.MaxFrames() < frames)
 		stream.Resize(frames);
-	
+
 	SRC_DATA data;
 	data.src_ratio = pimpl->ratio;
 	data.input_frames = inStream.Frames();
@@ -77,8 +78,11 @@ void Resample::Process(AudioStream & stream, uint32_t const frames)
 		if (err)
 			Error("src_process error: %1%"), src_strerror(err);
 	}
-	stream.endOfStream = inStream.endOfStream;
-	stream.SetFrames(data.output_frames);
+	assert(!stream.IsOverrun());
+	// if output contins wanted frames there might be more
+	stream.endOfStream = inStream.endOfStream
+		&& data.output_frames_gen != data.output_frames;
+	stream.SetFrames(data.output_frames_gen);
 }
 
 void Resample::Pimpl::Reset()

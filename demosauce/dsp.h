@@ -24,9 +24,9 @@ public:
 		Resize(size);
 	}
 
-	~AlignedBuffer() 
+	~AlignedBuffer()
 	{
-		_Free(buffer); 
+		_Free(buffer);
 	}
 
 	T* Resize(size_t const size)
@@ -36,16 +36,16 @@ public:
 		return reinterpret_cast<T*>(buffer);
 	}
 
-	T* Get() const 
-	{ 
-		return reinterpret_cast<T*>(buffer); 
+	T* Get() const
+	{
+		return reinterpret_cast<T*>(buffer);
 	}
 
-	size_t Size() const 
+	size_t Size() const
 	{
 		return size;
 	}
-	
+
 	void Zero()
 	{
 		memset(buffer, 0, size * sizeof(T));
@@ -56,6 +56,7 @@ private:
 	size_t size;
 };
 
+//-----------------------------------------------------------------------------
 // currently only supports max two channels
 class AudioStream : boost::noncopyable
 {
@@ -78,18 +79,20 @@ public:
 
 	void Resize(uint32_t frames)
 	{
-		size_t bufferSize = sizeof(float) * frames;
+		if (maxFrames == frames)
+			return;
 		maxFrames = frames;
+		size_t bufferSize = sizeof(float) * (frames + 1);
 		for (uint32_t i = 0; i < channels; ++i)
 		{
-			void* buf = _Realloc(buffer[i], bufferSize + 1);
+			void* buf = _Realloc(buffer[i], bufferSize);
 			buffer[i] = reinterpret_cast<float*>(buf);
 			buffer[i][maxFrames] = magicNumber;
 		}
 	}
 
 	float* Buffer(uint32_t channel) const
-	{	
+	{
 		assert(channel < channels);
 		return buffer[channel];
 	}
@@ -108,12 +111,12 @@ public:
 	{
 		return frames;
 	}
-	
+
 	uint32_t MaxFrames() const
 	{
 		return maxFrames;
 	}
-	
+
 	void SetChannels(uint32_t const channels)
 	{
 		assert(channels == 1 || channels == 2);
@@ -138,7 +141,7 @@ public:
 	bool IsOverrun() const
 	{
 		for (uint32_t i = 0; i < channels; ++i)
-			if (buffer[i][maxFrames] != magicNumber)
+			if (buffer[i] && buffer[i][maxFrames] != magicNumber)
 				return true;
 		return false;
 	}
@@ -161,7 +164,7 @@ public:
 				memmove(buffer[i], buffer[i] + frames, remainingFrames * sizeof(float));
 		this->frames = remainingFrames;
 	}
-	
+
 	void Zero(uint32_t frames)
 	{
 		assert(frames <= this->frames);
@@ -295,7 +298,7 @@ public:
 
 	void SetDuration(uint64_t duration);
 	void SetChannels(uint32_t channels) { this->channels = channels; }
-	
+
 private:
 	uint32_t channels;
 	uint64_t duration;
@@ -383,22 +386,22 @@ double AmpToDb(double amp);
 
 template<typename FrameType, typename SampleType, typename ByteType, typename ChannelType>
 inline FrameType BytesInFrames(ByteType const bytes, ChannelType const channels)
-{ 
+{
 	if (channels == 0)
 		return 0;
-	return boost::numeric_cast<FrameType>(bytes / sizeof(SampleType) / channels); 
+	return boost::numeric_cast<FrameType>(bytes / sizeof(SampleType) / channels);
 }
 
 template<typename SampleType, typename FrameType, typename ChannelType>
 inline size_t FramesInBytes(FrameType const frames, ChannelType const channels)
-{ 
+{
 	return boost::numeric_cast<size_t>(frames * sizeof(SampleType) * channels);
 }
 
 template<typename ReturnType> // unsigned min
 inline ReturnType unsigned_min(uint64_t const value0, uint64_t const value1)
-{ 	
-	return static_cast<ReturnType>(value0 < value1 ? value0 : value1); 
+{
+	return static_cast<ReturnType>(value0 < value1 ? value0 : value1);
 }
 
 #endif

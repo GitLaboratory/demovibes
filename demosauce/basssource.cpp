@@ -1,5 +1,5 @@
 #include <boost/version.hpp>
-#if (BOOST_VERSION / 100) < 1036	
+#if (BOOST_VERSION / 100) < 1036
 #error "need at leats BOOST version 1.36"
 #endif
 
@@ -47,7 +47,7 @@ BassSource::BassSource():
 	pimpl->channel = 0;
 	pimpl->Free();
 	BASS_SetConfig(BASS_CONFIG_UPDATEPERIOD, 0);
-	if (!BASS_Init(0, 44100, 0, 0, NULL) && 
+	if (!BASS_Init(0, 44100, 0, 0, NULL) &&
 		BASS_ErrorGetCode() != BASS_ERROR_ALREADY)
 		Fatal("BASS init failed (%1%)"), BASS_ErrorGetCode();
 }
@@ -61,7 +61,7 @@ bool BassSource::Load(string fileName, bool prescan)
 {
 	pimpl->Free();
 	pimpl->fileName = fileName;
-	DWORD & channel = pimpl->channel; 
+	DWORD & channel = pimpl->channel;
 	DWORD stream_flags = BASS_STREAM_DECODE | (prescan ? BASS_STREAM_PRESCAN : 0) | BASS_SAMPLE_FLOAT;
 	DWORD music_flags = BASS_MUSIC_DECODE | BASS_MUSIC_PRESCAN | BASS_SAMPLE_FLOAT;
 
@@ -76,31 +76,31 @@ bool BassSource::Load(string fileName, bool prescan)
 	if (!channel)
 		channel = BASS_MP4_StreamCreateFile(FALSE, fileName.c_str(), 0, 0, stream_flags);
 	if (!channel)
-		channel = BASS_FLAC_StreamCreateFile(FALSE, fileName.c_str(), 0, 0, stream_flags);		
+		channel = BASS_FLAC_StreamCreateFile(FALSE, fileName.c_str(), 0, 0, stream_flags);
 	if (!channel)
 	{
 		Error("failed to load %1%"), fileName;
 		return false;
 	}
-	
+
 	BASS_ChannelGetInfo(channel, &pimpl->channelInfo);
 	const QWORD length = BASS_ChannelGetLength(channel, BASS_POS_BYTE);
 	pimpl->duration = BASS_ChannelBytes2Seconds(channel, length);
-	
+
 	if (length == static_cast<QWORD>(-1))
 	{
 		Error("failed to determine duration of %1%"), fileName;
 		pimpl->Free();
 		return false;
 	}
-	
+
 	static DWORD const amiga_flags = BASS_MUSIC_NONINTER | BASS_MUSIC_PT1MOD;
-	if (IsAmigaModule())		
+	if (IsAmigaModule())
 		BASS_ChannelFlags(pimpl->channel, amiga_flags, amiga_flags);
 	else
 		BASS_ChannelFlags(pimpl->channel, BASS_MUSIC_RAMP, BASS_MUSIC_RAMP);
-	
-	return true;	
+
+	return true;
 }
 
 void BassSource::Pimpl::Free()
@@ -130,7 +130,7 @@ void BassSource::Process(AudioStream & stream, uint32_t const frames)
 		Error("usupported number of channels");
 		stream.SetFrames(0);
 		return;
-	}		
+	}
 
 	uint32_t const framesToRead = unsigned_min<uint32_t>(frames, pimpl->lastFrame - pimpl->currentFrame);
 	if (framesToRead == 0)
@@ -139,31 +139,32 @@ void BassSource::Process(AudioStream & stream, uint32_t const frames)
 		stream.SetFrames(0);
 		return;
 	}
-		
+
 	DWORD const bytesToRead = FramesInBytes<sample_t>(framesToRead, channels);
-	sample_t* const readBuffer = pimpl->converter.Buffer(frames, channels);	
+	sample_t* const readBuffer = pimpl->converter.Buffer(frames, channels);
 	DWORD const bytesRead = BASS_ChannelGetData(pimpl->channel, readBuffer, bytesToRead);
-	
+
 	if (bytesRead == static_cast<DWORD>(-1) && BASS_ErrorGetCode() != BASS_ERROR_ENDED)
 		Error("failed to read from channel (%1%)"), BASS_ErrorGetCode();
-	
-	uint32_t framesRead = 0;	
+
+	uint32_t framesRead = 0;
 	if (bytesRead != static_cast<DWORD>(-1))
 		framesRead = BytesInFrames<uint32_t, sample_t>(bytesRead, channels);
 
 	pimpl->converter.Process(stream, framesRead);
-	
+	assert(!stream.IsOverrun());
+
 	pimpl->currentFrame += framesRead;
 	stream.endOfStream = framesRead != framesToRead || pimpl->currentFrame >= pimpl->lastFrame;
 }
 
 void BassSource::SetSamplerate(uint32_t moduleSamplerate)
-{ 
+{
 	pimpl->samplerate = moduleSamplerate;
 }
 
 void BassSource::SetLoopDuration(double duration)
-{ 
+{
 	if (pimpl->channel == 0 || duration < 0)
 		return;
 	pimpl->duration = duration;
@@ -175,9 +176,9 @@ float BassSource::Loopiness() const
 {
 	if (!IsModule() || pimpl->fileName.size() == 0)
 		return 0;
-	// what I'm doing here is find the last 50 ms of a track and return the average positive value 
+	// what I'm doing here is find the last 50 ms of a track and return the average positive value
 	// i got a bit lazy here, but this part isn't so crucial anyways
-	// flags to make decoding as fast as possible. still use 44100 hz, because lower setting might 
+	// flags to make decoding as fast as possible. still use 44100 hz, because lower setting might
 	// remove upper frequencies that could indicate a loop
 	DWORD const flags = BASS_MUSIC_DECODE | BASS_SAMPLE_MONO | BASS_MUSIC_NONINTER;
 	static DWORD const sampleRate = 44100;
@@ -217,22 +218,22 @@ float BassSource::Loopiness() const
 }
 
 bool BassSource::IsModule() const
-{	
+{
 	return pimpl->channelInfo.ctype & BASS_CTYPE_MUSIC_MOD;
 }
 
 bool BassSource::IsAmigaModule() const
-{	
+{
 	return pimpl->channelInfo.ctype == BASS_CTYPE_MUSIC_MOD;
 }
 
 uint32_t BassSource::Channels() const
-{ 
+{
 	return static_cast<uint32_t>(pimpl->channelInfo.chans);
 }
 
 uint32_t BassSource::Samplerate() const
-{ 
+{
 	return static_cast<uint32_t>(pimpl->channelInfo.freq);
 }
 
@@ -244,8 +245,8 @@ uint32_t BassSource::Bitrate() const
 	return gah ? 0 : bitrate;
 }
 
-double BassSource::Duration() const 
-{ 
+double BassSource::Duration() const
+{
 	return pimpl->duration;
 }
 
@@ -253,14 +254,14 @@ bool BassSource::CheckExtension(string const fileName)
 {
 	path file(fileName);
 	string name = file.filename();
-	
+
 	static size_t const elements = 18;
-	char const * ext[elements] = {".mp3", ".ogg", ".m4a", ".flac", ".acc", ".mp4", ".mp2", ".mp1", 
+	char const * ext[elements] = {".mp3", ".ogg", ".m4a", ".flac", ".acc", ".mp4", ".mp2", ".mp1",
 		".wav", ".aiff", ".xm", ".mod", ".s3m", ".it", ".mtm", ".umx", ".mo3", ".fst"};
 	for (size_t i = 0; i < elements; ++i)
 		if (iends_with(name, ext[i]))
 			return true;
-	
+
 	// extrawurst for AMP :D
 	static size_t const elements_amp = 8;
 	char const * ext_amp[elements_amp] = {"xm.", "mod.", "s3m.", "it.", "mtm.", "umx.", "mo3.", "fst."};
@@ -287,7 +288,7 @@ string BassSource::CodecType() const
 		case BASS_CTYPE_STREAM_AAC: return "aac";
 		case BASS_CTYPE_STREAM_FLAC_OGG:
 		case BASS_CTYPE_STREAM_FLAC: return "flac";
-		
+
 		case BASS_CTYPE_MUSIC_MOD: return "mod";
 		case BASS_CTYPE_MUSIC_MTM: return "mtm";
 		case BASS_CTYPE_MUSIC_S3M: return "s3m";

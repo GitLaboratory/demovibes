@@ -14,33 +14,39 @@
 
 using namespace logror;
 
-double DbToAmp(double db) 
-{ 
+double DbToAmp(double db)
+{
 	return pow(10, db / 20);
 }
 
-double AmpToDb(double amp) 
+double AmpToDb(double amp)
 {
 	return log10(amp) * 20;
 }
 
 void* _Realloc(void* ptr, size_t size)
 {
+	LogDebug("realloc %1%, %2% bytes"), ptr, size;
+	void* new_ptr = 0;
 	if (ptr)
 	{
-		void* _ptr = realloc(ptr, size);
+		void* tmp_ptr = realloc(ptr, size);
 		// ffmpeg(sse) needs mem aligned to 16 byetes
-		if (_ptr != ptr && reinterpret_cast<size_t>(_ptr) % 16 != 0) 
+		if (tmp_ptr != ptr && reinterpret_cast<size_t>(tmp_ptr) % 16 != 0)
 		{
-			ptr = memalign(16, size);
-			memcpy(ptr, _ptr, size);
-			free(_ptr);
-		}	
+			new_ptr = memalign(16, size);
+			memcpy(new_ptr, tmp_ptr, size);
+			free(tmp_ptr);
+		}
+		else
+			new_ptr = tmp_ptr;
 	}
 	else
-		ptr = memalign(16, size);
-		
-	return ptr;
+		new_ptr = memalign(16, size);
+
+	assert(new_ptr);
+	LogDebug("realloc `-> %1%"), new_ptr;
+	return new_ptr;
 }
 
 void _Free(void* ptr)
@@ -120,10 +126,10 @@ void MapChannels::Process(AudioStream & stream, uint32_t const frames)
 	source->Process(stream, frames);
 	uint32_t const inChannels = stream.Channels();
 	stream.SetChannels(outChannels);
-	
+
 	if (inChannels == 1 && outChannels == 2)
 		memcpy(stream.Buffer(1), stream.Buffer(0), stream.ChannelBytes());
-	
+
 	else if (inChannels == 2 && outChannels == 1)
 	{
 		float * left = stream.Buffer(0);
@@ -135,6 +141,7 @@ void MapChannels::Process(AudioStream & stream, uint32_t const frames)
 			++right;
 		}
 	}
+	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -160,7 +167,7 @@ void LinearFade::Process(AudioStream & stream, uint32_t const frames)
 	currentFrame += readFrames;
 	if (amp == 1 && (endA >= readFrames || endB == 0))
 		return; // nothing to do; amp mignt not be exacly on target, so proximity check would be better
-	
+
 	for (uint_fast32_t iChan = 0; iChan < stream.Channels(); ++iChan)
 	{
 		float * out = stream.Buffer(iChan);
@@ -174,6 +181,7 @@ void LinearFade::Process(AudioStream & stream, uint32_t const frames)
 			*out++ *= a;
 	}
 	amp += ampInc * (endB - endA);
+	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -186,6 +194,7 @@ void Gain::Process(AudioStream & stream, uint32_t const frames)
 		for (uint_fast32_t i = stream.Frames(); i; --i)
 			*out++ *= amp;
 	}
+	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -205,16 +214,18 @@ void NoiseSource::Process(AudioStream & stream, uint32_t const frames)
 	}
 	float const gah = 1.0 / RAND_MAX;
 	const uint_fast32_t procFrames = unsigned_min<uint32_t>(duration - currentFrame, frames);
-	
+
 	for (uint_fast32_t iChan = 0; iChan < stream.Channels(); ++iChan)
 	{
 		float* out = stream.Buffer(iChan);
 		for (uint_fast32_t i = procFrames; i; --i)
 			*out++ = gah * rand();
 	}
+
+	assert(!stream.IsOverrun());
 	currentFrame += procFrames;
 	stream.endOfStream = currentFrame >= duration;
-	stream.SetFrames(procFrames);	
+	stream.SetFrames(procFrames);
 }
 
 //-----------------------------------------------------------------------------
@@ -240,40 +251,47 @@ void MixChannels::Process(AudioStream & stream, uint32_t const frames)
 		*left++ = newLeft;
 		*right++ = newRight;
 	}
+	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
+// ok, this is supposed to be a brickwall limiter, but I have absolutely no
+// indea about the theory behind one. so I just made some stuff up!
 Brickwall::Brickwall() :
 	peak(.999),
 	gain(.999),
 	gainInc(0),
-	attackLength(4410), // 10 ms at 44100
-	releaseLength(4410),
+	attackLength(441), // 10 ms at 44100
+	releaseLength(441),
 	streamPos(0),
 	attackEnd(0),
 	sustainEnd(0),
 	releaseEnd(0)
 {}
-	
+
 void Brickwall::Set(uint32_t attackFrames, uint32_t releaseFrames)
 {
 	attackLength = attackFrames;
 	releaseLength = releaseFrames;
 }
 
-void Brickwall::Process(AudioStream & stream, uint32_t const frames)
+void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 {
-	uint32_t const wantedFrames = frames - stream0.Frames() + attackLength;
-	source->Process(stream1, wantedFrames);
+assert(!stream.IsOverrun());
+	source->Process(stream1, frames);
 	assert(stream1.Channels() > 0);
+assert(!stream.IsOverrun());
+	uint32_t procFrames0 = std::min(stream0.Frames(), frames);
+	uint32_t procFrames1 = std::min(stream1.Frames(), frames) - procFrames0;
 
 	if (ampBuffer.Size() < stream1.Frames())
-		ampBuffer.Resize(stream1.Frames());	
+		ampBuffer.Resize(stream1.Frames());
 	if (mixBuffer.Size() < stream1.Frames())
 		mixBuffer.Resize(stream1.Frames());
-	
-	{	// extract peaks of all channels
-		assert(stream1.Channels() == 1 || stream1.Channels() == 2);
+
+	// prepare data for peak scanning
+	{
+		assert(stream1.Channels() <= 2);
 		float* buff = mixBuffer.Get();
 		float* in0 = stream1.Buffer(0);
 		if (stream1.Channels() == 1)
@@ -283,82 +301,88 @@ void Brickwall::Process(AudioStream & stream, uint32_t const frames)
 		{
 			float* in1 = stream1.Buffer(1);
 			for (uint_fast32_t i = stream1.Frames(); i; --i)
-				*buff++ = std::max(*in0++, *in1++);
+				*buff++ = std::max(fabs(*in0++), fabs(*in1++));
 		}
-	}	
-	
-	stream.SetFrames(0);
+	}
+assert(!stream.IsOverrun());
+	// scan data at beginning of stream
 	if (streamPos < attackLength)
 	{
 		float* in = mixBuffer.Get();
-		for (; streamPos <  std::min(stream1.Frames(), attackLength); ++streamPos, ++in)
-			if (fabs(*in) > peak)
+		uint64_t i = streamPos;
+		for (; i < std::min(stream1.Frames(), attackLength); ++i, ++in)
+			if (*in > peak)
 				peak = fabs(*in);
-		if (streamPos == attackLength || stream1.endOfStream)
+		if (i == attackLength || stream1.endOfStream)
 			gain = .999 / peak; // peak always >= 1
 		else
+		{   // not enouth frames for regular processing
+			streamPos = i;
+			stream.SetFrames(0);
+			stream0.Append(stream1);
 			return;
+		}
 	}
-	
-	float* amp = ampBuffer.Get();
-	float* in = mixBuffer.Get();
-	for (uint_fast32_t i = stream1.Frames(); i; --i)
+assert(!stream.IsOverrun());
 	{
-		float const value = fabs(*in++);
-
-		if (value > peak)
+		float* amp = ampBuffer.Get();
+		float* in = mixBuffer.Get();
+		for (uint_fast32_t i = stream1.Frames(); i; --i, ++streamPos)
 		{
-			peak = value;
-			gainInc = (.999 / peak - gain) / attackLength;
-			attackEnd = streamPos + attackLength;
-		}
+			float const value = *in++;
+			if (value > peak)
+			{
+				peak = value;
+				gainInc = (.999 / peak - gain) / attackLength;
+				attackEnd = streamPos + attackLength;
+			}
 
-		if (value > .999)
-		{
-			sustainEnd = streamPos + attackLength;
-			releaseEnd = 0;
-		}
+			if (value > .999)
+			{
+				sustainEnd = streamPos + attackLength;
+				releaseEnd = 0;
+			}
 
-		if (streamPos == attackEnd)
-			gainInc = 0;
-		
-		if (streamPos == sustainEnd)
-		{
-			gainInc = (.999 - gain) / releaseLength;
-			releaseEnd = streamPos + releaseLength;
-			peak = .999;
-		}
-		
-		if (streamPos == releaseEnd)
-		{
-			gain = .999;
-			gainInc = 0;
-		}
+			if (streamPos == attackEnd)
+				gainInc = 0;
 
-		*amp = gain;
-		gain += gainInc;
-		++amp;
-		++streamPos;
+			if (streamPos == sustainEnd)
+			{
+				gainInc = (.999 - gain) / releaseLength;
+				releaseEnd = streamPos + releaseLength;
+				peak = .999;
+			}
+
+			if (streamPos == releaseEnd)
+			{
+				gain = .999;
+				gainInc = 0;
+			}
+
+			*amp++ = gain;
+			gain += gainInc;
+		}
 	}
-	
-	uint32_t procFrames = unsigned_min<uint32_t>(stream1.Frames() - attackLength, stream1.Frames());
+
+
 	stream.endOfStream = stream1.endOfStream;
 	stream.SetChannels(stream1.Channels());
-	if (stream.MaxFrames() < stream0.Frames() + procFrames)
-		stream.Resize(stream0.Frames() + procFrames);
-	stream.SetFrames(stream0.Frames() + procFrames);
-		
+	if (stream.MaxFrames() < procFrames0 + procFrames1)
+		stream.Resize(procFrames0 + procFrames1);
+	stream.SetFrames(procFrames0 + procFrames1);
+assert(!stream.IsOverrun());
 	for (uint32_t iChan = 0; iChan < stream1.Channels(); ++iChan)
 	{
 		float* amp = ampBuffer.Get();
 		float* in = stream0.Buffer(iChan);
 		float* out = stream.Buffer(iChan);
-		for (uint_fast32_t i = stream0.Frames(); i; --i)
+		for (uint_fast32_t i = procFrames0; i; --i)
 			*out++ = *in++ * *amp++;
 		in = stream1.Buffer(iChan);
-		for (uint_fast32_t i = procFrames; i; --i)
+		for (uint_fast32_t i = procFrames1; i; --i)
 			*out++ = *in++ * *amp++;
 	}
+assert(!stream.IsOverrun());
 /*	{	// uncomment to visualize gain in left channel
 		float* amp = ampBuffer.Get();
 		float* in = stream0.Buffer(0);
@@ -369,8 +393,9 @@ void Brickwall::Process(AudioStream & stream, uint32_t const frames)
 		for (uint_fast32_t i = procFrames; i; --i)
 			*out++ = *amp++;
 	}
-*/	stream1.Drop(procFrames);
-	stream0.SetFrames(0);
+*/
+	stream0.Drop(procFrames0);
+	stream1.Drop(procFrames1);
 	stream0.Append(stream1);
 }
 

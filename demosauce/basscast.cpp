@@ -1,5 +1,5 @@
 #include <boost/version.hpp>
-#if (BOOST_VERSION / 100) < 1036	
+#if (BOOST_VERSION / 100) < 1036
 #error "need at leats BOOST version 1.36"
 #endif
 
@@ -72,8 +72,8 @@ struct BassCastPimpl
 BassCast::BassCast() : pimpl(new BassCastPimpl) { }
 
 template <typename T> shared_ptr<T> new_shared()
-{ 
-	return shared_ptr<T>(new T); 
+{
+	return shared_ptr<T>(new T);
 }
 
 void BassCastPimpl::InitMachines()
@@ -109,18 +109,13 @@ void BassCastPimpl::InitMachines()
 
 void BassCast::Run()
 {
-    const size_t buffSize = setting::encoder_samplerate * 2;
-    char * buff = new char[buffSize]; // TODO: change to aligned buffer
+	AlignedBuffer<char> buff(setting::encoder_samplerate * 2);
 	for (;;)
 	{
-		const DWORD bytesRead = BASS_ChannelGetData(pimpl->sink, buff, buffSize);
-    	if (bytesRead == static_cast<DWORD>(-1))
-    	{
-    		delete buff;
+		DWORD bytesRead = BASS_ChannelGetData(pimpl->sink, buff.Get(), buff.Size());
+		if (bytesRead == static_cast<DWORD>(-1))
 			Fatal("lost sink channel (%1%)"), BASS_ErrorGetCode();
-		}
 	}
-	delete buff; // never reached, but what the hell..
 }
 
 // this is called whenever the song is changed
