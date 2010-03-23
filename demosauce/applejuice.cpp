@@ -362,7 +362,7 @@ bool LoadSong(std::string fileName)
 	if (bassSource->IsAmigaModule())
 	{
 		boost::shared_ptr<MixChannels> mixChannels = new_shared<MixChannels>();
-		mixChannels->Set(.8, .2, .8, .2);
+		mixChannels->Set(.7, .3, .7, .3);
 		machineStack->AddMachine(mixChannels);
 	}
 	
@@ -389,15 +389,20 @@ bool LoadSong(std::string fileName)
 	return true;
 }
 
+//uncomment to dump output
+//#include "wav.h"
+//WavWriter wav("dump.wav", 44100, 2, sizeof(int16_t));
+
 bool StreamWriter()
 {
 	uint32_t frames = BytesInFrames<uint32_t, int16_t>(BUFFER_SIZE, CHANNELS);
 	int16_t* buffer = reinterpret_cast<int16_t*>(convert_buffer.Get());
 	gain->SetAmp(amp_replaygain.Get()); // in case playback was started before scan finished
 	
-	uint32_t procFrames = converter.Process(buffer, frames);
+	uint32_t procFrames = converter.Process2(buffer, frames);
 	size_t read_bytes = FramesInBytes<int16_t>(procFrames, CHANNELS);
-	
+//	wav.write(buffer, read_bytes);	
+
 	write_mutex.Lock(); // unlocked by reader when more data is needed
 	read_mutex.Lock();
 	memcpy(play_buffer_b, buffer, read_bytes);
@@ -409,6 +414,7 @@ bool StreamWriter()
 
 void AudioCallback(void* userdata, Uint8* buffer, int len)
 {
+	// TODO: support large output buffers. apparently pulse provides ratherbig ones
 	assert(len <= BUFFER_SIZE);
 	
 	if (playbeack_stopped.Get() || remaining_bytes < 0)

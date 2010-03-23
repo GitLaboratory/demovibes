@@ -1,10 +1,11 @@
 #include <cstring>
 #include <vector>
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include "libsamplerate/samplerate.h"
 
 #include "logror.h"
-
 #include "convert.h"
 
 using namespace std;
@@ -107,3 +108,11 @@ void Resample::Pimpl::Free()
 		src_delete(states[i]);
 	states.clear();
 }
+
+// src wrappers
+
+void FloatToInt16(float const * in, int16_t* out, uint32_t len)
+{
+	src_float_to_short_array (in, out, boost::numeric_cast<int>(len));
+}
+

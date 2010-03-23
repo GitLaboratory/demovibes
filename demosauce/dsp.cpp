@@ -32,14 +32,14 @@ struct MachineStack::Pimpl
 MachineStack::MachineStack() : pimpl(new Pimpl) {}
 MachineStack::~MachineStack() {} // needed or scoped_ptr may start whining
 
-void MachineStack::Process(AudioStream & stream, uint32_t const frames)
+void MachineStack::Process(AudioStream& stream, uint32_t const frames)
 {
 	if (!source.get())
 		return;
 	return source->Process(stream, frames);
 }
 
-void MachineStack::AddMachine(MachinePtr & machine, size_t position)
+void MachineStack::AddMachine(MachinePtr& machine, size_t position)
 {
 	static size_t const maxMachines = 1000;
 	if (machine.get() == this)
@@ -55,7 +55,7 @@ void MachineStack::AddMachine(MachinePtr & machine, size_t position)
 	}
 }
 
-void MachineStack::RemoveMachine(MachinePtr & machine)
+void MachineStack::RemoveMachine(MachinePtr& machine)
 {
 	MachinePtrVector & machines = pimpl->machines;
 	size_t lastMachine = 0;
@@ -88,7 +88,7 @@ void MachineStack::UpdateRouting()
 }
 
 //-----------------------------------------------------------------------------
-void MapChannels::Process(AudioStream & stream, uint32_t const frames)
+void MapChannels::Process(AudioStream& stream, uint32_t const frames)
 {
 	source->Process(stream, frames);
 	uint32_t const inChannels = stream.Channels();
@@ -123,7 +123,7 @@ void LinearFade::Set(uint64_t startFrame, uint64_t endFrame, float beginAmp, flo
 	this->ampInc = (endAmp - beginAmp) / (endFrame - startFrame);
 }
 
-void LinearFade::Process(AudioStream & stream, uint32_t const frames)
+void LinearFade::Process(AudioStream& stream, uint32_t const frames)
 {
 	source->Process(stream, frames);
 	uint32_t const readFrames = stream.Frames();
@@ -152,7 +152,7 @@ void LinearFade::Process(AudioStream & stream, uint32_t const frames)
 }
 
 //-----------------------------------------------------------------------------
-void Gain::Process(AudioStream & stream, uint32_t const frames)
+void Gain::Process(AudioStream& stream, uint32_t const frames)
 {
 	source->Process(stream, frames);
 	for (uint_fast32_t iChan = 0; iChan < stream.Channels(); ++iChan)
@@ -171,7 +171,7 @@ void NoiseSource::SetDuration(uint64_t duration)
 	currentFrame = 0;
 }
 
-void NoiseSource::Process(AudioStream & stream, uint32_t const frames)
+void NoiseSource::Process(AudioStream& stream, uint32_t const frames)
 {
 	if (currentFrame >= duration)
 	{
@@ -204,7 +204,7 @@ void MixChannels::Set(float llAmp, float lrAmp, float rrAmp, float rlAmp)
 	this->rlAmp = rlAmp;
 }
 
-void MixChannels::Process(AudioStream & stream, uint32_t const frames)
+void MixChannels::Process(AudioStream& stream, uint32_t const frames)
 {
 	source->Process(stream, frames);
 	if (stream.Channels() != 2)
@@ -228,7 +228,7 @@ Brickwall::Brickwall() :
 	peak(.999),
 	gain(.999),
 	gainInc(0),
-	attackLength(441), // 10 ms at 44100
+	attackLength(441), // 1 ms at 44100
 	releaseLength(441),
 	streamPos(0),
 	attackEnd(0),
@@ -244,10 +244,8 @@ void Brickwall::Set(uint32_t attackFrames, uint32_t releaseFrames)
 
 void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 {
-assert(!stream.IsOverrun());
 	source->Process(stream1, frames);
 	assert(stream1.Channels() > 0);
-assert(!stream.IsOverrun());
 	uint32_t procFrames0 = std::min(stream0.Frames(), frames);
 	uint32_t procFrames1 = std::min(stream1.Frames(), frames) - procFrames0;
 
@@ -271,7 +269,7 @@ assert(!stream.IsOverrun());
 				*buff++ = std::max(fabs(*in0++), fabs(*in1++));
 		}
 	}
-assert(!stream.IsOverrun());
+
 	// scan data at beginning of stream
 	if (streamPos < attackLength)
 	{
@@ -280,17 +278,18 @@ assert(!stream.IsOverrun());
 		for (; i < std::min(stream1.Frames(), attackLength); ++i, ++in)
 			if (*in > peak)
 				peak = fabs(*in);
-		if (i == attackLength || stream1.endOfStream)
-			gain = .999 / peak; // peak always >= 1
-		else
+		if (i == attackLength)
+			procFrames1 = procFrames1 - std::min(procFrames1, attackLength);
+		else if (!stream1.endOfStream)
 		{   // not enouth frames for regular processing
 			streamPos = i;
 			stream.SetFrames(0);
 			stream0.Append(stream1);
 			return;
 		}
+		gain = .999 / peak; // peak always >= 1
 	}
-assert(!stream.IsOverrun());
+
 	{
 		float* amp = ampBuffer.Get();
 		float* in = mixBuffer.Get();
@@ -331,13 +330,12 @@ assert(!stream.IsOverrun());
 		}
 	}
 
-
 	stream.endOfStream = stream1.endOfStream;
 	stream.SetChannels(stream1.Channels());
 	if (stream.MaxFrames() < procFrames0 + procFrames1)
 		stream.Resize(procFrames0 + procFrames1);
 	stream.SetFrames(procFrames0 + procFrames1);
-assert(!stream.IsOverrun());
+
 	for (uint32_t iChan = 0; iChan < stream1.Channels(); ++iChan)
 	{
 		float* amp = ampBuffer.Get();
@@ -349,25 +347,26 @@ assert(!stream.IsOverrun());
 		for (uint_fast32_t i = procFrames1; i; --i)
 			*out++ = *in++ * *amp++;
 	}
-assert(!stream.IsOverrun());
-/*	{	// uncomment to visualize gain in left channel
-		float* amp = ampBuffer.Get();
-		float* in = stream0.Buffer(0);
-		float* out = stream.Buffer(0);
-		for (uint_fast32_t i = stream0.Frames(); i; --i)
-			*out++ = *amp++;
-		in = stream1.Buffer(0);
-		for (uint_fast32_t i = procFrames; i; --i)
-			*out++ = *amp++;
-	}
-*/
+	assert(!stream.IsOverrun());
+	
+// uncomment to visualize applied gain in left channel
+//	{	
+//		float* amp = ampBuffer.Get();
+//		float* in = stream0.Buffer(0);
+//		float* out = stream.Buffer(0);
+//		for (uint_fast32_t i = procFrames0; i; --i)
+//			*out++ = *amp++;
+//		in = stream1.Buffer(0);
+//		for (uint_fast32_t i = procFrames1; i; --i)
+//			*out++ = *amp++;
+//	}
 	stream0.Drop(procFrames0);
 	stream1.Drop(procFrames1);
 	stream0.Append(stream1);
 }
 
 //-----------------------------------------------------------------------------
-void Peaky::Process(AudioStream & stream, uint32_t const frames)
+void Peaky::Process(AudioStream& stream, uint32_t const frames)
 {
 	source->Process(stream, frames);
 	float max = peak;

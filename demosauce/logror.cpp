@@ -107,12 +107,14 @@ bool StringToLevel(const string & levelString, Level & level)
 		level = debug;
 	else if (str == "info")
 		level = info;
-	else if (str == "warning")
+	else if (str == "warn")
 		level = warning;
 	else if (str == "error")
 		level = error;
 	else if (str =="fatal")
 		level = fatal;
+	else if (str =="nothing")
+		level = nothing;
 	else 
 		return false;
 	return true;

@@ -97,6 +97,7 @@ template<> inline void ConvertFromInterleaved<float>
 }
 
 //-----------------------------------------------------------------------------
+void FloatToInt16(float const * in, int16_t* out, uint32_t len);
 
 class ConvertToInterleaved
 {
@@ -109,38 +110,76 @@ public:
 	}
 
 	template <typename SampleType>
-	uint32_t Process(SampleType* const outSamples, uint32_t const frames);
+	uint32_t Process(SampleType* outSamples, uint32_t frames, uint32_t channels);
+	template <typename SampleType>
+	uint32_t Process1(SampleType* outSamples, uint32_t frames);
+	template <typename SampleType>
+	uint32_t Process2(SampleType* outSamples, uint32_t frames);
 
 private:
 	Machine::MachinePtr source;
+	AlignedBuffer<int16_t> convertBuffer;
 	AudioStream inStream;
 };
 
-// guarantees to return number of requested frames unless eos
-template <> inline uint32_t ConvertToInterleaved
-::Process(int16_t* const outSamples, uint32_t const frames)
+template<typename SampleType> inline uint32_t ConvertToInterleaved
+::Process(SampleType* outSamples, uint32_t frames, uint32_t channels)
 {
- 	static int16_t const range = std::numeric_limits<int16_t>::max();
+	assert(channels > 0 && channels <= 2);
+	if (channels == 2)
+		return Process2(outSamples, frames);
+	return Process1(outSamples, frames);
+}
 
+template<> inline uint32_t ConvertToInterleaved
+::Process1(int16_t* outSamples, uint32_t frames)
+{
 	uint32_t procFrames = 0;
+	
 	while (procFrames < frames)
 	{
 		source->Process(inStream, frames - procFrames);
-		uint32_t const channels = inStream.Channels();
-
-		for (uint_fast32_t iChan = 0; iChan < channels; ++iChan)
-		{
-			float const * in = inStream.Buffer(iChan);
-			int16_t* out = outSamples + procFrames * channels + iChan;
-			for (uint_fast32_t i = inStream.Frames(); i; --i, out += channels)
-				*out = static_cast<int16_t>(*in++ * range);
-		}
+		assert(inStream.Channels() == 1);	
+		FloatToInt16(inStream.Buffer(0), outSamples, inStream.Frames());
+		outSamples += inStream.Frames();
 		procFrames += inStream.Frames();
 		assert(procFrames <= frames);
 		if (inStream.endOfStream)
 			break;
-		if (procFrames < frames)
-			LogDebug("converter wanted %1%, got %2% frames"), frames, procFrames;
+	}
+	return procFrames;
+}
+
+template<> inline uint32_t ConvertToInterleaved
+::Process2(int16_t* outSamples, uint32_t frames)
+{
+	uint32_t procFrames = 0;
+	int16_t* out = outSamples;
+	
+	while (procFrames < frames)
+	{
+		source->Process(inStream, frames - procFrames);
+		assert(inStream.Channels() == 2);
+		uint32_t const inFrames = inStream.Frames();
+		
+		if (convertBuffer.Size() < inFrames * 2)
+			convertBuffer.Resize(inFrames * 2);
+		int16_t* buff0 = convertBuffer.Get();
+		int16_t* buff1 = buff0 + inFrames;
+
+		FloatToInt16(inStream.Buffer(0), buff0, inFrames);
+		FloatToInt16(inStream.Buffer(1), buff1, inFrames);
+		
+		for (uint_fast32_t i = inFrames; i; --i)
+		{	
+			*out++ = *buff0++;
+			*out++ = *buff1++;
+		}
+
+		procFrames += inFrames;
+		assert(procFrames <= frames);
+		if (inStream.endOfStream)
+			break;
 	}
 	return procFrames;
 }

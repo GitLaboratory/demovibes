@@ -94,6 +94,9 @@ void BassCastPimpl::InitMachines()
 	float ratio = setting::amiga_channel_ratio;
 	mixChannels->Set(1 - ratio, ratio, 1 - ratio, ratio);
 	mapChannels->SetOutChannels(setting::encoder_channels);
+	// set attack/release to a tiny 1 ms
+	uint32_t brickFrames = setting::encoder_samplerate * .001;
+	brickwall->Set(brickFrames, brickFrames);
 
 	machineStack->AddMachine(noiseSource);
 	machineStack->AddMachine(resample);
@@ -208,8 +211,8 @@ void BassCastPimpl::ChangeSong()
 	// maybe this won't work have to check, alternative:
 	// http://ip:port/admin/metadata?mount=/mystream&mode=updinfo&song=ACDC+Back+In+Black
 	// other keys title, artist and charset=UTF-8"
-	string msg = str(format("%1%&charset=UTF-8") % songInfo.title);
-	BASS_Encode_CastSetTitle(encoder, msg.c_str(), NULL);
+	// string msg = str(format("%1%&charset=UTF-8") % songInfo.title); // won't work
+	BASS_Encode_CastSetTitle(encoder, songInfo.title.c_str(), NULL);
 }
 
 // this is where most of the shit happens
@@ -219,7 +222,8 @@ DWORD FillBuffer(HSTREAM handle, void * buffer, DWORD length, void * user)
 	uint32_t const channels = setting::encoder_channels;
 	uint32_t const frames = BytesInFrames<uint32_t, sample_t>(length, channels);
 	sample_t* const outBuffer = reinterpret_cast<sample_t*>(buffer);
-	uint32_t const procFrames = pimpl.converter.Process(outBuffer, frames);
+
+	uint32_t const procFrames = pimpl.converter.Process(outBuffer, frames, channels);
 
 	if (procFrames != frames) // implicates end of stream
 	{
