@@ -247,10 +247,12 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 	source->Process(stream1, frames);
 	assert(stream1.Channels() > 0);
 	uint32_t procFrames0 = std::min(stream0.Frames(), frames);
-	uint32_t procFrames1 = std::min(stream1.Frames(), frames) - procFrames0;
+	uint32_t procFrames1 = stream1.Frames() < procFrames0 ? 0 :
+		stream1.Frames() - procFrames0;
+	uint32_t ampFrames = procFrames0 + stream1.Frames();
 
-	if (ampBuffer.Size() < stream1.Frames())
-		ampBuffer.Resize(stream1.Frames());
+	if (ampBuffer.Size() < ampFrames)
+		ampBuffer.Resize(ampFrames);
 	if (mixBuffer.Size() < stream1.Frames())
 		mixBuffer.Resize(stream1.Frames());
 
@@ -293,6 +295,7 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 	{
 		float* amp = ampBuffer.Get();
 		float* in = mixBuffer.Get();
+
 		for (uint_fast32_t i = stream1.Frames(); i; --i, ++streamPos)
 		{
 			float const value = *in++;
@@ -330,7 +333,22 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 		}
 	}
 
-	stream.endOfStream = stream1.endOfStream;
+	// may happen at end of stream
+	if (stream1.Frames() < ampFrames)
+	{
+		float* amp = ampBuffer.Get();
+		for (uint_fast32_t i = ampFrames - stream1.Frames(); i; --i, ++streamPos)
+			*amp++ = gain;
+	}
+
+	if (stream1.endOfStream && procFrames0 + stream1.Frames() <= frames)
+	{
+		gain = .999;
+		peak = .999;
+		gainInc = 0;
+		stream.endOfStream = true;
+	}
+
 	stream.SetChannels(stream1.Channels());
 	if (stream.MaxFrames() < procFrames0 + procFrames1)
 		stream.Resize(procFrames0 + procFrames1);
@@ -348,9 +366,9 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 			*out++ = *in++ * *amp++;
 	}
 	assert(!stream.IsOverrun());
-	
+
 // uncomment to visualize applied gain in left channel
-//	{	
+//	{
 //		float* amp = ampBuffer.Get();
 //		float* in = stream0.Buffer(0);
 //		float* out = stream.Buffer(0);

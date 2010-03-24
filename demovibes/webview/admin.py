@@ -11,14 +11,14 @@ class DownloadInline(admin.TabularInline):
 
 class SongAdmin(admin.ModelAdmin):
 	list_display = ['title', 'status', 'artist', 'uploader', 'bitrate', 'added', 'pouetid', 'explicit', 'info']
-	list_editable = ['status']   
+	list_editable = ['status']
 	search_fields = ['title', 'status']
 	list_filter = ['status']
 	filter_horizontal = ['artists', 'groups', 'labels']
 	fieldsets = [
 		("General"		,{ 'fields' : ['title', 'release_year', 'remix_of_id', 'file', 'explicit', 'artists', 'groups', 'labels']}),
 		("Reference Info"	,{ 'fields' : ['pouetid', 'dtv_id', 'wos_id', 'zxdemo_id', 'lemon_id', 'projecttwosix_id', 'hol_id', 'al_id', 'hvsc_url', 'type', 'platform', 'status', 'info']}),
-		("Technical Stuff"	,{ 'fields' : ['song_length', 'bitrate','samplerate']}),
+		("Technical Stuff"	,{ 'fields' : ['song_length', 'bitrate','samplerate','replay_gain','loopfade_time']}),
 	]
 	inlines = [DownloadInline]
 
@@ -42,25 +42,25 @@ class ArtistAdmin(admin.ModelAdmin):
 	search_fields = ('handle', 'name')
 	list_display = ('handle', 'name', 'link_to_user')
 	filter_horizontal = ['groups', 'labels']
-	
+
 class CompilationAdmin(admin.ModelAdmin):
 	list_display = ('name', 'rel_date', 'date_added', 'created_by', 'status')
 	search_fields = ['name'] # For now, we only need to search by the name of the compilation
 	filter_horizontal = ['songs', 'prod_groups', 'prod_artists']
 	raw_id_fields = ["songs", "prod_artists", "prod_groups"]
-	
+
 class LabelAdmin(admin.ModelAdmin):
 	search_fields =  ['name']
 	list_display = ('name', 'found_date', 'last_updated', 'created_by')
-	
+
 class LinkAdmin(admin.ModelAdmin):
 	search_fields = ('link_title', 'link_url') # Because we might want to find links to a specific site
 	list_display = ('name', 'link_title', 'link_url', 'link_type', 'added', 'submitted_by', 'priority')
-	
+
 class FaqAdmin(admin.ModelAdmin):
 	search_fields = ('question', 'answer')
 	list_display = ('question', 'added', 'added_by', 'priority', 'answer', 'active')
-	
+
 class ScreenshotAdmin(admin.ModelAdmin):
 	search_fields = ['name']
 	list_display = ('name', 'last_updated', 'description', 'active')

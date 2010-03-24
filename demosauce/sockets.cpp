@@ -27,7 +27,7 @@ Sockets::Sockets(string const & host, uint32_t const port):
 	pimpl->port = port;
 }
 
-bool 
+bool
 Sockets::Pimpl::SendCommand(string const & command, string & result)
 {
 	result.clear(); // result string might conatin shit from lasst call or something
@@ -73,7 +73,7 @@ Sockets::Pimpl::SendCommand(string const & command, string & result)
 	return true;
 }
 
-void 
+void
 Sockets::GetSong(SongInfo & info)
 {
 	if (!pimpl->SendCommand("GETSONG", info.fileName))
@@ -81,20 +81,23 @@ Sockets::GetSong(SongInfo & info)
 		Error("socket command GETSONG failed");
 		info.fileName = setting::error_tune;
 	}
-	
-	if (!pimpl->SendCommand("GETMETA", info.title))
+
+	if (!pimpl->SendCommand("GETARTIST", info.artist))
+		info.artist = setting::error_title;
+
+	if (!pimpl->SendCommand("GETTITLE", info.title))
 		info.title = setting::error_title;
-	
+
 	string gain;
 	if (!pimpl->SendCommand("GETGAIN", gain))
 		gain = "0"; // right, gain in db
 	try { info.gain = lexical_cast<float>(gain); }
 	catch (bad_lexical_cast &) { info.gain = 0; }
-	
+
 	string loopDuration;
 	if (!pimpl->SendCommand("GETLOOP", loopDuration))
 		loopDuration = "0";
-	try { info.loopDuration = lexical_cast<float>(gain); }
+	try { info.loopDuration = lexical_cast<float>(loopDuration); }
 	catch (bad_lexical_cast &) { info.loopDuration = 0; }
 }
 

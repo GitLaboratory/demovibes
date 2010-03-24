@@ -6,9 +6,9 @@
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_thread.h>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
+#include <SDL/SDL_thread.h>
 
 #include "libreplaygain/replay_gain.h"
 
@@ -18,17 +18,17 @@
 #include "basssource.h"
 #include "avsource.h"
 
-// linked resources 
+// linked resources
 
 extern void* _binary_res_background_png_size;
 extern void* _binary_res_background_png_start;
 static int const bg_size = reinterpret_cast<int>(&_binary_res_background_png_size);
-static char* const bg_ptr = reinterpret_cast<char*>(&_binary_res_background_png_start);	
+static char* const bg_ptr = reinterpret_cast<char*>(&_binary_res_background_png_start);
 
 extern void* _binary_res_buttons_png_size;
-extern void* _binary_res_buttons_png_start;	
+extern void* _binary_res_buttons_png_start;
 static int const buttons_size = reinterpret_cast<int>(&_binary_res_buttons_png_size);
-static char* const buttons_ptr = reinterpret_cast<char*>(&_binary_res_buttons_png_start);	
+static char* const buttons_ptr = reinterpret_cast<char*>(&_binary_res_buttons_png_start);
 
 extern void* _binary_res_icon_png_size;
 extern void* _binary_res_icon_png_start;
@@ -38,7 +38,7 @@ static char* const icon_ptr = reinterpret_cast<char*>(&_binary_res_icon_png_star
 extern void* _binary_res_font_synd_png_size;
 extern void* _binary_res_font_synd_png_start;
 static int const font_size = reinterpret_cast<int>(&_binary_res_font_synd_png_size);
-static char* const font_ptr = reinterpret_cast<char*>(&_binary_res_font_synd_png_start);	
+static char* const font_ptr = reinterpret_cast<char*>(&_binary_res_font_synd_png_start);
 
 // structs
 
@@ -64,16 +64,16 @@ struct BitmapFont
 class Mutex
 {
 	SDL_sem* sem;
-	
+
 public:
 	Mutex() : sem(SDL_CreateSemaphore(1)) {}
 	~Mutex() { SDL_DestroySemaphore(sem); }
-	
+
 	void Lock()
 	{
 		SDL_SemWait(sem);
 	}
-	
+
 	void Unlock()
 	{
 		if (SDL_SemValue(sem) == 0)
@@ -88,7 +88,7 @@ template<typename T> class AtomicValue // T must be copyable
 
 public:
 	AtomicValue(T value) : val(value) {}
-	
+
 	T Get()
 	{
 		mutex.Lock();
@@ -96,7 +96,7 @@ public:
 		mutex.Unlock();
 		return value;
 	}
-	
+
 	void Set(T value)
 	{
 		mutex.Lock();
@@ -105,7 +105,7 @@ public:
 	}
 };
 
-// global constants	
+// global constants
 #define SAMPLERATE 44100
 #define CHANNELS 2
 #define BUFFER_SIZE (44100 * 2)
@@ -117,8 +117,8 @@ SDL_Thread* play_thread = NULL;
 SDL_Surface* screen = NULL;
 SDL_Surface* surface_bg = NULL;
 SDL_AudioSpec audio_spec;
-SDL_Rect bg_rect = {0, 0, 320, 200};	
-SDL_Rect txt_rect = {128, 48, 184, 112};	
+SDL_Rect bg_rect = {0, 0, 320, 200};
+SDL_Rect txt_rect = {128, 48, 184, 112};
 
 Uint32 bg_color = 0;
 BitmapFont font;
@@ -139,7 +139,7 @@ Mutex read_mutex;
 Mutex write_mutex;
 AtomicValue<bool> playbeack_stopped(true);
 bool stream_ended = true;
-int remaining_bytes = 0; 
+int remaining_bytes = 0;
 
 // font functions
 
@@ -147,7 +147,7 @@ void ParseBitmapFont(BitmapFont& font, SDL_Surface* surface)
 {
 	Uint8* pixels = reinterpret_cast<Uint8*>(surface->pixels);
 	font.height = surface->h;
-	font.surface = surface; 
+	font.surface = surface;
 	int ch, last_offset = 0;
 	for (int i = 0; i < surface->w && ch < BitmapFont::max_chars; ++i)
 		if (*(pixels + i) && i)
@@ -169,13 +169,13 @@ int PaintTextLine(std::string const & text, int x, int y, BitmapFont& font, Uint
 		ch = (ch < 0 || ch >= BitmapFont::max_chars) ? 0 : ch;
 		if (total_with + font.width[ch] >= txt_rect.w)
 			continue;
-		for (int yy = 0; yy < font.height - 1; ++yy) 
+		for (int yy = 0; yy < font.height - 1; ++yy)
 		{
 			Uint8* font_pix = font_buffer + (yy + 1) * font.surface->pitch + font.offset[ch];
-			Uint32* screen_pix = reinterpret_cast<Uint32*>(screen_buffer 
+			Uint32* screen_pix = reinterpret_cast<Uint32*>(screen_buffer
 				+ (y + yy) * screen->pitch + (x + total_with) * sizeof(Uint32));
 			for (int xx = 0; xx < font.width[ch]; ++xx, ++font_pix, ++screen_pix)
-				if (*font_pix) 
+				if (*font_pix)
 					*screen_pix = value;
 		}
 		total_with += font.width[ch];
@@ -188,7 +188,7 @@ void PaintText(std::string const & text, int x, int y, BitmapFont& font, Uint32 
 {
 	size_t begin = 0;
 	int line = 0;
-	for (size_t i = 0; i <= text.size(); ++i) 
+	for (size_t i = 0; i <= text.size(); ++i)
 		if (i == text.size() || text[i] == '\n')
 		{
 			PaintTextLine(text.substr(begin, i - begin), x, y + line++ * font.height, font, value);
@@ -204,7 +204,7 @@ void RedrawTextArea(std::string msg)
 	SDL_UnlockSurface(screen);
 	SDL_Rect blit_rect = {txt_rect.x + bg_rect.x, txt_rect.y, txt_rect.w, txt_rect.h};
 	SDL_BlitSurface(surface_bg, &blit_rect, screen, &txt_rect);
-	SDL_UpdateRect(screen, txt_rect.x, txt_rect.y, txt_rect.w, txt_rect.h);	
+	SDL_UpdateRect(screen, txt_rect.x, txt_rect.y, txt_rect.w, txt_rect.h);
 }
 
 // ui functions
@@ -218,7 +218,7 @@ void HandleMouseClick(int x, int y)
 		bool over = (x > r.x) && (y > r.y) && (x < r.x + r.w) && (y < r.y + r.h);
 		if (over && button.OnClick)
 			button.OnClick();
-	}	
+	}
 }
 
 void PaintButton(Button& button)
@@ -251,14 +251,14 @@ std::string ScanSong(std::string fileName)
 	AvSource avSource;
 	bool bassLoaded = bassSource.Load(fileName, false);
 	bool avLoaded = bassLoaded ? false : avSource.Load(fileName);
-	
+
 	uint32_t channels = 0;
 	std::string type;
 	double length = 0;
 	uint32_t samplerate = 0;
 	uint32_t bitrate = 0;
 	Machine* decoder = 0;
-	
+
 	if (bassLoaded)
 	{
 		channels = bassSource.Channels();
@@ -287,7 +287,7 @@ std::string ScanSong(std::string fileName)
 	uint64_t frameCounter = 0;
 	RG_SampleFormat format = {samplerate, RG_FLOAT_32_BIT, channels, FALSE};
 	RG_Context * context = RG_NewContext(&format);
-		
+
 	AudioStream stream;
 	while (!stream.endOfStream)
 	{
@@ -298,74 +298,74 @@ std::string ScanSong(std::string fileName)
 	}
 	double replayGain = RG_GetTitleGain(context);
 	RG_FreeContext(context);
-	
+
 	length = static_cast<double>(frameCounter) / samplerate;
 	amp_replaygain.Set(DbToAmp(replayGain));
-	
+
 	std::string msg = "library: %1%\ntype/codec: %2%\nlength: %3%\nreplay gain: %4%\n";
 	if (bassSource.IsModule())
 		msg.append("loopiness: %7%");
 	else
 		msg.append("bitrate: %5%\nsamplerate: %6%");
-	
+
 	std::string decoder_name = bassLoaded ? "bass" : "avcodec";
 	boost::format formater(msg);
 	formater.exceptions(boost::io::no_error_bits);
-	return str(formater % decoder_name % type 
+	return str(formater % decoder_name % type
 		% length % replayGain % bitrate % samplerate % bassSource.Loopiness());
 }
 
 template <typename T> boost::shared_ptr<T> new_shared()
-{ 
-	return boost::shared_ptr<T>(new T); 
+{
+	return boost::shared_ptr<T>(new T);
 }
 
 bool LoadSong(std::string fileName)
 {
 	if (fileName.size() == 0)
-		return false;	
+		return false;
 
 	boost::shared_ptr<MachineStack> machineStack = new_shared<MachineStack>();
 	converter.SetSource(machineStack);
 	boost::shared_ptr<BassSource> bassSource = new_shared<BassSource>();
 	boost::shared_ptr<AvSource> avSource = new_shared<AvSource>();
-	
+
 	bool bassLoaded = bassSource->Load(fileName, false);
-	bool avLoaded = bassLoaded ? false : avSource->Load(fileName);	
+	bool avLoaded = bassLoaded ? false : avSource->Load(fileName);
 	if (!avLoaded && !bassLoaded)
 		return false;
-	
+
 	uint32_t channels = 0;
 	uint32_t samplerate = 0;
-	
+
 	if (bassLoaded)
 	{
 		channels = bassSource->Channels();
 		samplerate = bassSource->Samplerate();
 		machineStack->AddMachine(bassSource);
 	}
-	
+
 	if (avLoaded)
 	{
 		channels = avSource->Channels();
 		samplerate = avSource->Samplerate();
 		machineStack->AddMachine(avSource);
 	}
-	
+
 	if (samplerate != SAMPLERATE)
 	{
 		boost::shared_ptr<Resample> resample = new_shared<Resample>();
 		resample->Set(samplerate, SAMPLERATE);
 		machineStack->AddMachine(resample);
 	}
-	
+
 	if (bassSource->IsAmigaModule())
 	{
 		boost::shared_ptr<MixChannels> mixChannels = new_shared<MixChannels>();
 		mixChannels->Set(.7, .3, .7, .3);
 		machineStack->AddMachine(mixChannels);
 	}
-	
+
 	if (bassSource->IsModule() && bassSource->Loopiness() > 0.1)
 	{
 		boost::shared_ptr<LinearFade> fade = new_shared<LinearFade>();
@@ -374,14 +374,14 @@ bool LoadSong(std::string fileName)
 		fade->Set(SAMPLERATE * (duration - 5), SAMPLERATE * (duration - 1), 1, 0);
 		machineStack->AddMachine(fade);
 	}
-	
+
 	if (channels != CHANNELS)
 	{
 		boost::shared_ptr<MapChannels> mapChannels = new_shared<MapChannels>();
 		mapChannels->SetOutChannels(CHANNELS);
 		machineStack->AddMachine(mapChannels);
 	}
-	
+
 	boost::shared_ptr<Brickwall> brickwall = new_shared<Brickwall>();
 	machineStack->AddMachine(gain);
 	machineStack->AddMachine(brickwall);
@@ -398,17 +398,17 @@ bool StreamWriter()
 	uint32_t frames = BytesInFrames<uint32_t, int16_t>(BUFFER_SIZE, CHANNELS);
 	int16_t* buffer = reinterpret_cast<int16_t*>(convert_buffer.Get());
 	gain->SetAmp(amp_replaygain.Get()); // in case playback was started before scan finished
-	
+
 	uint32_t procFrames = converter.Process2(buffer, frames);
 	size_t read_bytes = FramesInBytes<int16_t>(procFrames, CHANNELS);
-//	wav.write(buffer, read_bytes);	
+//	wav.write(buffer, read_bytes);
 
 	write_mutex.Lock(); // unlocked by reader when more data is needed
 	read_mutex.Lock();
 	memcpy(play_buffer_b, buffer, read_bytes);
 	stream_ended = procFrames != frames;
 	read_mutex.Unlock();
-	
+
 	return procFrames == frames;
 }
 
@@ -416,11 +416,11 @@ void AudioCallback(void* userdata, Uint8* buffer, int len)
 {
 	// TODO: support large output buffers. apparently pulse provides ratherbig ones
 	assert(len <= BUFFER_SIZE);
-	
+
 	if (playbeack_stopped.Get() || remaining_bytes < 0)
 		SDL_PauseAudio(1);
 	remaining_bytes -= len;
-	
+
 	if (buffer_offset + len <= BUFFER_SIZE)
 	{
 		memcpy(buffer, play_buffer_a + buffer_offset, len);
@@ -431,14 +431,14 @@ void AudioCallback(void* userdata, Uint8* buffer, int len)
 		size_t rest = BUFFER_SIZE - buffer_offset;
 		memcpy(buffer, play_buffer_a + buffer_offset, rest);
 		memset(play_buffer_a, 0, BUFFER_SIZE);  // in case writer isnt't ready
-	
+
 		read_mutex.Lock();
 
 		remaining_bytes += stream_ended ? 0 : BUFFER_SIZE;
 		memcpy(buffer + rest, play_buffer_b, len - rest);
 		buffer_offset = len - rest;
 		std::swap(play_buffer_a, play_buffer_b);
-		
+
 		read_mutex.Unlock();
 		write_mutex.Unlock(); // tell writer we need moar data
 	}
@@ -457,7 +457,7 @@ int RunScanFile(void* data)
 int RunStreamWriter(void* data)
 {
 	if (data) // clean up old thread...
-		SDL_WaitThread(reinterpret_cast<SDL_Thread*>(data), NULL);	
+		SDL_WaitThread(reinterpret_cast<SDL_Thread*>(data), NULL);
 	while(StreamWriter());
 	return 0;
 }
@@ -478,17 +478,17 @@ void StartPlayback()
 		SDL_PauseAudio(1);
 	else
 		SDL_OpenAudio(&wanted, &audio_spec);
-		
-	audio_ok = (wanted.freq == audio_spec.freq && 
-		wanted.format == audio_spec.format && 
+
+	audio_ok = (wanted.freq == audio_spec.freq &&
+		wanted.format == audio_spec.format &&
 		wanted.channels == audio_spec.channels);
 	if (!audio_ok || !LoadSong(file_name))
 	{
-		SDL_CloseAudio();		
+		SDL_CloseAudio();
 		return;
 	}
 
-	playbeack_stopped.Set(false);	
+	playbeack_stopped.Set(false);
 	stream_ended = false;
 	remaining_bytes = BUFFER_SIZE * 3;
 	gain->SetAmp(amp_replaygain.Get());
@@ -505,7 +505,7 @@ void StopPlayback()
 }
 
 void Exit()
-{	
+{
 	exit(EXIT_SUCCESS);
 }
 
@@ -531,7 +531,7 @@ int main(int argc, char* argv[])
 	bg_rect.x = bg_rect.w * (rand() % 4);
 	SDL_BlitSurface(surface_bg, &bg_rect, screen, NULL);
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
-	
+
 	// load & draw buttons
 	SDL_RWops* rw_buttons = SDL_RWFromMem(buttons_ptr, buttons_size);
 	SDL_Surface* surface_buttons = IMG_LoadTyped_RW(rw_buttons, 1, const_cast<char*>("PNG"));
@@ -547,14 +547,14 @@ int main(int argc, char* argv[])
 	buttons[0].OnClick = StartPlayback;
 	buttons[1].OnClick = StopPlayback;
 	buttons[2].OnClick = Exit;
-		
-	// load font, draw welcome msg	
+
+	// load font, draw welcome msg
 	SDL_RWops* rw_font = SDL_RWFromMem(font_ptr, font_size);
 	SDL_Surface* surface_font = IMG_LoadTyped_RW(rw_font, 1, const_cast<char*>("PNG"));
 	ParseBitmapFont(font, surface_font);
 	char const * msg = "Hi!\nCurrently the only way\nto load a song is by\ncommand line.\n\n  enjoy, ~maep";
 	RedrawTextArea(msg);
-	
+
 	// scan file from command line, if present
 	if (argc > 1)
 	{
@@ -565,7 +565,7 @@ int main(int argc, char* argv[])
 	// event loop
 	SDL_Event event;
 	bool quit = false;
-	while(!quit && SDL_WaitEvent(&event)) 
+	while(!quit && SDL_WaitEvent(&event))
 		switch(event.type)
 		{
 		case SDL_KEYUP:
@@ -574,7 +574,7 @@ int main(int argc, char* argv[])
 			{
 				if (playbeack_stopped.Get())
 					StartPlayback();
-				else 
+				else
 					StopPlayback();
 			}
 			break;

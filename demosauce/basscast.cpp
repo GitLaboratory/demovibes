@@ -9,6 +9,10 @@
 #include <boost/thread/thread.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
+#include <unicode/ucnv.h>
+#include <unicode/unistr.h>
+#include <unicode/normlzr.h>
+
 #include "bass/bass.h"
 #include "bass/bassenc.h"
 
@@ -48,7 +52,6 @@ struct BassCastPimpl
 	shared_ptr<MapChannels> mapChannels;
 	shared_ptr<LinearFade> linearFade;
 	shared_ptr<Gain> gain;
-	shared_ptr<Peaky> peaky;
 	shared_ptr<Brickwall> brickwall;
 	HENCODE encoder;
 	HSTREAM sink;
@@ -87,7 +90,6 @@ void BassCastPimpl::InitMachines()
 	mapChannels = new_shared<MapChannels>();
 	linearFade = new_shared<LinearFade>();
 	gain = new_shared<Gain>();
-	peaky = new_shared<Peaky>();
 	brickwall = new_shared<Brickwall>();
 
 	noiseSource->SetChannels(setting::encoder_channels);
@@ -105,7 +107,6 @@ void BassCastPimpl::InitMachines()
 	machineStack->AddMachine(linearFade);
 	machineStack->AddMachine(gain);
 	machineStack->AddMachine(brickwall);
-	machineStack->AddMachine(peaky);
 
 	converter.SetSource(machineStack);
 }
@@ -121,11 +122,49 @@ void BassCast::Run()
 	}
 }
 
+string utf8_to_ascii(string const & utf8_str)
+{
+	// wow, this icu stuff is the best string class implementation i've seen evar
+	// why doesn't boost have this? this is fun \o/
+	// check this: http://www.unicode.org/reports/tr15/#Norm_Forms
+
+	// BLAST! fromUTF8 requires ics 4.2
+	// UnicodeString in_str = UnicodeString::fromUTF8(utf8_str);
+	UErrorCode status;
+	UConverter* converter = ucnv_open("UTF-8", &status); //
+	UnicodeString in_str(utf8_str.c_str(), utf8_str.size(), converter, status);
+	ucnv_close(converter);
+
+	// convert to ascii as best as possible. it's really smart
+	UnicodeString norm_str;
+	Normalizer::normalize(in_str, UNORM_NFKD, 0, norm_str, status);
+
+	// NFKD may produce non ascii chars, these are dropped
+	string out_str;
+	for (int32_t i = 0; i < norm_str.length(); ++i)
+		if (norm_str[i] >= ' ' && norm_str[i] <= '~')
+			out_str += static_cast<char>(norm_str[i]);
+	return out_str;
+}
+
+string create_cast_title(string const & artist, string const & title)
+{
+	// can't use utf-8 metadata in the stream, at least not with bass
+	// so unicode decomposition is as a workaround
+	// all dashes are removed from artist, because it's
+	// used as artist-title separator. talk about bad semantics...
+	string cast_title = utf8_to_ascii(artist);
+	for (size_t i = 0; i < cast_title.size(); ++i)
+		if (cast_title[i] == '-')
+			cast_title[i] = ' ';
+	cast_title.append(" - ");
+	cast_title.append(utf8_to_ascii(title));
+	return cast_title;
+}
+
 // this is called whenever the song is changed
 void BassCastPimpl::ChangeSong()
 {
-	LogDebug("last peak: %1%"), peaky->Peak();
-	peaky->Reset();
 	// reset routing
 	resample->SetEnabled(false);
 	mixChannels->SetEnabled(false);
@@ -192,7 +231,7 @@ void BassCastPimpl::ChangeSong()
 			Log(warning, "no error tune, playing some glorious noise"), songInfo.fileName;
 			noiseSource->SetDuration(120 * setting::encoder_samplerate);
 			machineStack->AddMachine(noiseSource, 0);
-			gain->SetAmp(DbToAmp(-12));
+			gain->SetAmp(DbToAmp(-24));
 			loadSuccess = true;
 		}
 	}
@@ -208,11 +247,9 @@ void BassCastPimpl::ChangeSong()
 	gain->SetAmp(DbToAmp(songInfo.gain));
 	machineStack->UpdateRouting();
 
-	// maybe this won't work have to check, alternative:
-	// http://ip:port/admin/metadata?mount=/mystream&mode=updinfo&song=ACDC+Back+In+Black
-	// other keys title, artist and charset=UTF-8"
-	// string msg = str(format("%1%&charset=UTF-8") % songInfo.title); // won't work
-	BASS_Encode_CastSetTitle(encoder, songInfo.title.c_str(), NULL);
+	string title = create_cast_title(songInfo.artist, songInfo.title);
+	LogDebug("%1% %2% %3%"), songInfo.artist, songInfo.title, title;
+	BASS_Encode_CastSetTitle(encoder, title.c_str(), NULL);
 }
 
 // this is where most of the shit happens

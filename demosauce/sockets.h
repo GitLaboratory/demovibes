@@ -16,7 +16,9 @@
 	
 struct SongInfo
 {
+	// all strings are in utf-8
 	std::string fileName;
+	std::string artist; 
 	std::string title;
 	float gain;
 	float loopDuration;

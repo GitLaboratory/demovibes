@@ -39,7 +39,8 @@ web="libapache2-mod-wsgi apache2"
 python="python-imaging python-mysqldb python-django python-flup python-pymad python-setuptools python-openid"
 memcache="python-memcache memcached"
 icecast="icecast2"
-ices_compile="build-essential python-dev libshout3-dev"
+ices_compile="build-essential python-dev libshout3-dev libmp3lame-dev"
+demosauce_compile="build-essential lame libboost-dev libicu-dev"
 
 south="http://www.aeracode.org/releases/south/south-0.6.2.tar.gz"
 ices="http://downloads.us.xiph.org/releases/ices/ices-0.4.tar.gz"
@@ -69,7 +70,7 @@ fi
 
 echo -e "\n\n\nInstalling packages $python $web $database $icecast $ices_compile $memcache \n\n\n"
 #apt-get update
-apt-get install -y $python $web $database $icecast $ices_compile $memcache
+apt-get install -y $python $web $database $icecast $ices_compile $demosauce_compile $memcache
 
 
 echo -e "\n\n\nInstalling Django South from $south\n\n\n"

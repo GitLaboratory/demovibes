@@ -14,7 +14,7 @@ from webview import common
 from string import *
 
 #Only set up logging if called directly
-if __name__ == '__main__': 
+if __name__ == '__main__':
 	if os.path.exists("logging.conf"):
     		logging.config.fileConfig("logging.conf")
 	else:
@@ -138,6 +138,7 @@ def ices_get_next ():
         filepath = song.file.path.encode(enc)
     except:
         filepath = song.file.path.encode(fsenc, 'ignore')
+
     Log.debug("Giving ices path %s" % filepath)
     return filepath
 

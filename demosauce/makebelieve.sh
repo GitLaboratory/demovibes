@@ -61,8 +61,8 @@ fi
 
 # libreplaygain
 if test ! -f "$replaygain_a" -o "$build_rebuild"; then
-	cd libreplaygain 
-	./build.sh ${build_debug:+debug} 
+	cd libreplaygain
+	./build.sh ${build_debug:+debug}
 	if test $? -ne 0; then exit 1; fi
 	cd ..
 fi
@@ -77,7 +77,7 @@ fi
 
 # ffmpeg
 if test ! -f "$avcodec_so" -o "$build_rebuild"; then
-	cd ffmpeg 
+	cd ffmpeg
 	./build.sh
 	if test $? -ne 0; then exit 1; fi
 	cd ..
@@ -98,7 +98,7 @@ flags_bass="-L$dir_bass -Wl,-rpath=$dir_bass"
 if test $build_applejuice; then
 	echo 'building applejuice'
 	ld -r -b binary -o res.o $res_applejuice
-	g++ -o applejuice -Wl,-rpath=. $src_applejuice $flags $flags_bass `sdl-config --cflags` $libs_applejuice $input_applejuice res.o
+	g++ -o applejuice -Wl,-rpath=. $src_applejuice $flags $flags_bass $libs_applejuice $input_applejuice res.o
 	if test $? -ne 0; then exit 1; fi
 
 else
@@ -107,7 +107,7 @@ else
 	if test $? -ne 0; then exit 1; fi
 
 	echo 'building demosauce'
-	g++ -o demosauce $src_demosauce $flags $flags_bass $libs_demosauce $input_demosauce
+	g++ -o demosauce $src_demosauce $flags $flags_bass $libs_demosauce `icu-config --ldflags` $input_demosauce
 	if test $? -ne 0; then exit 1; fi
 
 fi

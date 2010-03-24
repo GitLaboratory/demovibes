@@ -10,7 +10,7 @@
 
 # Ubuntu Notes:
 #
-# Ubuntu 9.10 seems to have multiverse already enabled for the liblame stuff, so 
+# Ubuntu 9.10 seems to have multiverse already enabled for the liblame stuff, so
 # We call it as a normal apt-get in this script.
 #
 # Not sure if its just Ubuntu related, but the script fails to install python-mysqldb
@@ -52,6 +52,7 @@ memcache="python-memcache memcached"
 lame_support="libmp3lame0 libmp3lame-dev"
 icecast="icecast2"
 ices_compile="build-essential python-dev libshout3-dev"
+demosauce_compile="build-essential lame libboost-dev libicu-dev"
 
 django = "http://www.djangoproject.com/download/1.1.1/tarball/"
 south="http://www.aeracode.org/releases/south/south-0.6.2.tar.gz"
@@ -71,7 +72,7 @@ ice_source=$(dd if=/dev/urandom bs=8 count=1  2>/dev/null | base64 -w 0)
 
 echo -e "\n\n\nInstalling packages $python $web $database $icecast $lame_support $ices_compile $memcache \n\n\n"
 #apt-get update
-apt-get install -y $python $web $database $icecast $lame_support $ices_compile $memcache
+apt-get install -y $python $web $database $icecast $lame_support $ices_compile $memcache $demosauce_compile
 
 
 # Because not all mirrors carry the very latest security release of Django...
