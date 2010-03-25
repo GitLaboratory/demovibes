@@ -11,6 +11,12 @@
 
 #include "mem.h"
 
+#ifndef NO_OVERRUN_ASSERT
+	#define OVERRUN_ASSERT(arg) assert(arg)
+#else
+	#define OVERRUN_ASSERT(arg)
+#endif
+
 //-----------------------------------------------------------------------------
 template <typename T>
 class AlignedBuffer : boost::noncopyable
@@ -25,32 +31,48 @@ public:
 
 	~AlignedBuffer()
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		free(buffer);
 	}
 
 	T* Resize(size_t const size)
 	{
-		buffer = aligned_realloc(buffer, size * sizeof(T));
+		OVERRUN_ASSERT(NoOverrun());
+		buffer = aligned_realloc(buffer, size * sizeof(T) + sizeof(uint32_t));
 		this->size = size;
+		*reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(buffer)
+			+ size * sizeof(T)) = magicNumber;
 		return reinterpret_cast<T*>(buffer);
 	}
 
 	T* Get() const
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		return reinterpret_cast<T*>(buffer);
 	}
 
 	size_t Size() const
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		return size;
 	}
 
 	void Zero()
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		memset(buffer, 0, size * sizeof(T));
 	}
 
+	bool NoOverrun() const
+	{
+		if (!buffer)
+			return true;
+		return *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(buffer)
+			+ size * sizeof(T)) == magicNumber;
+	}
+
 private:
+	static uint32_t const magicNumber = 0xaaAAaaAA;
 	void* buffer;
 	size_t size;
 };
@@ -72,12 +94,14 @@ public:
 
 	virtual ~AudioStream()
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		free(buffer[0]);
 		free(buffer[1]);
 	}
 
 	void Resize(uint32_t frames)
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		if (maxFrames == frames)
 			return;
 		maxFrames = frames;
@@ -92,7 +116,7 @@ public:
 
 	float* Buffer(uint32_t channel) const
 	{
-		assert(channel < channels);
+		OVERRUN_ASSERT(NoOverrun());
 		return buffer[channel];
 	}
 
@@ -108,6 +132,7 @@ public:
 
 	uint32_t Frames() const
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		return frames;
 	}
 
@@ -128,25 +153,28 @@ public:
 
 	void SetFrames(uint32_t frames)
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		assert(frames <= maxFrames);
 		this->frames = frames;
 	}
 
 	size_t ChannelBytes() const
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		return frames * sizeof(float);
 	}
 
-	bool IsOverrun() const
+	bool NoOverrun() const
 	{
 		for (uint32_t i = 0; i < channels; ++i)
 			if (buffer[i] && buffer[i][maxFrames] != magicNumber)
-				return true;
-		return false;
+				return false;
+		return true;
 	}
 
 	void Append(AudioStream & stream)
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		if (frames + stream.Frames() > maxFrames)
 			Resize(frames + stream.Frames());
 		for (uint32_t i = 0; i < channels && i < stream.Channels(); ++i)
@@ -156,6 +184,7 @@ public:
 
 	void Drop(uint32_t frames)
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		assert(frames <= this->frames);
 		uint32_t remainingFrames = this->frames - frames;
 		if (remainingFrames > 0)
@@ -166,6 +195,7 @@ public:
 
 	void Zero(uint32_t frames)
 	{
+		OVERRUN_ASSERT(NoOverrun());
 		assert(frames <= this->frames);
 		for (uint32_t iChan = 0; iChan < channels; ++iChan)
 			memset(buffer[iChan], 0, frames * sizeof(float));

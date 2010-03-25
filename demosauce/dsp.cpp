@@ -108,7 +108,6 @@ void MapChannels::Process(AudioStream& stream, uint32_t const frames)
 			++right;
 		}
 	}
-	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -148,7 +147,6 @@ void LinearFade::Process(AudioStream& stream, uint32_t const frames)
 			*out++ *= a;
 	}
 	amp += ampInc * (endB - endA);
-	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -161,7 +159,6 @@ void Gain::Process(AudioStream& stream, uint32_t const frames)
 		for (uint_fast32_t i = stream.Frames(); i; --i)
 			*out++ *= amp;
 	}
-	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -189,7 +186,6 @@ void NoiseSource::Process(AudioStream& stream, uint32_t const frames)
 			*out++ = gah * rand();
 	}
 
-	assert(!stream.IsOverrun());
 	currentFrame += procFrames;
 	stream.endOfStream = currentFrame >= duration;
 	stream.SetFrames(procFrames);
@@ -218,7 +214,6 @@ void MixChannels::Process(AudioStream& stream, uint32_t const frames)
 		*left++ = newLeft;
 		*right++ = newRight;
 	}
-	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -341,14 +336,6 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 			*amp++ = gain;
 	}
 
-	if (stream1.endOfStream && procFrames0 + stream1.Frames() <= frames)
-	{
-		gain = .999;
-		peak = .999;
-		gainInc = 0;
-		stream.endOfStream = true;
-	}
-
 	stream.SetChannels(stream1.Channels());
 	if (stream.MaxFrames() < procFrames0 + procFrames1)
 		stream.Resize(procFrames0 + procFrames1);
@@ -365,7 +352,6 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 		for (uint_fast32_t i = procFrames1; i; --i)
 			*out++ = *in++ * *amp++;
 	}
-	assert(!stream.IsOverrun());
 
 // uncomment to visualize applied gain in left channel
 //	{
@@ -381,6 +367,16 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 	stream0.Drop(procFrames0);
 	stream1.Drop(procFrames1);
 	stream0.Append(stream1);
+
+	stream.endOfStream = false;
+	if (stream1.endOfStream && procFrames0 + stream1.Frames() <= frames)
+	{
+		gain = .999;
+		peak = .999;
+		gainInc = 0;
+		stream.endOfStream = true;
+	}
+	if(stream.endOfStream) LogDebug("eos brick %1% frames left"), stream.Frames();
 }
 
 //-----------------------------------------------------------------------------

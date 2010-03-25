@@ -79,11 +79,11 @@ void Resample::Process(AudioStream & stream, uint32_t const frames)
 		if (err)
 			Error("src_process error: %1%"), src_strerror(err);
 	}
-	assert(!stream.IsOverrun());
 	// if output contins wanted frames there might be more
 	stream.endOfStream = inStream.endOfStream
 		&& data.output_frames_gen != data.output_frames;
 	stream.SetFrames(data.output_frames_gen);
+	if(stream.endOfStream) LogDebug("eos resample %1% frames left"), stream.Frames();
 }
 
 void Resample::Pimpl::Reset()

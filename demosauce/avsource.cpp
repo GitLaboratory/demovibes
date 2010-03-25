@@ -1,13 +1,20 @@
 #include <boost/version.hpp>
-#if (BOOST_VERSION / 100) < 1036	
+#if (BOOST_VERSION / 100) < 1036
 #error "need at leats BOOST version 1.36"
 #endif
 
+
 #include <algorithm>
 
+
+
 #include <boost/filesystem.hpp>
+
 #include <boost/algorithm/string.hpp>
+
 #include <boost/numeric/conversion/cast.hpp>
+
+
 
 #include "logror.h"
 #include "convert.h"
@@ -39,8 +46,8 @@ struct AvSource::Pimpl
 	AVFormatContext* formatContext;
 	AVCodecContext* codecContext;
 	AVCodec* codec;
-	int audioStreamIndex;
 
+	int audioStreamIndex;
 	int ffBufferPos;
 	AlignedBuffer<uint8_t> ffBuffer;
 
@@ -66,6 +73,7 @@ bool AvSource::Load(string fileName)
 	pimpl->fileName = fileName;
 
 	Log(info, "avsource loading %1%"), fileName;
+
 	if (av_open_input_file(&pimpl->formatContext, fileName.c_str(), NULL, 0, NULL) != 0)
 	{
 		Log(warning, "can't open file %1%"), fileName;
@@ -92,7 +100,6 @@ bool AvSource::Load(string fileName)
 	}
 
 	pimpl->codecContext = pimpl->formatContext->streams[pimpl->audioStreamIndex]->codec;
-
 	pimpl->codec = avcodec_find_decoder(pimpl->codecContext->codec_id);
 	if (!pimpl->codec)
 	{
@@ -105,41 +112,35 @@ bool AvSource::Load(string fileName)
 		Log(warning, "failed to open codec %1%"), fileName;
 		return false;
 	}
-
 	return true;
 }
 
 int AvSource::Pimpl::DecodeFrame(AVPacket& packet, uint8_t* const buffer, int const size)
 {
-
    	int len = 0;
 	int decoded_size = 0;
-	
 	//store size & data for later freeing
-	uint8_t* const packet_data = packet.data; 
+	uint8_t* const packet_data = packet.data;
 	int const packet_size = packet.size;
-    
+
 	while (packet.size > 0)
 	{
 		int data_size = size - decoded_size;
 		sample_t* const buf = reinterpret_cast<sample_t*>(buffer + decoded_size);
 		len = avcodec_decode_audio3(codecContext, buf, &data_size, &packet);
-
 		if (len < 0) // error, skip frame
 			return 0;
-
 		packet.data += len;
 		packet.size -= len;
-		
 		decoded_size += data_size;
 	}
-	
+
 	packet.data = packet_data;
 	packet.size = packet_size;
 	return decoded_size;
 }
 
-void AvSource::Pimpl::Process(AudioStream & stream, uint32_t const frames)
+void AvSource::Pimpl::Process(AudioStream& stream, uint32_t const frames)
 {
 	uint32_t const channels = numeric_cast<uint32_t>(codecContext->channels);
 	if (ffBufferPos < 0 || channels < 1)
@@ -155,35 +156,34 @@ void AvSource::Pimpl::Process(AudioStream & stream, uint32_t const frames)
 	int const minBytes = max(192000, needBytes);
 	int const bufferSize = max(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3, minBytes * 2);
 	if (ffBuffer.Size() < static_cast<size_t>(bufferSize))
-	    ffBuffer.Resize(bufferSize);	
+	    ffBuffer.Resize(bufferSize);
 
 	AVPacket packet;
-
    	while (ffBufferPos < minBytes)
 	{
         if (av_read_frame(formatContext, &packet) < 0) // demux/read packet
-			break; // end of stream	
+			break; // end of stream
 		if (packet.stream_index == audioStreamIndex)
 			ffBufferPos += DecodeFrame(packet, ffBuffer.Get() + ffBufferPos, bufferSize);
 		else
 			av_free_packet(&packet);
 	}
-	
+
 	// according to the docs, av_free_packet should be called at some point
-	// without stream index check, a segfault will appear
+	// without these checks, a segfault might occour
  	if (packet.data && packet.size && packet.stream_index == audioStreamIndex)
 		av_free_packet(&packet);
 
     stream.endOfStream = ffBufferPos < needBytes;
     size_t const usedBytes = min(needBytes, ffBufferPos);
     uint32_t const usedFrames = BytesInFrames<uint32_t, sample_t>(usedBytes, channels);
-
 	sample_t* const convBuffer = converter.Buffer(frames, channels);
+
 	memcpy(convBuffer, ffBuffer.Get(), usedBytes);
     converter.Process(stream, usedFrames);
-	
-    memmove(ffBuffer.Get(), ffBuffer.Get() + usedBytes, ffBufferPos - usedBytes);   
-    ffBufferPos -= usedBytes;	
+    memmove(ffBuffer.Get(), ffBuffer.Get() + usedBytes, ffBufferPos - usedBytes);
+    ffBufferPos -= usedBytes;
+    if(stream.endOfStream) LogDebug("eos avcodec %1% frames left"), stream.Frames();
 }
 
 void AvSource::Process(AudioStream & stream, uint32_t const frames)
@@ -232,7 +232,6 @@ bool AvSource::CheckExtension(string fileName)
 {
 	boost::filesystem::path file(fileName);
 	string name = file.filename();
-
 	static size_t const elements = 17;
 	char const * ext[elements] = {".mp3", ".ogg", ".m4a", ".wma", ".acc", ".flac", ".mp4", ".ac3",
 		".wav", ".ape", ".wv", ".mpc", ".mp+", ".mpp", ".ra", ".mp2", ".mp1"};
@@ -248,7 +247,7 @@ string AvSource::CodecType() const
 	if (codecType >= CODEC_ID_PCM_S16LE && codecType <= CODEC_ID_PCM_BLURAY)
 		return "pcm";
 	if (codecType >= CODEC_ID_ADPCM_IMA_QT && codecType <= CODEC_ID_ADPCM_IMA_ISS)
-		return "adpcm";	
+		return "adpcm";
 	switch (codecType)
 	{
 		case CODEC_ID_RA_144:
@@ -256,17 +255,17 @@ string AvSource::CodecType() const
 		case CODEC_ID_MP2: return "mp2";
 		case CODEC_ID_MP3: return "mp3";
 		case CODEC_ID_AAC: return "aac";
-		case CODEC_ID_AC3: return "ac3";		
+		case CODEC_ID_AC3: return "ac3";
 		case CODEC_ID_VORBIS: return "vorbis";
 		case CODEC_ID_WMAV1:
-		case CODEC_ID_WMAV2: 
+		case CODEC_ID_WMAV2:
 		case CODEC_ID_WMAVOICE:
 		case CODEC_ID_WMAPRO:
 		case CODEC_ID_WMALOSSLESS: return "wma";
-		case CODEC_ID_FLAC: return "flac";	
+		case CODEC_ID_FLAC: return "flac";
 		case CODEC_ID_WAVPACK: return "wavpack";
 		case CODEC_ID_APE: return "monkey";
-		case CODEC_ID_MUSEPACK7: 
+		case CODEC_ID_MUSEPACK7:
 		case CODEC_ID_MUSEPACK8: return "musepack";
 		case CODEC_ID_MP1: return "mp1";
 		case CODEC_ID_MP4ALS: return "mp4";

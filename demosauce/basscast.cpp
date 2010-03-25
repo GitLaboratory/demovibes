@@ -248,7 +248,6 @@ void BassCastPimpl::ChangeSong()
 	machineStack->UpdateRouting();
 
 	string title = create_cast_title(songInfo.artist, songInfo.title);
-	LogDebug("%1% %2% %3%"), songInfo.artist, songInfo.title, title;
 	BASS_Encode_CastSetTitle(encoder, title.c_str(), NULL);
 }
 

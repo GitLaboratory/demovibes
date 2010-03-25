@@ -70,7 +70,6 @@ template<> inline void ConvertFromInterleaved<int16_t>
 			in += channels;
 		}
 	}
-	assert(!stream.IsOverrun());
 }
 
 template<> inline void ConvertFromInterleaved<float>
@@ -93,7 +92,6 @@ template<> inline void ConvertFromInterleaved<float>
 			in += channels;
 		}
 	}
-	assert(!stream.IsOverrun());
 }
 
 //-----------------------------------------------------------------------------
@@ -135,11 +133,11 @@ template<> inline uint32_t ConvertToInterleaved
 ::Process1(int16_t* outSamples, uint32_t frames)
 {
 	uint32_t procFrames = 0;
-	
+
 	while (procFrames < frames)
 	{
 		source->Process(inStream, frames - procFrames);
-		assert(inStream.Channels() == 1);	
+		assert(inStream.Channels() == 1);
 		FloatToInt16(inStream.Buffer(0), outSamples, inStream.Frames());
 		outSamples += inStream.Frames();
 		procFrames += inStream.Frames();
@@ -155,13 +153,13 @@ template<> inline uint32_t ConvertToInterleaved
 {
 	uint32_t procFrames = 0;
 	int16_t* out = outSamples;
-	
+
 	while (procFrames < frames)
 	{
 		source->Process(inStream, frames - procFrames);
 		assert(inStream.Channels() == 2);
 		uint32_t const inFrames = inStream.Frames();
-		
+
 		if (convertBuffer.Size() < inFrames * 2)
 			convertBuffer.Resize(inFrames * 2);
 		int16_t* buff0 = convertBuffer.Get();
@@ -169,9 +167,9 @@ template<> inline uint32_t ConvertToInterleaved
 
 		FloatToInt16(inStream.Buffer(0), buff0, inFrames);
 		FloatToInt16(inStream.Buffer(1), buff1, inFrames);
-		
+
 		for (uint_fast32_t i = inFrames; i; --i)
-		{	
+		{
 			*out++ = *buff0++;
 			*out++ = *buff1++;
 		}

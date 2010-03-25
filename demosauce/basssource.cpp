@@ -122,12 +122,13 @@ void BassSource::Pimpl::Free()
 	memset(&channelInfo, 0, sizeof(BASS_CHANNELINFO));
 }
 
-void BassSource::Process(AudioStream & stream, uint32_t const frames)
+void BassSource::Process(AudioStream& stream, uint32_t const frames)
 {
 	uint32_t const channels = Channels();
 	if (channels != 2 && channels != 1)
 	{
 		Error("usupported number of channels");
+		stream.endOfStream = true;
 		stream.SetFrames(0);
 		return;
 	}
@@ -151,11 +152,11 @@ void BassSource::Process(AudioStream & stream, uint32_t const frames)
 	if (bytesRead != static_cast<DWORD>(-1))
 		framesRead = BytesInFrames<uint32_t, sample_t>(bytesRead, channels);
 
+	// converter will set stream size
 	pimpl->converter.Process(stream, framesRead);
-	assert(!stream.IsOverrun());
-
 	pimpl->currentFrame += framesRead;
 	stream.endOfStream = framesRead != framesToRead || pimpl->currentFrame >= pimpl->lastFrame;
+	if(stream.endOfStream) LogDebug("eos bass %1% frames left"), stream.Frames();
 }
 
 void BassSource::SetSamplerate(uint32_t moduleSamplerate)
