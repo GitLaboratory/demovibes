@@ -39,14 +39,22 @@ class NewsAdmin(admin.ModelAdmin):
 	search_fields = ('title', 'text')
 
 class ArtistAdmin(admin.ModelAdmin):
-	search_fields = ('handle', 'name')
-	list_display = ('handle', 'name', 'link_to_user')
-	filter_horizontal = ['groups', 'labels']
+    search_fields = ('handle', 'name')
+    list_display = ('handle', 'name', 'link_to_user')
+    filter_horizontal = ['groups', 'labels']
+    list_filter = ['status']
+    fieldsets = [
+	    ("General info", {'fields' : ['handle', 'status', 'webpage', 'artist_pic', 'groups'] }),
+	    ("Personalia", {'fields' : ['name', 'dob', 'home_country', 'home_location', 'is_deceased', 'deceased_date', 'info'] }),
+	    ("NectaStuff", {'fields' : ['alias_of','created_by', 'link_to_user', 'labels' ] }),
+	    ("Other web pages", {'fields' : ['twitter_id', 'wiki_link', 'hol_id', 'last_fm_id'] }),
+	]
 
 class CompilationAdmin(admin.ModelAdmin):
 	list_display = ('name', 'rel_date', 'date_added', 'created_by', 'status')
 	search_fields = ['name'] # For now, we only need to search by the name of the compilation
 	filter_horizontal = ['songs', 'prod_groups', 'prod_artists']
+	list_filter = ['status']
 	raw_id_fields = ["songs", "prod_artists", "prod_groups"]
 
 class LabelAdmin(admin.ModelAdmin):
@@ -65,11 +73,17 @@ class ScreenshotAdmin(admin.ModelAdmin):
 	search_fields = ['name']
 	list_display = ('name', 'last_updated', 'description', 'active')
 
+class RadioStreamAdmin(admin.ModelAdmin):
+    search_fields = ('name', 'user', 'country_code')
+    list_display = ('name', 'bitrate', 'user', 'streamtype', 'country_code', 'active')
+    list_editable = ['active']
+    list_filter = ['active', 'streamtype']
+
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Song, SongAdmin)
 admin.site.register(SongType)
 admin.site.register(Theme)
-admin.site.register(RadioStream)
+admin.site.register(RadioStream, RadioStreamAdmin)
 admin.site.register(News, NewsAdmin)
 admin.site.register(Artist, ArtistAdmin)
 admin.site.register(Userprofile, UserprofileAdmin)
