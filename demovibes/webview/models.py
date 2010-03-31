@@ -823,7 +823,8 @@ class News(models.Model):
 class RadioStream(models.Model):
     url = models.CharField(max_length=120, verbose_name="Direct URL", help_text="Direct URL to stream (no m3u). Shoutcast streams include PLS extension")
     name = models.CharField(max_length=120, verbose_name="Stream Name", help_text="Name of the stream, as you want it to appear on the site")
-    description = models.TextField()
+    description = models.TextField(blank=True)
+    user = models.ForeignKey(User, null = True, help_text="User hosting the stream")
     country_code = models.CharField(max_length=10, verbose_name="Country Code", help_text="Lower-case country code of the server location")
     bitrate = models.IntegerField()
     STREAMS = (
