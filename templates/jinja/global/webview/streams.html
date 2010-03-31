@@ -3,7 +3,7 @@
 {% block title %}Audio Streams{% endblock %}
 
 {% block main %}
-<h2>{% site_name %} Audio Streams</h2>
+<h2>{{ dv.site_name() }} Audio Streams</h2>
 {% include "webview/stream_instructions.html" %}
 <br />
 {% for stream in object_list %}
