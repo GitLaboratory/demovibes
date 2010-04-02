@@ -241,6 +241,9 @@ bool AvSource::CheckExtension(string fileName)
 	return false;
 }
 
+// I guess this got introduced with some ffpmep update
+#undef CodecType
+
 string AvSource::CodecType() const
 {
 	CodecID codecType = pimpl->codec->id;
