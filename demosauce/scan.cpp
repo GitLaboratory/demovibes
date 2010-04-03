@@ -5,14 +5,6 @@
 
 #include <boost/format.hpp>
 
-extern "C" {
-#include <libavcodec/avcodec.h>
-}
-
-#include "bass/bass.h"
-#include "bass/bass_aac.h"
-#include "bass/bassflac.h"
-
 #include "libreplaygain/replay_gain.h"
 
 #include "logror.h"
