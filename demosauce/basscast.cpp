@@ -159,6 +159,7 @@ string create_cast_title(string const & artist, string const & title)
 			cast_title[i] = ' ';
 	cast_title.append(" - ");
 	cast_title.append(utf8_to_ascii(title));
+	LogDebug("unicode decomposition: %1%, %2% -> %3%"), artist, title, cast_title; 
 	return cast_title;
 }
 
