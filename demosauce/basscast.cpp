@@ -124,27 +124,39 @@ void BassCast::Run()
 
 string utf8_to_ascii(string const & utf8_str)
 {
-	// wow, this icu stuff is the best string class implementation i've seen evar
-	// why doesn't boost have this? this is fun \o/
-	// check this: http://www.unicode.org/reports/tr15/#Norm_Forms
-
 	// BLAST! fromUTF8 requires ics 4.2
 	// UnicodeString in_str = UnicodeString::fromUTF8(utf8_str);
-	UErrorCode status;
-	UConverter* converter = ucnv_open("UTF-8", &status); //
+    UErrorCode status = U_ZERO_ERROR;
+    UConverter* converter = ucnv_open("UTF-8", &status);
 	UnicodeString in_str(utf8_str.c_str(), utf8_str.size(), converter, status);
 	ucnv_close(converter);
+    
+    if (U_FAILURE(status))
+    {
+        Log(warning, "utf8 conversion failed (%1%)"), u_errorName(status);
+        return "";
+    }
 
 	// convert to ascii as best as possible. it's really smart
 	UnicodeString norm_str;
 	Normalizer::normalize(in_str, UNORM_NFKD, 0, norm_str, status);
+    
+    if (U_FAILURE(status))
+    {
+        Log(warning, "unicode decomposition failed (%1%)"), u_errorName(status);
+        return "";
+    }
 
-	// NFKD may produce non ascii chars, these are dropped
+    // NFKD may produce non ascii chars, these are dropped
+	
 	string out_str;
-	for (int32_t i = 0; i < norm_str.length(); ++i)
+    for (int32_t i = 0; i < norm_str.length(); ++i)
+    {
+        LogDebug("%1%"), norm_str[i];
 		if (norm_str[i] >= ' ' && norm_str[i] <= '~')
-			out_str += static_cast<char>(norm_str[i]);
-	return out_str;
+			out_str.push_back(static_cast<char>(norm_str[i]));
+	}
+    return out_str;
 }
 
 string create_cast_title(string const & artist, string const & title)
