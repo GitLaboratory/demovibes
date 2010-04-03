@@ -176,6 +176,8 @@ void NoiseSource::Process(AudioStream& stream, uint32_t const frames)
 		stream.endOfStream = true;
 		return;
 	}
+	if (stream.MaxFrames() < frames)
+		stream.Resize(frames);
 	float const gah = 1.0 / RAND_MAX;
 	const uint_fast32_t procFrames = unsigned_min<uint32_t>(duration - currentFrame, frames);
 
