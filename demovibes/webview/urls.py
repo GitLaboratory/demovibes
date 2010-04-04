@@ -115,6 +115,8 @@ urlpatterns = patterns('',
     url(r'^groups/(?P<letter>.)/$',               'demovibes.webview.views.list_groups', name = "dv-groups_letter"),
     url(r'^group/(?P<object_id>\d+)/$',            'django.views.generic.list_detail.object_detail',       group_a_dict, name = "dv-group"),
 
+    url(r'^statistics/(?P<stattype>\w+)/$',                 'demovibes.webview.views.song_statistics', name = "dv-stats"),
+
     url(r'^artists/$',                             'django.views.generic.list_detail.object_list', \
             dict(artist_dict, paginate_by=settings.PAGINATE, extra_context = { 'al' : alphalist }), name = "dv-artists"),
     url(r'^artists/(?P<letter>.)/$',               'demovibes.webview.views.list_artists', name = "dv-artists_letter"),
