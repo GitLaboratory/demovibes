@@ -543,6 +543,19 @@ def activate_upload(request):
     songs = Song.objects.filter(status = "U").order_by('added')
     return j2shim.r2r('webview/uploaded_songs.html', {'songs' : songs}, request=request)
 
+def song_statistics(request, stattype):
+    songs = None
+    title = "Mu"
+    numsongs = 100
+    if stattype == "favorited":
+        title = "most favorited"
+        songs = Song.objects.order_by('-num_favorited')[:numsongs]
+    if stattype == "queued":
+        title = "most played"
+        songs = Song.objects.order_by('-times_played')[:numsongs]
+    return render_to_response('webview/stat_songs.html', {'songs': songs, 'title': title, 'numsongs': numsongs}, context_instance=RequestContext(request))
+    
+
 @login_required
 def create_artist(request):
     """
