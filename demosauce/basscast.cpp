@@ -146,11 +146,8 @@ string utf8_to_ascii(string const & utf8_str)
 	// NFKD may produce non ascii chars, these are dropped
 	string out_str;
 	for (int32_t i = 0; i < norm_str.length(); ++i)
-	{
-		LogDebug("%1%"), norm_str[i];
 		if (norm_str[i] >= ' ' && norm_str[i] <= '~')
 			out_str.push_back(static_cast<char>(norm_str[i]));
-	}
 	return out_str;
 }
 
@@ -164,7 +161,8 @@ string create_cast_title(string const & artist, string const & title)
 	for (size_t i = 0; i < cast_title.size(); ++i)
 		if (cast_title[i] == '-')
 			cast_title[i] = ' ';
-	cast_title.append(" - ");
+	if (cast_title.size() > 0)
+        cast_title.append(" - ");
 	cast_title.append(utf8_to_ascii(title));
 	LogDebug("unicode decomposition: %1%, %2% -> %3%"), artist, title, cast_title; 
 	return cast_title;
@@ -190,10 +188,13 @@ void BassCastPimpl::GetNextSong(SongInfo& songInfo)
 		sockets.GetSong(songInfo);
 	
 	if (songInfo.fileName.size() == 0)
+    {
+        Log(info, "loading random file");
 		songInfo.fileName = get_random_file(setting::error_fallback_dir);
+    }
 	if (songInfo.fileName.size() == 0)
 		songInfo.fileName = setting::error_tune;	
-	if (songInfo.artist.size() == 0 && songInfo.title.size())
+	if (songInfo.artist.size() == 0 && songInfo.title.size() == 0)
 		songInfo.title = setting::error_title;
 }
 

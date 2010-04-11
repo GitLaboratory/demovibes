@@ -29,6 +29,7 @@
 */
 
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 
 #include "globals.h"
@@ -49,9 +50,10 @@ using namespace logror;
 int main(int argc, char* argv[])
 {
 	std::cout << "demosauce 0.2.2" EXPAND(REVISION) " - Now with TWICE the BITS!\n";
+	srand(time(0));
 	try
 	{
-		InitSettings(argc, argv);
+        InitSettings(argc, argv);
 		LogSetConsoleLevel(setting::log_console_level);
 		LogSetFile(setting::log_file, setting::log_file_level);
 		BassCast cast;
