@@ -18,6 +18,7 @@ cast_description 	= this is a nice online radio, also maep is a ruler
 # if that tune fails to load, 2 minutes of white noise will be played instead
 error_tune			= error.tune
 error_title			= error 
+error_fallback_dir	= /dir/to/songs
 log_file			= demosauce.log
 
 # level can be debug, info, warn, error, fatal, nothing

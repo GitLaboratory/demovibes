@@ -24,8 +24,13 @@ using namespace boost;
 using namespace boost::filesystem;
 using namespace logror;
 
-//typedef int16_t sample_t; // remember to change channel flag: BASS_SAMPLE_FLOAT
-typedef float sample_t;
+#ifdef BASSSOURCE_16BIT_DECODING
+	typedef int16_t sample_t;
+	#define FLOAT_FLAG 0
+#else
+	typedef float sample_t;
+	#define FLOAT_FLAG BASS_SAMPLE_FLOAT
+#endif
 
 struct BassSource::Pimpl
 {
@@ -62,8 +67,8 @@ bool BassSource::Load(string fileName, bool prescan)
 	pimpl->Free();
 	pimpl->fileName = fileName;
 	DWORD & channel = pimpl->channel;
-	DWORD stream_flags = BASS_STREAM_DECODE | (prescan ? BASS_STREAM_PRESCAN : 0) | BASS_SAMPLE_FLOAT;
-	DWORD music_flags = BASS_MUSIC_DECODE | BASS_MUSIC_PRESCAN | BASS_SAMPLE_FLOAT;
+	DWORD stream_flags = BASS_STREAM_DECODE | (prescan ? BASS_STREAM_PRESCAN : 0) | FLOAT_FLAG;
+	DWORD music_flags = BASS_MUSIC_DECODE | BASS_MUSIC_PRESCAN | FLOAT_FLAG;
 
 	Log(info, "basssource loading %1%"), fileName;
 

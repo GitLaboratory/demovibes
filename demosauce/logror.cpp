@@ -60,7 +60,7 @@ LogBlob LogAction(Level level, bool takeAction, string message)
 		msg.append(message);
 		return LogBlob(level, takeAction, msg);
 	}
-	return LogBlob(nothing, false, "");
+	return LogBlob(nothing, takeAction, "");
 }
 
 LogBlob::LogBlob (Level level, bool takeAction, string message):

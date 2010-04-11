@@ -219,19 +219,14 @@ void MixChannels::Process(AudioStream& stream, uint32_t const frames)
 }
 
 //-----------------------------------------------------------------------------
-// ok, this is supposed to be a brickwall limiter, but I have absolutely no
-// indea about the theory behind one. so I just made some stuff up!
+// this needs to be rewritten
+/*
 Brickwall::Brickwall() :
-	peak(.999),
-	gain(.999),
-	gainInc(0),
 	attackLength(441), // 1 ms at 44100
-	releaseLength(441),
-	streamPos(0),
-	attackEnd(0),
-	sustainEnd(0),
-	releaseEnd(0)
-{}
+	releaseLength(441)
+{
+	Reset();
+}
 
 void Brickwall::Set(uint32_t attackFrames, uint32_t releaseFrames)
 {
@@ -239,71 +234,81 @@ void Brickwall::Set(uint32_t attackFrames, uint32_t releaseFrames)
 	releaseLength = releaseFrames;
 }
 
+void Brickwall::Reset()
+{
+	peak = 1;
+	gain = 1;
+	gainInc = 0;
+	streamPos = 0;
+	attackEnd = 0;
+	sustainEnd = 0;
+	releaseEnd = 0;
+	inStream.SetFrames(0);
+	buffStream.SetFrames(0);
+}
+
+// the peaks buffer is filles with the peaks of both channels
+void ProcessPeaks(AudioStream& stream, AlignedBuffer<float>& peaks)
+{
+	if (peaks.Size() < stream.Frames())
+		peaks.Resize(stream.Frames());
+	float* out = peaks.Get();
+	float const* in0 = stream.Buffer(0);
+	if (stream.Channels() == 2)
+	{
+		float const* in1 = stream.Buffer(1);
+		for (uint_fast32_t i = stream.Frames(); i; --i)
+			*out++ = std::max(fabs(*in0++), fabs(*in1++));
+	}
+	else if (stream.Channels() == 1)
+		for (uint_fast32_t i = stream.Frames(); i; --i)
+		*out++ = fabs(*in0++);
+	//TODO implement for 3+ channels
+}
+
 void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 {
-	source->Process(stream1, frames);
-	assert(stream1.Channels() > 0);
-	uint32_t procFrames0 = std::min(stream0.Frames(), frames);
-	uint32_t procFrames1 = stream1.Frames() < procFrames0 ? 0 :
-		stream1.Frames() - procFrames0;
-	uint32_t ampFrames = procFrames0 + stream1.Frames();
-
-	if (ampBuffer.Size() < ampFrames)
-		ampBuffer.Resize(ampFrames);
-	if (mixBuffer.Size() < stream1.Frames())
-		mixBuffer.Resize(stream1.Frames());
-
+	source->Process(inStream, frames);
 	// prepare data for peak scanning
-	{
-		assert(stream1.Channels() <= 2);
-		float* buff = mixBuffer.Get();
-		float* in0 = stream1.Buffer(0);
-		if (stream1.Channels() == 1)
-			for (uint_fast32_t i = stream1.Frames(); i; --i)
-				*buff++ = fabs(*in0++);
-		else
-		{
-			float* in1 = stream1.Buffer(1);
-			for (uint_fast32_t i = stream1.Frames(); i; --i)
-				*buff++ = std::max(fabs(*in0++), fabs(*in1++));
-		}
-	}
+	stream.endOfStream = inStream.endOfStream && inStream.Frames() + buffStream.Frames() < frames;
+	stream.SetFrames(0);
+	if (buffStream.Frames() == attackLength)
+		stream.Append(buffStream);
 
-	// scan data at beginning of stream
+	uint32_t streamFrames = !stream.endOfStream ?
+		std::min(inStream.Frames(), inStream.Frames() - attackLength) :
+		std::min(inStream.Frames(), frames);
+
+	stream.Append(inStream, streamFrames);
+	inStream.Drop(streamFrames);
+	buffStream.SetFrames(0);
+	buffStream.Append(inStream);
+	
 	if (streamPos < attackLength)
 	{
-		float* in = mixBuffer.Get();
-		uint64_t i = streamPos;
-		for (; i < std::min(stream1.Frames(), attackLength); ++i, ++in)
-			if (*in > peak)
-				peak = fabs(*in);
-		if (i == attackLength)
-			procFrames1 = procFrames1 - std::min(procFrames1, attackLength);
-		else if (!stream1.endOfStream)
-		{   // not enouth frames for regular processing
-			streamPos = i;
-			stream.SetFrames(0);
-			stream0.Append(stream1);
-			return;
-		}
-		gain = .999 / peak; // peak always >= 1
+		ProcessPreaks(stream, peakBuffer);
 	}
+		
 
 	{
-		float* amp = ampBuffer.Get();
-		float* in = mixBuffer.Get();
+		ProcessPeaks(stream, peakBuffer);
+		if (ampBuffer.Size() < stream.Frames)
+			ampBuffer.Resize(stream.Frames);
 
-		for (uint_fast32_t i = stream1.Frames(); i; --i, ++streamPos)
+		float* amp = ampBuffer.Get();
+		float* in = PeakBuffer.Get();
+
+		for (uint_fast32_t i = stream.Frames(); i; --i, ++streamPos)
 		{
 			float const value = *in++;
 			if (value > peak)
 			{
 				peak = value;
-				gainInc = (.999 / peak - gain) / attackLength;
+				gainInc = (1 / peak - gain) / attackLength;
 				attackEnd = streamPos + attackLength;
 			}
 
-			if (value > .999)
+			if (value > 1)
 			{
 				sustainEnd = streamPos + attackLength;
 				releaseEnd = 0;
@@ -314,14 +319,14 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 
 			if (streamPos == sustainEnd)
 			{
-				gainInc = (.999 - gain) / releaseLength;
+				gainInc = (1 - gain) / releaseLength;
 				releaseEnd = streamPos + releaseLength;
-				peak = .999;
+				peak = 1;
 			}
 
 			if (streamPos == releaseEnd)
 			{
-				gain = .999;
+				gain = 1;
 				gainInc = 0;
 			}
 
@@ -330,57 +335,21 @@ void Brickwall::Process(AudioStream& stream, uint32_t const frames)
 		}
 	}
 
-	// may happen at end of stream
-	if (stream1.Frames() < ampFrames)
+
 	{
-		float* amp = ampBuffer.Get();
-		for (uint_fast32_t i = ampFrames - stream1.Frames(); i; --i, ++streamPos)
-			*amp++ = gain;
+		float const* amp = ampBuffer.Get();
+		float* out = fooStream.Buffer(iChan);
+		for (uint32_t iChan = 0; iChan < stream1.Channels(); ++iChan)
+			for (uint_fast32_t i = fooStream.Frames(); i; --i)
+				*out++ *= *amp++;
 	}
 
-	stream.SetChannels(stream1.Channels());
-	if (stream.MaxFrames() < procFrames0 + procFrames1)
-		stream.Resize(procFrames0 + procFrames1);
-	stream.SetFrames(procFrames0 + procFrames1);
-
-	for (uint32_t iChan = 0; iChan < stream1.Channels(); ++iChan)
-	{
-		float* amp = ampBuffer.Get();
-		float* in = stream0.Buffer(iChan);
-		float* out = stream.Buffer(iChan);
-		for (uint_fast32_t i = procFrames0; i; --i)
-			*out++ = *in++ * *amp++;
-		in = stream1.Buffer(iChan);
-		for (uint_fast32_t i = procFrames1; i; --i)
-			*out++ = *in++ * *amp++;
-	}
-
-// uncomment to visualize applied gain in left channel
-//	{
-//		float* amp = ampBuffer.Get();
-//		float* in = stream0.Buffer(0);
-//		float* out = stream.Buffer(0);
-//		for (uint_fast32_t i = procFrames0; i; --i)
-//			*out++ = *amp++;
-//		in = stream1.Buffer(0);
-//		for (uint_fast32_t i = procFrames1; i; --i)
-//			*out++ = *amp++;
-//	}
-	stream0.Drop(procFrames0);
-	stream1.Drop(procFrames1);
-	stream0.Append(stream1);
-
-	stream.endOfStream = false;
-	if (stream1.endOfStream && procFrames0 + stream1.Frames() <= frames)
-	{
-		gain = .999;
-		peak = .999;
-		gainInc = 0;
-		stream.endOfStream = true;
-	}
-	if(stream.endOfStream) LogDebug("eos brick %1% frames left"), stream.Frames();
+	if (stream.endOfStream)
+		Reset();
+	if(stream.endOfStream)
+		LogDebug("eos brick %1% frames left"), stream.Frames();
 }
-
+*/
 //-----------------------------------------------------------------------------
 void Peaky::Process(AudioStream& stream, uint32_t const frames)
 {

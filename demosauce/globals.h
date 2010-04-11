@@ -23,6 +23,7 @@ namespace setting
 	extern std::string		cast_description;
 	extern std::string  	error_tune;
 	extern std::string		error_title;
+	extern std::string		error_fallback_dir;
 	extern std::string		log_file;
 	extern logror::Level	log_file_level;
 	extern logror::Level	log_console_level;

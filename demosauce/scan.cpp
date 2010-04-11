@@ -1,9 +1,6 @@
-#include <cstdlib>
-#include <cstring>
+	#include <cstdlib>
 #include <string>
 #include <iostream>
-
-#include <boost/format.hpp>
 
 #include "libreplaygain/replay_gain.h"
 
@@ -69,7 +66,9 @@ std::string ScanSong(std::string fileName, bool doReplayGain)
 
 	double replayGain = RG_GetTitleGain(context);
 	RG_FreeContext(context);
-
+		
+	if (avLoaded)
+		length = static_cast<double>(frameCounter) / samplerate;
 	std::string msg = "type:%1%\nlength:%2%\n";
 	if (doReplayGain)
 		msg.append("replay gain:%3%\n");
@@ -86,7 +85,7 @@ std::string ScanSong(std::string fileName, bool doReplayGain)
 
 int main(int argc, char* argv[])
 {
-	logror::LogSetConsoleLevel(logror::nothing);
+	logror::LogSetConsoleLevel(logror::fatal);
 	if (argc < 2 || (*argv[1] == '-' && argc < 3))
 		logror::Fatal("not enough arguments");
 

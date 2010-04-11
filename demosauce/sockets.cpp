@@ -74,31 +74,40 @@ Sockets::Pimpl::SendCommand(string const & command, string & result)
 }
 
 void
-Sockets::GetSong(SongInfo & info)
+Sockets::GetSong(SongInfo& songInfo)
 {
-	if (!pimpl->SendCommand("GETSONG", info.fileName))
-	{
+	songInfo.fileName = "";
+	songInfo.artist = "";
+	songInfo.title = "";
+	songInfo.gain = 0;
+	songInfo.loopDuration = 0;
+	
+	if (!pimpl->SendCommand("GETSONG", songInfo.fileName))
 		Error("socket command GETSONG failed");
-		info.fileName = setting::error_tune;
-	}
 
-	if (!pimpl->SendCommand("GETARTIST", info.artist))
-		info.artist = setting::error_title;
+	if (!pimpl->SendCommand("GETARTIST", songInfo.artist))
+		Log(warning, "socket command GETARTIST failed");
 
-	if (!pimpl->SendCommand("GETTITLE", info.title))
-		info.title = setting::error_title;
-
-	string gain;
+	if (!pimpl->SendCommand("GETTITLE", songInfo.title))
+		Log(warning, "socket command GETTITLE failed");
+		
+	string gain = "0";
 	if (!pimpl->SendCommand("GETGAIN", gain))
-		gain = "0"; // right, gain in db
-	try { info.gain = lexical_cast<float>(gain); }
-	catch (bad_lexical_cast &) { info.gain = 0; }
-
-	string loopDuration;
+		Log(warning, "socket command GETGAIN failed");
+	try 
+	{
+		songInfo.gain = lexical_cast<float>(gain);
+	}
+	catch (bad_lexical_cast&) {}
+	
+	string loopDuration = "0";
 	if (!pimpl->SendCommand("GETLOOP", loopDuration))
-		loopDuration = "0";
-	try { info.loopDuration = lexical_cast<float>(loopDuration); }
-	catch (bad_lexical_cast &) { info.loopDuration = 0; }
+		Log(warning, "socket command GETLOOP failed");
+	try 
+	{
+		songInfo.loopDuration = lexical_cast<float>(loopDuration); 
+	}
+	catch (bad_lexical_cast&) {}
 }
 
 bool ResolveIp(string host, std::string &ipAddress)

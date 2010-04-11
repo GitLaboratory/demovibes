@@ -3,6 +3,7 @@
 
 #include <malloc.h>
 #include <cassert>
+#include <cstring>
 
 #if defined(_WIN32)
 	#define aligned_malloc(alignment, size) _aligned_malloc(size, alignment)

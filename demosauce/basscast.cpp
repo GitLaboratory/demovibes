@@ -1,6 +1,6 @@
 #include <boost/version.hpp>
 #if (BOOST_VERSION / 100) < 1036
-#error "need at leats BOOST version 1.36"
+	#error "need at leats BOOST version 1.36"
 #endif
 
 #include <cstring>
@@ -27,10 +27,11 @@
 using namespace std;
 using namespace boost;
 using namespace logror;
+using namespace boost::filesystem;
 
 /*	current processing stack layout
 	NoiseSource / BassSource / AVCodecSource -> (Resample) -> (MixChannels) ->
-	-> MapChannels -> (LinearFade) -> Gain -> Brickwall -> BassCast
+	-> MapChannels -> (LinearFade) -> Gain -> BassCast
 */
 
 typedef int16_t sample_t; // output sample type
@@ -39,6 +40,7 @@ struct BassCastPimpl
 {
 	void Start();
 	void ChangeSong();
+	void GetNextSong(SongInfo& songInfo);
 	void InitMachines();
 	//-----------------
 	Sockets sockets;
@@ -52,7 +54,6 @@ struct BassCastPimpl
 	shared_ptr<MapChannels> mapChannels;
 	shared_ptr<LinearFade> linearFade;
 	shared_ptr<Gain> gain;
-	shared_ptr<Brickwall> brickwall;
 	HENCODE encoder;
 	HSTREAM sink;
 	vector<float> readBuffer;
@@ -90,15 +91,11 @@ void BassCastPimpl::InitMachines()
 	mapChannels = new_shared<MapChannels>();
 	linearFade = new_shared<LinearFade>();
 	gain = new_shared<Gain>();
-	brickwall = new_shared<Brickwall>();
 
 	noiseSource->SetChannels(setting::encoder_channels);
 	float ratio = setting::amiga_channel_ratio;
 	mixChannels->Set(1 - ratio, ratio, 1 - ratio, ratio);
 	mapChannels->SetOutChannels(setting::encoder_channels);
-	// set attack/release to a tiny 1 ms
-	uint32_t brickFrames = setting::encoder_samplerate * .001;
-	brickwall->Set(brickFrames, brickFrames);
 
 	machineStack->AddMachine(noiseSource);
 	machineStack->AddMachine(resample);
@@ -106,7 +103,6 @@ void BassCastPimpl::InitMachines()
 	machineStack->AddMachine(mapChannels);
 	machineStack->AddMachine(linearFade);
 	machineStack->AddMachine(gain);
-	machineStack->AddMachine(brickwall);
 
 	converter.SetSource(machineStack);
 }
@@ -126,37 +122,36 @@ string utf8_to_ascii(string const & utf8_str)
 {
 	// BLAST! fromUTF8 requires ics 4.2
 	// UnicodeString in_str = UnicodeString::fromUTF8(utf8_str);
-    UErrorCode status = U_ZERO_ERROR;
-    UConverter* converter = ucnv_open("UTF-8", &status);
+	UErrorCode status = U_ZERO_ERROR;
+	UConverter* converter = ucnv_open("UTF-8", &status);
 	UnicodeString in_str(utf8_str.c_str(), utf8_str.size(), converter, status);
 	ucnv_close(converter);
-    
-    if (U_FAILURE(status))
-    {
-        Log(warning, "utf8 conversion failed (%1%)"), u_errorName(status);
-        return "";
-    }
+
+	if (U_FAILURE(status))
+	{
+		Log(warning, "utf8 conversion failed (%1%)"), u_errorName(status);
+		return "";
+	}
 
 	// convert to ascii as best as possible. it's really smart
 	UnicodeString norm_str;
 	Normalizer::normalize(in_str, UNORM_NFKD, 0, norm_str, status);
-    
-    if (U_FAILURE(status))
-    {
-        Log(warning, "unicode decomposition failed (%1%)"), u_errorName(status);
-        return "";
-    }
 
-    // NFKD may produce non ascii chars, these are dropped
-	
+	if (U_FAILURE(status))
+	{
+		Log(warning, "unicode decomposition failed (%1%)"), u_errorName(status);
+		return "";
+	}
+
+	// NFKD may produce non ascii chars, these are dropped
 	string out_str;
-    for (int32_t i = 0; i < norm_str.length(); ++i)
-    {
-        LogDebug("%1%"), norm_str[i];
+	for (int32_t i = 0; i < norm_str.length(); ++i)
+	{
+		LogDebug("%1%"), norm_str[i];
 		if (norm_str[i] >= ' ' && norm_str[i] <= '~')
 			out_str.push_back(static_cast<char>(norm_str[i]));
 	}
-    return out_str;
+	return out_str;
 }
 
 string create_cast_title(string const & artist, string const & title)
@@ -175,6 +170,33 @@ string create_cast_title(string const & artist, string const & title)
 	return cast_title;
 }
 
+string get_random_file(string directoryName)
+{
+	if (!is_directory(directoryName))
+		return "";
+	path dir(directoryName);
+	uint32_t numFiles = std::distance(dir.begin(), dir.end());
+	uint32_t randIndex = rand() * numFiles / RAND_MAX;
+	directory_iterator it(dir);
+	std::advance(it, randIndex);
+	return it->path().string();
+}
+
+void BassCastPimpl::GetNextSong(SongInfo& songInfo)
+{
+	if (setting::debug_file.size() > 0)
+		songInfo.fileName = setting::debug_file;
+	else
+		sockets.GetSong(songInfo);
+	
+	if (songInfo.fileName.size() == 0)
+		songInfo.fileName = get_random_file(setting::error_fallback_dir);
+	if (songInfo.fileName.size() == 0)
+		songInfo.fileName = setting::error_tune;	
+	if (songInfo.artist.size() == 0 && songInfo.title.size())
+		songInfo.title = setting::error_title;
+}
+
 // this is called whenever the song is changed
 void BassCastPimpl::ChangeSong()
 {
@@ -189,17 +211,13 @@ void BassCastPimpl::ChangeSong()
 
 	for (bool loadSuccess = false; !loadSuccess;)
 	{
-		if (setting::debug_file.size() > 0)
-			songInfo.fileName = setting::debug_file;
-		else
-			sockets.GetSong(songInfo);
-
 		bool bassLoaded = false;
 		bool avLoaded = false;
-
-		if (boost::filesystem::exists(songInfo.fileName))
+		GetNextSong(songInfo);
+		
+		if (exists(songInfo.fileName))
 		{
-		//	try loading by extension
+		// try loading by extension
 			if (BassSource::CheckExtension(songInfo.fileName))
 				bassLoaded = bassSource->Load(songInfo.fileName);
 			else if (AvSource::CheckExtension(songInfo.fileName))

@@ -29,6 +29,7 @@ namespace setting
 	string cast_description;
 	string error_tune;
 	string error_title			= "sorry, we're having some trouble";
+	string error_fallback_dir;
 	string log_file				= "demosauce.log";
 	Level log_file_level		= info;
 	Level log_console_level		= warning;
@@ -62,6 +63,7 @@ void BuildDescriptions(options_description & settingsDesc, options_description &
 	("cast_description", value<string>(&cast_description))
 	("error_tune", value<string>(&error_tune))
 	("error_title", value<string>(&error_title))
+	("error_fallback_dir", value<string>(&error_fallback_dir))
 	("log_file", value<string>(&log_file))
 	("log_file_level", value<string>(&logFileLevel))
 	("log_console_level", value<string>(&logConsoleLevel))

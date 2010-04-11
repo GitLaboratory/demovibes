@@ -182,6 +182,18 @@ public:
 		frames += stream.Frames();
 	}
 
+	void Append(AudioStream& stream, uint32_t frames)
+	{
+		OVERRUN_ASSERT(NoOverrun());
+		frames = std::min(frames, stream.Frames());
+		if (this->frames + frames > maxFrames)
+			Resize(this->frames + stream.Frames());
+		size_t channelBytes = frames * sizeof(float);
+		for (uint32_t i = 0; i < channels && i < stream.Channels(); ++i)
+			memcpy(buffer[i] + this->frames, stream.Buffer(i), channelBytes);
+		this->frames += frames;
+	}
+
 	void Drop(uint32_t frames)
 	{
 		OVERRUN_ASSERT(NoOverrun());
@@ -219,12 +231,25 @@ public:
 	Machine() : enabled(true) {}
 	typedef boost::shared_ptr<Machine> MachinePtr;
 
-	virtual void Process(AudioStream & stream, uint32_t const frames) = 0;
+	virtual void Process(AudioStream& stream, uint32_t const frames) = 0;
 	virtual std::string Name() const = 0;
 
-	void SetSource(MachinePtr & machine) { if (machine.get() != this) source = machine; }
-	void SetEnabled(bool enabled) { this->enabled = enabled; }
- 	bool Enabled() const { return enabled; }
+	void SetSource(MachinePtr& machine)
+	{
+		if (machine.get() != this)
+			source = machine;
+	}
+
+	void SetEnabled(bool enabled)
+	{
+		this->enabled = enabled;
+	}
+
+ 	bool Enabled() const
+ 	{
+ 		return enabled;
+ 	}
+
 protected:
 	MachinePtr source;
 	bool enabled;
@@ -363,6 +388,8 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+// needs to be rewritten
+/* 
 class Brickwall : public Machine
 {
 public:
@@ -375,10 +402,11 @@ public:
 
 	void Set(uint32_t attackFrames, uint32_t releaseFrames);
 private:
-	AudioStream stream0;
-	AudioStream stream1;
+	void Reset();
+	AudioStream inStream;
+	AudioStream buffStream;
 	AlignedBuffer<float> ampBuffer;
-	AlignedBuffer<float> mixBuffer;
+	AlignedBuffer<float> peakBuffer;
 	float peak;
 	float gain;
 	float gainInc;
@@ -389,7 +417,7 @@ private:
 	uint64_t sustainEnd;
 	uint64_t releaseEnd;
 };
-
+*/
 //-----------------------------------------------------------------------------
 class Peaky : public Machine
 {

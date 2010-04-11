@@ -126,6 +126,7 @@ std::string file_name;
 std::vector<Button> buttons;
 ConvertToInterleaved converter;
 boost::shared_ptr<Gain> gain = boost::shared_ptr<Gain>(new Gain());
+boost::shared_ptr<Peaky> peaky = boost::shared_ptr<Peaky>(new Peaky());
 AtomicValue<double> amp_replaygain(1);
 
 // sdl has rather small buffers -> mutil-threaded dual buffering to reduce overhead \o/
@@ -243,7 +244,7 @@ void UpdateButtons(bool lmbPressed, int x, int y)
 	}
 }
 
-// aufio functions
+// audio functions
 
 std::string ScanSong(std::string fileName)
 {
@@ -382,16 +383,15 @@ bool LoadSong(std::string fileName)
 		machineStack->AddMachine(mapChannels);
 	}
 
-	boost::shared_ptr<Brickwall> brickwall = new_shared<Brickwall>();
-	machineStack->AddMachine(gain);
-	machineStack->AddMachine(brickwall);
+	//machineStack->AddMachine(gain);
+	machineStack->AddMachine(peaky);
 	machineStack->UpdateRouting();
 	return true;
 }
 
 //uncomment to dump output
-//#include "wav.h"
-//WavWriter wav("dump.wav", 44100, 2, sizeof(int16_t));
+#include "wav.h"
+WavWriter wav("dump.wav", 44100, 2, sizeof(int16_t));
 
 bool StreamWriter()
 {
@@ -401,7 +401,7 @@ bool StreamWriter()
 
 	uint32_t procFrames = converter.Process2(buffer, frames);
 	size_t read_bytes = FramesInBytes<int16_t>(procFrames, CHANNELS);
-//	wav.write(buffer, read_bytes);
+	wav.write(buffer, read_bytes);
 
 	write_mutex.Lock(); // unlocked by reader when more data is needed
 	read_mutex.Lock();
@@ -459,6 +459,7 @@ int RunStreamWriter(void* data)
 	if (data) // clean up old thread...
 		SDL_WaitThread(reinterpret_cast<SDL_Thread*>(data), NULL);
 	while(StreamWriter());
+	LogDebug("peak %1%"), peaky->Peak();
 	return 0;
 }
 
