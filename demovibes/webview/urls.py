@@ -1,18 +1,22 @@
 from django.conf.urls.defaults import *
 from demovibes.webview.models import *
 from django.conf import settings
+import djangojinja2        
         
 song_dict = {
     'queryset': Song.objects.select_related(depth=1).all(),
     'extra_context': {  'a_test' : "True", 'vote_range': [1, 2, 3, 4, 5]}, 
+    'template_loader': djangojinja2._jinja_env,
 }
 
 oneliner_dict = {
     'queryset': Oneliner.objects.all(),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 artist_dict = {
     'queryset': Artist.objects.filter(status="A"),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 """
@@ -20,10 +24,12 @@ Access any artist object.
 """
 artist_a_dict = {
     'queryset': Artist.objects.all(),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 group_dict = {
     'queryset': Group.objects.filter(status="A"),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 """
@@ -31,6 +37,7 @@ Access any group object.
 """
 group_a_dict = {
     'queryset': Group.objects.all(),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 """
@@ -38,6 +45,7 @@ Shows all active lables in the system
 """
 labels_all_dict = {
     'queryset': Label.objects.filter(status="A"),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 """
@@ -45,37 +53,45 @@ Queries pending labels, needs to be all or pending wont show
 """
 labels_a_dict = {
     'queryset': Label.objects.all(),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 news_dict = {
-    'queryset': News.objects.all()
+    'queryset': News.objects.all(),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 comp_dict = {
-    'queryset': Compilation.objects.filter(status="A")
+    'queryset': Compilation.objects.filter(status="A"),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 streams_dict_txt = {
-    'queryset': RadioStream.objects.filter(active=True, streamtype = 'M')
+    'queryset': RadioStream.objects.filter(active=True, streamtype = 'M'),
+    'template_loader': djangojinja2._jinja_env,
 }
 streams_dict = {
     'queryset': RadioStream.objects.filter(active=True).order_by('name'),
-    'template_name' : "webview/streams.html"
+    'template_name' : "webview/streams.html",
+    'template_loader': djangojinja2._jinja_env,
 }
 
 """
 Retreive all FAQ Questions marked as 'Active'
 """
 faq_dict = {
-    'queryset': Faq.objects.filter(active=True)
+    'queryset': Faq.objects.filter(active=True),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 platforms = {
     'queryset' : SongPlatform.objects.all(),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 sources = {
     'queryset' : SongType.objects.all(),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 urlpatterns = patterns('',

@@ -3,7 +3,10 @@ from smileys import SMILEYS
 from secretsmileys import SECRETSMILEYS
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+TEMPLATE_DEBUG = False
+
+import jinja2_funcs
+JINJA2_GLOBALS = jinja2_funcs.GLOBALS
 
 #Local stuff for debug
 #need to be set to 1 or higher for debug logging
@@ -187,6 +190,10 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
+)
+
+JINJA2_TEMPLATE_DIRS = (
+    '__PATH__/templates/jinja/global',
 )
 
 # Maximum number of songs a user can have in the queue at the same time.

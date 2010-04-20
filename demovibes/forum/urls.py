@@ -12,9 +12,11 @@ Usage in your base urls.py:
 from django.conf.urls.defaults import *
 from forum.models import Forum
 from forum.feeds import RssForumFeed, AtomForumFeed
+import djangojinja2  
 
 forum_dict = {
     'queryset' : Forum.objects.filter(parent__isnull=True),
+    'template_loader': djangojinja2._jinja_env,
 }
 
 feed_dict = {

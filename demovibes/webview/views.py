@@ -1,14 +1,14 @@
-from demovibes.webview.models import *
-from demovibes.webview.forms import *
-from demovibes.webview.common import *
+from webview.models import *
+from webview.forms import *
+from webview import common
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import logout
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext, TemplateDoesNotExist
+from django.shortcuts import get_object_or_404
+from django.template import TemplateDoesNotExist
 from django.conf import settings
 from django.views.generic.simple import direct_to_template
 
@@ -18,6 +18,8 @@ from django.core.files.base import File
 from django.core.cache import cache
 
 from random import choice
+
+import j2shim
 
 import time
 import mad
@@ -49,7 +51,7 @@ def inbox(request):
     else:
         pms = "received" #to remove injects
         mails = PrivateMessage.objects.filter(to = request.user, visible = True)
-    return render_to_response('webview/inbox.html', {'mails' : mails, 'pms': pms}, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/inbox.html', {'mails' : mails, 'pms': pms}, request=request)
 
 
 @login_required
@@ -58,9 +60,9 @@ def read_pm(request, pm_id):
     if pm.to == request.user:
         pm.unread = False
         pm.save()
-        return render_to_response('webview/view_pm.html', {'pm' : pm}, context_instance=RequestContext(request))
+        return j2shim.r2r('webview/view_pm.html', {'pm' : pm}, request=request)
     if pm.sender == request.user:
-        return render_to_response('webview/view_pm.html', {'pm' : pm}, context_instance=RequestContext(request))
+        return j2shim.r2r('webview/view_pm.html', {'pm' : pm}, request=request)
     return HttpResponseRedirect(reverse('dv-inbox'))
 
 @login_required
@@ -80,7 +82,7 @@ def send_pm(request):
         except:
             U = None
         form = PmForm(initial= {'to': U, 'subject' : title})
-    return render_to_response('webview/pm_send.html', {'form' : form}, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/pm_send.html', {'form' : form}, request)
 
 @login_required
 def addqueue(request, song_id): # XXX Fix to POST
@@ -92,7 +94,7 @@ def addqueue(request, song_id): # XXX Fix to POST
     except:
         return HttpResponseNotFound()
     #song.queue_by(request.user)
-    queue_song(song, request.user)
+    common.queue_song(song, request.user)
     return direct_to_template(request, template = "webview/song_queued.html")
 
 @login_required
@@ -112,18 +114,18 @@ def site_about(request):
     """
     Support for a generic 'About' function
     """
-    return render_to_response('webview/site-about.html', { }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/site-about.html', { }, request)
 
 def list_queue(request):
     """
     Display the current song, the next songs in queue, and the latest 20 songs in history.
     """
     now_playing = ""
-    history = get_history()
-    queue = get_queue()
-    return render_to_response('webview/queue_list.html', \
+    history = common.get_history()
+    queue = common.get_queue()
+    return j2shim.r2r('webview/queue_list.html', \
         {'now_playing': now_playing, 'history': history, 'queue': queue}\
-        , context_instance=RequestContext(request))
+        , request)
     
 def list_song(request, song_id):
     song = get_object_or_404(Song, id=song_id)
@@ -134,19 +136,19 @@ def list_song(request, song_id):
     # Has this song been remixed?
     remix = Song.objects.filter(remix_of_id = song.id)
     
-    return render_to_response('webview/song_detail.html', \
+    return j2shim.r2r('webview/song_detail.html', \
         { 'object' : song, 'vote_range': [1, 2, 3, 4, 5], 'comps' : comps, 'remix' : remix }\
-        , context_instance=RequestContext(request))
+        , request)
 
 def view_user_favs(request, user):
     U = get_object_or_404(User, username = user)
-    profile = get_profile(U)
+    profile = common.get_profile(U)
     if not profile.viewable_by(request.user):
-        return render_to_response('base/error.html', { 'error' : "Sorry, you're not allowed to see this" }, context_instance=RequestContext(request))
+        return j2shim.r2r('base/error.html', { 'error' : "Sorry, you're not allowed to see this" }, request=request)
     favorites = Favorite.objects.filter(user = U)
-    return render_to_response('webview/user_favorites.html', \
+    return j2shim.r2r('webview/user_favorites.html', \
         {'favorites' : favorites, 'favuser' : U}, \
-        context_instance=RequestContext(request))
+        request=request)
 
 @login_required
 def my_profile(request):
@@ -154,7 +156,7 @@ def my_profile(request):
     Display the logged in user's profile.
     """
     user = request.user
-    profile = get_profile(user)
+    profile = common.get_profile(user)
     if request.method == 'POST':
         form = ProfileForm(request.POST, request.FILES, instance = profile)
         if form.is_valid():
@@ -162,7 +164,7 @@ def my_profile(request):
             return HttpResponseRedirect(reverse('dv-my_profile')) # To hinder re-post on refresh
     else:
         form = ProfileForm(instance=profile)
-    return render_to_response('webview/my_profile.html', {'profile' : profile, 'form' : form}, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/my_profile.html', {'profile' : profile, 'form' : form}, request=request)
 
 
 def view_profile(request, user):
@@ -170,12 +172,12 @@ def view_profile(request, user):
     Display a user's profile.
     """
     ProfileUser = get_object_or_404(User,username = user)
-    profile = get_profile(User.objects.get(username=user))
+    profile = common.get_profile(User.objects.get(username=user))
     if profile.viewable_by(request.user):
-        return render_to_response('webview/view_profile.html', \
+        return j2shim.r2r('webview/view_profile.html', \
             {'profile' : profile}, \
-            context_instance=RequestContext(request))
-    return render_to_response('base/error.html', { 'error' : "Sorry, you're not allowed to see this" }, context_instance=RequestContext(request))
+            request=request)
+    return j2shim.r2r('base/error.html', { 'error' : "Sorry, you're not allowed to see this" }, request=request)
 
 def search(request):
     """
@@ -199,10 +201,10 @@ def search(request):
             compilations = Compilation.objects.filter(name__icontains = searchterm)[:result_limit]
             labels = Label.objects.filter(name__icontains = searchterm)[:result_limit]
 
-        return render_to_response('webview/search.html', \
+        return j2shim.r2r('webview/search.html', \
             { 'songs' : songs, 'artists' : artists, 'groups' : groups, 'users' : users, 'compilations' : compilations, 'labels' : labels }, \
-            context_instance=RequestContext(request))
-    return render_to_response('webview/search.html', {}, context_instance=RequestContext(request))
+            request=request)
+    return j2shim.r2r('webview/search.html', {}, request=request)
 
 def show_approvals(request):
     """
@@ -212,7 +214,7 @@ def show_approvals(request):
     result_limit = getattr(settings, 'UPLOADED_SONG_COUNT', 150)
     songs = SongApprovals.objects.order_by('-approved')[:result_limit]
     
-    return render_to_response('webview/recent_approvals.html', { 'songs': songs , 'settings' : settings }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/recent_approvals.html', { 'songs': songs , 'settings' : settings }, request=request)
 
 def list_artists(request, letter):
     """
@@ -227,10 +229,10 @@ def list_artists(request, letter):
         artistic = paginator.page(page)
     except (EmptyPage, InvalidPage):
         artistic = paginator.page(paginator.num_pages)
-    return render_to_response('webview/artist_list.html', \
+    return j2shim.r2r('webview/artist_list.html', \
         {'object_list' : artistic.object_list, 'page_range' : paginator.page_range, \
             'page' : page, 'letter' : letter, 'al': alphalist}, \
-        context_instance=RequestContext(request))
+        request=request)
 
 def list_groups(request, letter):
     """
@@ -245,10 +247,10 @@ def list_groups(request, letter):
         groupic = paginator.page(page)
     except (EmptyPage, InvalidPage):
         groupic = paginator.page(paginator.num_pages)
-    return render_to_response('webview/group_list.html', \
+    return j2shim.r2r('webview/group_list.html', \
         {'object_list' : groupic.object_list, 'page_range' : paginator.page_range, \
             'page' : page, 'letter' : letter, 'al': alphalist}, \
-        context_instance=RequestContext(request))
+        request=request)
     
 def list_labels(request, letter):
     """
@@ -263,10 +265,10 @@ def list_labels(request, letter):
         labelic = paginator.page(page)
     except (EmptyPage, InvalidPage):
         labelic = paginator.page(paginator.num_pages)
-    return render_to_response('webview/label_list.html', \
+    return j2shim.r2r('webview/label_list.html', \
         {'object_list' : labelic.object_list, 'page_range' : paginator.page_range, \
             'page' : page, 'letter' : letter, 'al': alphalist}, \
-        context_instance=RequestContext(request))
+        request=request)
 
 def list_compilations(request, letter):
     """
@@ -281,10 +283,10 @@ def list_compilations(request, letter):
         complist = paginator.page(page)
     except (EmptyPage, InvalidPage):
         complist = paginator.page(paginator.num_pages)
-    return render_to_response('webview/compilation_list.html', \
+    return j2shim.r2r('webview/compilation_list.html', \
         {'object_list' : complist.object_list, 'page_range' : paginator.page_range, \
             'page' : page, 'letter' : letter, 'al': alphalist}, \
-        context_instance=RequestContext(request))
+        request=request)
 
 @login_required
 def log_out(request):
@@ -294,7 +296,7 @@ def log_out(request):
     if request.method == 'POST':
         logout(request)
         return HttpResponseRedirect("/")
-    return render_to_response('webview/logout.html', {}, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/logout.html', {}, request=request)
 
 def list_songs(request, letter):
     """
@@ -309,10 +311,10 @@ def list_songs(request, letter):
         songlist = paginator.page(page)
     except (EmptyPage, InvalidPage):
         songlist = paginator.page(paginator.num_pages)
-    return render_to_response('webview/song_list.html', \
+    return j2shim.r2r('webview/song_list.html', \
         {'object_list' : songlist.object_list, 'page_range' : paginator.page_range, \
          'page' : page, 'letter' : letter, 'al' : alphalist}, \
-        context_instance = RequestContext(request))
+        request)
 
 def list_song_history(request, song_id):
     """
@@ -326,9 +328,9 @@ def list_song_history(request, song_id):
         historylist = paginator.page(page)
     except (EmptyPage, InvalidPage):
         historylist = paginator.page(paginator.num_pages)
-    return render_to_response('webview/song_history.html', \
+    return j2shim.r2r('webview/song_history.html', \
         { 'requests' : historylist.object_list, 'song' : song, 'page' : page, 'page_range' : paginator.page_range  },\
-        context_instance = RequestContext(request))
+        request=request)
 
 def list_song_votes(request, song_id):
     """
@@ -342,9 +344,9 @@ def list_song_votes(request, song_id):
         votelist = paginator.page(page)
     except (EmptyPage, InvalidPage):
         votelist = paginator.page(paginator.num_pages)
-    return render_to_response('webview/song_votes.html', \
+    return j2shim.r2r('webview/song_votes.html', \
         { 'votelist' : votelist.object_list, 'song' : song, 'page' : page, 'page_range' : paginator.page_range  },\
-        context_instance = RequestContext(request))
+        request=request)
 
 def list_song_comments(request, song_id):
     """
@@ -358,16 +360,16 @@ def list_song_comments(request, song_id):
         commentlist = paginator.page(page)
     except (EmptyPage, InvalidPage):
         commentlist = paginator.page(paginator.num_pages)
-    return render_to_response('webview/song_comments.html', \
+    return j2shim.r2r('webview/song_comments.html', \
         { 'commentlist' : commentlist.object_list, 'song' : song, 'page' : page, 'page_range' : paginator.page_range  },\
-        context_instance = RequestContext(request))
+        request=request)
 
 def view_compilation(request, comp_id):
     """
     Try to view a compilation entry.
     """
     comp = get_object_or_404(Compilation, id=comp_id) # Find it, or return a 404 error
-    return render_to_response('webview/compilation.html', { 'comp' : comp, 'user' : request.user }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/compilation.html', { 'comp' : comp, 'user' : request.user }, request=request)
 
 @login_required
 def add_favorite(request, id): # XXX Fix to POST
@@ -386,8 +388,8 @@ def add_favorite(request, id): # XXX Fix to POST
 
 def oneliner(request):
     oneliner = Oneliner.objects.select_related(depth=1).order_by('-id')[:20]
-    return render_to_response('webview/oneliner.html', {'oneliner' : oneliner}, \
-        context_instance=RequestContext(request))
+    return j2shim.r2r('webview/oneliner.html', {'oneliner' : oneliner}, \
+        request=request)
 
 @login_required
 def oneliner_submit(request):
@@ -430,12 +432,12 @@ def list_favorites(request):
             songlist = paginator.page(page)
         except (EmptyPage, InvalidPage):
             songlist = paginator.page(paginator.num_pages)
-        return render_to_response('webview/favorites.html', \
+        return j2shim.r2r('webview/favorites.html', \
           {'songs': songlist.object_list, 'page' : page, 'page_range' : paginator.page_range}, \
-          context_instance=RequestContext(request)) 
+          request=request) 
     
     # Attempt to list all faves at once!
-    return render_to_response('webview/favorites.html', { 'songs': songs }, context_instance=RequestContext(request)) 
+    return j2shim.r2r('webview/favorites.html', { 'songs': songs }, request=request) 
 
 @login_required
 def del_favorite(request, id): # XXX Fix to POST
@@ -496,9 +498,9 @@ def upload_song(request, artist_id):
             return HttpResponseRedirect(new_song.get_absolute_url())
     else:
         form = UploadForm()
-    return render_to_response('webview/upload.html', \
+    return j2shim.r2r('webview/upload.html', \
         {'form' : form, 'artist' : artist }, \
-        context_instance=RequestContext(request))
+        request=request)
 
 @permission_required('webview.change_song')
 def activate_upload(request):
@@ -539,7 +541,7 @@ def activate_upload(request):
             PrivateMessage.objects.create(sender = request.user, to = song.uploader,\
              message = mail_tpl.render(c), subject = "Song Upload Status Changed To: %s" % stat)
     songs = Song.objects.filter(status = "U").order_by('added')
-    return render_to_response('webview/uploaded_songs.html', {'songs' : songs}, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/uploaded_songs.html', {'songs' : songs}, request=request)
 
 def song_statistics(request, stattype):
     songs = None
@@ -578,9 +580,9 @@ def create_artist(request):
             return HttpResponseRedirect(new_artist.get_absolute_url())
     else:
         form = CreateArtistForm()
-    return render_to_response('webview/create_artist.html', \
+    return j2shim.r2r('webview/create_artist.html', \
         {'form' : form }, \
-        context_instance=RequestContext(request))
+        request=request)
 
 @permission_required('webview.change_artist')
 def activate_artists(request):
@@ -615,7 +617,7 @@ def activate_artists(request):
              message = mail_tpl.render(c), subject = "Artist Request Status Changed To: %s" % stat)
 
     artists = Artist.objects.filter(status = "U").order_by('last_updated')
-    return render_to_response('webview/pending_artists.html', { 'artists': artists }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/pending_artists.html', { 'artists': artists }, request=request)
 
 @login_required
 def create_group(request):
@@ -642,9 +644,9 @@ def create_group(request):
             return HttpResponseRedirect(new_group.get_absolute_url())
     else:
         form = CreateGroupForm()
-    return render_to_response('webview/create_group.html', \
+    return j2shim.r2r('webview/create_group.html', \
         {'form' : form }, \
-        context_instance=RequestContext(request))
+        request=request)
 
 @permission_required('webview.change_group')
 def activate_groups(request):
@@ -678,7 +680,7 @@ def activate_groups(request):
              message = mail_tpl.render(c), subject = "Group Request Status Changed To: %s" % stat)
 
     groups =Group.objects.filter(status = "U").order_by('last_updated')
-    return render_to_response('webview/pending_groups.html', { 'groups': groups }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/pending_groups.html', { 'groups': groups }, request=request)
 
 @login_required
 def create_label(request):
@@ -705,9 +707,9 @@ def create_label(request):
             return HttpResponseRedirect(new_label.get_absolute_url())
     else:
         form = CreateLabelForm()
-    return render_to_response('webview/create_label.html', \
+    return j2shim.r2r('webview/create_label.html', \
         {'form' : form }, \
-        context_instance=RequestContext(request))
+        request=request)
     
 @permission_required('webview.change_label')
 def activate_labels(request):
@@ -741,7 +743,7 @@ def activate_labels(request):
              message = mail_tpl.render(c), subject = "Label Request Status Changed To: %s" % stat)
 
     labels = Label.objects.filter(status = "U").order_by('last_updated')
-    return render_to_response('webview/pending_labels.html', { 'labels': labels }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/pending_labels.html', { 'labels': labels }, request=request)
 
     
 def save_flash(request):
@@ -767,7 +769,7 @@ def save_flash(request):
 def users_online(request):
     timefrom = datetime.datetime.now() - datetime.timedelta(minutes=5)
     userlist = Userprofile.objects.filter(last_activity__gt=timefrom).order_by('user__username')
-    return render_to_response('webview/online_users.html', {'userlist' : userlist}, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/online_users.html', {'userlist' : userlist}, request=request)
     
 @login_required
 def upload_flash(request):
@@ -795,9 +797,9 @@ def upload_flash(request):
         ticket = Ticket(ticket=ticket_id, user = request.user)
         ticket.save()
         form = FlashUploadForm()
-    return render_to_response('webview/flash_upload.html', \
+    return j2shim.r2r('webview/flash_upload.html', \
         {'ticket' : ticket_id, 'form': form}, \
-        context_instance=RequestContext(request))
+        request=request)
 
 @login_required
 def set_rating_autovote(request, song_id, user_rating):
@@ -846,9 +848,9 @@ def link_category(request, slug):
     #link_data_ban = Link.objects.filter(status="A").filter(link_type="B").filter(url_cat=link_cat)
     #link_data_but = Link.objects.filter(status="A").filter(link_type="U").filter(url_cat=link_cat)
     
-    return render_to_response('webview/links_category.html', \
+    return j2shim.r2r('webview/links_category.html', \
             {'links_txt' : link_data_txt, 'cat' : link_cat}, \
-            context_instance=RequestContext(request))
+            request=request)
 
 @login_required
 def link_create(request):
@@ -872,10 +874,10 @@ def link_create(request):
             new_link = form.save(commit=False)
             new_link.save()
             form.save_m2m()
-            return render_to_response('webview/link_added.html', context_instance=RequestContext(request)) # Redirect to 'Thanks!' screen!
+            return j2shim.r2r('webview/link_added.html', request=request) # Redirect to 'Thanks!' screen!
     else:
         form = CreateLinkForm()
-    return render_to_response('webview/create_link.html', { 'form' : form }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/create_link.html', { 'form' : form }, request=request)
 
 @permission_required('webview.change_link')
 def activate_links(request):
@@ -901,14 +903,14 @@ def activate_links(request):
     links_txt = Link.objects.filter(status="P").filter(link_type="T")
     #links_but = Link.objects.filter(status="P").filter(link_type="U")
     #links_ban = Link.objects.filter(status="P").filter(link_type="B")
-    return render_to_response('webview/pending_links.html', { 'text_links' : links_txt }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/pending_links.html', { 'text_links' : links_txt }, request=request)
 
 def site_links(request):
     """
     Show all active links for this site
     """
     link_cats = LinkCategory.objects.all() # All categories in the system
-    return render_to_response('webview/site-links.html', { 'link_cats' : link_cats }, context_instance=RequestContext(request))
+    return j2shim.r2r('webview/site-links.html', { 'link_cats' : link_cats }, request=request)
 
 def memcached_status(request):
     try:
@@ -954,9 +956,9 @@ def memcached_status(request):
 
     host.close_socket()
     
-    return render_to_response(
+    return j2shim.r2r(
         'webview/memcached_status.html', dict(
             stats=stats, 
             hit_rate=100 * stats.get_hits / stats.cmd_get,
             time=datetime.datetime.now(), # server time
-        ), context_instance=RequestContext(request))
+        ), request=request)

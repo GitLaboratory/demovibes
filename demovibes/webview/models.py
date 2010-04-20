@@ -101,6 +101,12 @@ class Userprofile(models.Model):
         ('N', 'No one')
     )
 
+    def have_artist(self):
+        try:
+            return self.user.artist
+        except:
+            return False
+
     aol_id = models.CharField(blank = True, max_length = 40, verbose_name = "AOL IM", help_text="AOL IM ID, for people to contact you (optional)")
     avatar = models.ImageField(upload_to = 'media/avatars', blank = True, null = True)
     country = models.CharField(blank = True, max_length = 10, verbose_name = "Country code")
@@ -549,13 +555,17 @@ class Song(models.Model):
         return False
 
     def set_vote(self, vote, user):
+        if vote < 1:
+            return False
         if not SongVote.objects.filter(song=self, user=user):
+            #New vote
             self.rating_total += vote
             self.rating_votes += 1
             vt = SongVote(user = user, song = self, vote = vote)
         else:
+            #Change existing vote
             vt = SongVote.objects.get(user=user, song = self)
-            self.rating_total = self.rating_total - vt.vote + vote
+            self.rating_total = (self.rating_total - vt.vote) + vote
             vt.vote = vote
         vt.save()
         self.rating = float(self.rating_total) / self.rating_votes

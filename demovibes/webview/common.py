@@ -9,6 +9,7 @@ from django.conf import settings
 import logging
 import socket
 import datetime
+import j2shim
 
 def play_queued(queue):
     queue.song.times_played = queue.song.times_played + 1
@@ -54,35 +55,40 @@ def queue_song(song, user, event = True, force = False):
     return Q
 
 
-def get_now_playing(create_new=True):
+def get_now_playing_song(create_new=False):
+    queueobj = cache.get("nowplaysong")
+    if not queueobj or create_new:
+        queueobj = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
+        cache.set("nowplaysong", queueobj, 300)
+    return queueobj
+
+def get_now_playing(create_new=False):
     logging.debug("Getting now playing")
-    key = "nnowplaying" # Change to non-event type key later, when Queue access system have been fixed
+    key = "nnowplaying"
+    
+    try:
+        songtype = get_now_playing_song(create_new)
+        song = songtype.song
+    except:
+        return ""
+       
     R = cache.get(key)
     if not R or create_new:
-        try:
-            songtype = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
-            song = songtype.song
-        except:
-            return ""
         comps = models.Compilation.objects.filter(songs__id = song.id)
-        T = get_template('webview/t/now_playing_song.html')
-        C = Context({ 'now_playing' : songtype, 'comps' : comps })
-        R = T.render(C)   
+        R = j2shim.r2s('webview/t/now_playing_song.html', { 'now_playing' : songtype, 'comps' : comps })
         cache.set(key, R, 300)
         logging.debug("Now playing generated")
+    R = R % songtype.timeleft()
     return R
 
 def get_history(create_new=False):
-    key = "nhistory" # Change to non-event type key later, when Queue access system have been fixed
+    key = "nhistory"
     logging.debug("Getting history cache")
     R = cache.get(key)
     if not R or create_new:
         logging.info("No existing cache for history, making new one")
         history = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[1:21]
-        T = get_template('webview/js/history.html')
-        C = Context({ 'history' : history })
-        R = T.render(C)
-        #R = render_to_response('webview/js/history.html', { 'history' : history })
+        R = j2shim.r2s('webview/js/history.html', { 'history' : history })
         cache.set(key, R, 300)
         logging.debug("Cache generated")
     return R
@@ -95,24 +101,19 @@ def get_oneliner(create_new=False):
         logging.info("No existing cache for oneliner, making new one")
         lines = getattr(settings, 'ONELINER', 10)
         oneliner = models.Oneliner.objects.select_related(depth=2).order_by('-id')[:lines]
-        T = get_template('webview/js/oneliner.html')
-        C = Context({ 'oneliner' : oneliner })
-        R = T.render(C)
+        R = j2shim.r2s('webview/js/oneliner.html', { 'oneliner' : oneliner })
         cache.set(key, R, 600)
         logging.debug("Cache generated")
     return R
 
 def get_queue(create_new=False):
-    key = "nqueue" # Change to non-event type key later, when Queue access system have been fixed
+    key = "nqueue"
     logging.debug("Getting cache for queue")
     R = cache.get(key)
     if not R or create_new:
         logging.info("No existing cache for queue, making new one")
         queue = models.Queue.objects.select_related(depth=2).filter(played=False).order_by('id')
-        T = get_template('webview/js/queue.html')
-        C = Context({ 'queue' : queue })
-        R = T.render(C)
-        #R = render_to_response('webview/js/queue.html', )
+        R = j2shim.r2s("webview/js/queue.html", { 'queue' : queue })
         cache.set(key, R, 300)
         logging.debug("Cache generated")
     return R

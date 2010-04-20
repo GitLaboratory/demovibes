@@ -9,6 +9,7 @@ from django.template import Context, Template
 from django.template.loader import get_template
 from forum.models import Forum, Thread, Post, Subscription
 import os.path, random
+import j2shim as js
 
 register = template.Library()
 
@@ -30,9 +31,7 @@ def get_online_users():
     userlist = Userprofile.objects.filter(last_activity__gt=timefrom).order_by('user__username')
     
     # Stuff this into an object
-    T = get_template('webview/whos_online_sb.html')
-    C = Context ({ 'userlist' : userlist })
-    result = T.render(C)
+    result = js.r2s('webview/whos_online_sb.html', { 'userlist' : userlist })
     return result
 
 @register.tag
@@ -100,14 +99,26 @@ def logo():
         alt = "Logo"
     return '<img id="logo" src="%s" title="%s" alt="%s" />' % (logo, alt, alt)
 
-@register.simple_tag
-def current_song():
+def current_song(user = None):
     """
     Returns the current song playing. Ties into right-panel on all views.
     """
-    T = get_template('webview/t/now_playing.html')
-    R = T.render(Context({ 'now_playing' : songname }))
-    return R
+    now = common.get_now_playing()
+    if user:
+        Q = common.get_now_playing_song()
+        if user.is_authenticated():
+            vote = Q.song.get_vote(user) or 0
+        else:
+            vote = 0
+        c = {
+            'song': Q.song,
+            'myvote': vote,
+            'voterange': [1, 2, 3, 4, 5],
+            'user': user,
+        }
+        voteinfo = js.r2s("webview/t/now_playing_vote.html", c)
+        now = now + voteinfo
+    return now
 
 @register.simple_tag
 def ajaxevent():
@@ -121,9 +132,8 @@ def get_oneliner():
     """
     Renders the oneliner html
     """
-    T = get_template('webview/oneliner2.html')
     oneliner = common.get_oneliner()
-    R = T.render(Context({'oneliner' : oneliner}))
+    R = js.r2s('webview/oneliner2.html', {'oneliner' : oneliner})
     return R
 
 @register.tag
@@ -138,62 +148,71 @@ def get_post_count(parser, token):
         raise template.TemplateSyntaxError, "%r tag requires one argument" % token.contents.split()[0]
     return GetPostCount(user)
 
+def user_css(user):
+    try:
+        return user.get_profile().get_css()
+    except:
+        return getattr(settings, 'DEFAULT_CSS', "%sthemes/default/style.css" % settings.MEDIA_URL)
+
 @register.tag
 def css(parser, token):
-	"""
-	Returns CSS path
-	"""
-	try:
-		tag, user = token.split_contents()
-	except ValueError:
-		raise template.TemplateSyntaxError, "%r tag requires one argument" % token.contents.split()[0]
-	return GetCss(user)
+    """
+    Returns CSS path
+    """
+    try:
+        tag, user = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires one argument" % token.contents.split()[0]
+    return GetCss(user)
 
 @register.tag
 def get_inbox(parser, token):
-	"""
-	Returns inbox unread messages
-	"""
-	try:
-		tag, user = token.split_contents()
-	except ValueError:
-		raise template.TemplateSyntaxError, "%r tag requires one argument" % token.contents.split()[0]
-	return GetInboxNode(user)
+    """
+    Returns inbox unread messages
+    """
+    try:
+        tag, user = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires one argument" % token.contents.split()[0]
+    return GetInboxNode(user)
 
 @register.tag
 def get_vote(parser, token):
-	"""
-	Sets variable "vote_value" to the user's vote.
-	"""
-	try:
-		tag_name, song_object, user = token.split_contents()
-	except ValueError:
-		raise template.TemplateSyntaxError, "%r tag requires three arguments" % token.contents.split()[0]
-	return GetVoteNode(song_object, user)
+    """
+    Sets variable "vote_value" to the user's vote.
+    """
+    try:
+        tag_name, song_object, user = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires three arguments" % token.contents.split()[0]
+    return GetVoteNode(song_object, user)
 
 @register.tag
 def get_song_rating(parser, token):
-	"""
-	Sets variable "song_rating" to the rating of the song specified on parameters
-	"""
-	try:
-		tag_name, song_object = token.split_contents()
-	except ValueError:
-		raise template.TemplateSyntaxError, "%r tag requires two arguments" % token.contents.split()[0]
-	return GetSongRatingNode(song_object)
+    """
+    Sets variable "song_rating" to the rating of the song specified on parameters
+    """
+    try:
+        tag_name, song_object = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires two arguments" % token.contents.split()[0]
+    return GetSongRatingNode(song_object)
 
 @register.tag
 def get_song_queuetag(parser, token):
-	"""
-	Aut-add any song number to a template with queueing capabilities. Specify the song number
-	After the command. Example: {% get_song_queuetag 5 %} # Adds a full link and queue click for song #5
-	This version is designed specifically for template use only.
-	"""
-	try:
-		tag_name, song = token.split_contents()
-	except ValueError:
-		raise template.TemplateSyntaxError, "%r tag requires two arguments" % token.contents.split()[0]
-	return GetSongQueueTag(song)
+    """
+    Aut-add any song number to a template with queueing capabilities. Specify the song number
+    After the command. Example: {% get_song_queuetag 5 %} # Adds a full link and queue click for song #5
+    This version is designed specifically for template use only.
+    """
+    try:
+        tag_name, song = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires two arguments" % token.contents.split()[0]
+    return GetSongQueueTag(song)
+
+def get_news(status="B"):
+    return News.objects.filter(status = status)
 
 @register.tag
 def get_sidebar_news(parser, token):
@@ -207,14 +226,14 @@ def get_streams(parser, token):
 
 @register.tag
 def is_favorite(parser, token):
-	"""
-	Sets variable "is_favorite" to true or false.
-	"""
-	try:
-		tag_name, song_object, user = token.split_contents()
-	except ValueError:
-		raise template.TemplateSyntaxError, "%r tag requires two arguments" % token.contents.split()[0]
-	return IsFavoriteNode(song_object, user)
+    """
+    Sets variable "is_favorite" to true or false.
+    """
+    try:
+        tag_name, song_object, user = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError, "%r tag requires two arguments" % token.contents.split()[0]
+    return IsFavoriteNode(song_object, user)
 
 class GetSongRatingNode(template.Node):
     def __init__(self, song):
@@ -238,7 +257,7 @@ class GetSongRatingStarsAvgNode(template.Node):
     This function is in bad need of some templating. AAK.
     """
     def __init__(self, username):
-		self.username = username
+        self.username = username
 
     def render(self, context):
         try:
@@ -258,36 +277,36 @@ class GetSongRatingStarsAvgNode(template.Node):
             # This in case something fails terribly!!
             song_rating = 0
             vote_count = 0
-	    
+        
         # Make sure song.rating is a real variable and has a value, otherwise default it to 0
         if(type(song.rating).__name__=='NoneType'):
             song_rating = 0
             vote_count = 0
 
         # Detect if this user is anonymous
-	try:
-            if(type(user).__name__=='AnonymousUser'):
-                # Anonymous users never have a vote, and can be identified later without DB call
-                user_vote = 0
-                user_anon = True
-            else:
-                user_vote = song.get_vote(user) # What did the user vote for this song?
-                user_anon = False
-	except:
-	    user_vote = 0
+        try:
+                if(type(user).__name__=='AnonymousUser'):
+                    # Anonymous users never have a vote, and can be identified later without DB call
+                    user_vote = 0
+                    user_anon = True
+                else:
+                    user_vote = song.get_vote(user) # What did the user vote for this song?
+                    user_anon = False
+        except:
+            user_vote = 0
             user_anon = True
-	    
+            
         htmltxt = ""
         TempLine = ""
-        
-	# This fixes an issue where UserVote doesnt actually exist yet. I have generated this
-	# Error several times on the dev server. This fixes the problem.
-	try:
+            
+        # This fixes an issue where UserVote doesnt actually exist yet. I have generated this
+        # Error several times on the dev server. This fixes the problem.
+        try:
             if(type(user_vote).__name__=='str'):
                 user_vote = int(0) # Implicitly define this as int, so there is no confusion!
-	except:
-	    user_vote = int(0); # Throws an exception in some odd situations
-
+        except:
+            user_vote = int(0); # Throws an exception in some odd situations
+    
         htmltxt = common.get_now_playing()
 
         # Open the table
@@ -297,7 +316,7 @@ class GetSongRatingStarsAvgNode(template.Node):
         for count in range(1, 6):
             DiffVal = (count - user_vote) # Pre-calc rating difference
             TempLine = '<td align="center" onmouseover="voteshow(\'vote-%d\', %d);" onmouseout="voteshow(\'vote-%d\', %d);">' % (song.id, count, song.id, user_vote)
-
+    
             if(user_anon == False):
                 TempLine = TempLine + '<a href="/demovibes/song/%d/vote/%d/">' % ( song.id, count )
     
@@ -310,9 +329,9 @@ class GetSongRatingStarsAvgNode(template.Node):
         
             if(user_anon == False):
                 TempLine = TempLine + '</a>'
-
+    
             TempLine = TempLine + "</td>\n" # Close the column
-
+    
             # Add this to the final text string
             htmltxt = htmltxt + TempLine
 
@@ -342,6 +361,35 @@ class GetSongRatingStarsAvgNode(template.Node):
         # Return the newly computed images html string
         return htmltxt
 
+
+def get_text_link_entries(slug):
+        try:
+            # Look for the identifiying slug
+            slug_id = LinkCategory.objects.get(id_slug = slug)
+        except:
+            # No matching slug was found!
+            return None
+        
+        # We have a slug; Now to see if it has any links
+        try:
+            site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
+            
+            # Filter out categories which have no links in them!
+            if len(site_links) == 0:
+                return " " # Prevents 'None' from being displayed
+            
+            # We got the goods, let's go with it!
+            T = loader.get_template('webview/t/link_category_header.html')
+            C = Context({ 'LC' : slug_id })
+            header = T.render(C)
+            
+            T = loader.get_template('webview/links_text_all.html')
+            C = Context({ 'text_links' : site_links })
+            return header + T.render(C)
+        except:
+            # Something borked!
+            return None
+
 """
 Simple tag to suck all text link entries out of the system for the specified
 Category slug. Should work in any template.
@@ -351,33 +399,33 @@ class GetTextLinkEntries(template.Node):
         self.slugname = slugname
 
     def render(self, context):
-	try:
-	    # Look for the identifiying slug
-	    slug = template.resolve_variable(self.slugname, context)
-	    slug_id = LinkCategory.objects.get(id_slug = slug)
-	except:
-	    # No matching slug was found!
-	    return None
-	
-	# We have a slug; Now to see if it has any links
-	try:
-	    site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
-	    
-	    # Filter out categories which have no links in them!
-	    if len(site_links) == 0:
-		return " " # Prevents 'None' from being displayed
-	    
-	    # We got the goods, let's go with it!
-	    T = loader.get_template('webview/t/link_category_header.html')
-	    C = Context({ 'LC' : slug_id })
-	    header = T.render(C)
-	    
-	    T = loader.get_template('webview/links_text_all.html')
-	    C = Context({ 'text_links' : site_links })
-	    return header + T.render(C)
-	except:
-	    # Something borked!
-	    return None
+        try:
+            # Look for the identifiying slug
+            slug = template.resolve_variable(self.slugname, context)
+            slug_id = LinkCategory.objects.get(id_slug = slug)
+        except:
+            # No matching slug was found!
+            return None
+        
+        # We have a slug; Now to see if it has any links
+        try:
+            site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
+            
+            # Filter out categories which have no links in them!
+            if len(site_links) == 0:
+                return " " # Prevents 'None' from being displayed
+            
+            # We got the goods, let's go with it!
+            T = loader.get_template('webview/t/link_category_header.html')
+            C = Context({ 'LC' : slug_id })
+            header = T.render(C)
+            
+            T = loader.get_template('webview/links_text_all.html')
+            C = Context({ 'text_links' : site_links })
+            return header + T.render(C)
+        except:
+            # Something borked!
+            return None
 
 """
 Count the number of links in the specified category slug.
@@ -387,23 +435,23 @@ class CountTextLinkEntries(template.Node):
         self.slugname = slugname
 
     def render(self, context):
-	try:
-	    # Look for the identifiying slug
-	    slug = template.resolve_variable(self.slugname, context)
-	    slug_id = LinkCategory.objects.get(id_slug = slug)
-	except:
-	    # No matching slug was found!
-	    return 0
-	
-	# We have a slug; Now to see if it has any links
-	try:
-	    site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
-	except:
-	    # No links, or something borked!
-	    return 0
-	
-	# We got the goods, let's go with it!
-        return len(site_links)
+        try:
+            # Look for the identifiying slug
+            slug = template.resolve_variable(self.slugname, context)
+            slug_id = LinkCategory.objects.get(id_slug = slug)
+        except:
+            # No matching slug was found!
+            return 0
+    
+        # We have a slug; Now to see if it has any links
+        try:
+            site_links = Link.objects.filter(status="A").filter(link_type="T").filter(url_cat=slug_id).order_by('-priority')
+        except:
+            # No links, or something borked!
+            return 0
+        
+        # We got the goods, let's go with it!
+            return len(site_links)
 
 class GetCss(template.Node):
     def __init__(self, user):
@@ -415,6 +463,9 @@ class GetCss(template.Node):
             return user.get_profile().get_css()
         except:
             return getattr(settings, 'DEFAULT_CSS', "%sthemes/default/style.css" % settings.MEDIA_URL)
+
+def j_get_post_count(user):
+    return Post.objects.filter(author=user).count()
 
 class GetPostCount(template.Node):
     """
@@ -430,6 +481,12 @@ class GetPostCount(template.Node):
             return len(obj)
         except:
             return 0
+
+def get_unread_count(user):
+    nr = PrivateMessage.objects.filter(to=user, unread=True, visible = True).count()
+    if not nr:
+        return ""
+    return "(%s)" % nr
 
 class GetInboxNode(template.Node):
     def __init__(self, user):
@@ -491,6 +548,19 @@ class IsFavoriteNode(template.Node):
             pass
         return ''
     
+def get_song_queue_tag(remix_id):
+    origsong = Song.objects.get(id = song.remix_of_id)
+    artists = origsong.artists
+    return js.r2s('webview/queue_tag.html', { 'song' : origsong, 'artists' : artists })
+
+def get_song_queue_tag(song_id):
+    song_obj = Song.objects.get(id = song_id)
+    artists = song_obj.artists
+
+    T = loader.get_template('webview/queue_tag.html')
+    C = Context({ 'song' : song_obj, 'artists' : artists })
+    return T.render(C)
+
 class GetSongQueueTag(template.Node):
     def __init__(self, song):
         self.song = song
@@ -778,7 +848,7 @@ def bb_compilation_name(hit):
         return T.render(Co)
     except:
         return '[album]%s[/album]' % (comp)
-	
+    
 def bb_faq(hit):
     """
     Create a clickable FAQ link.
@@ -801,10 +871,10 @@ def bb_youtube_ol(hit):
     return '<a href="http://www.youtube.com/watch?v=%s" target="_new"><img src="/static/youtube_icon.png" title="YouTube" alt="YouTube" border="0" /> YouTube Link</a>' % (video)
 
 def bb_googlevideo_ol(hit):
-	"""
-	"""
-	video = hit.group(1)
-	return '<a href="http://video.google.com/videoplay?docid=%s" target="_new"><img src="/static/googlevideo_icon.png" title="Google Video" alt="Google Video" border="0"> Google Video Link</a>' % (video)
+    """
+    """
+    video = hit.group(1)
+    return '<a href="http://video.google.com/videoplay?docid=%s" target="_new"><img src="/static/googlevideo_icon.png" title="Google Video" alt="Google Video" border="0"> Google Video Link</a>' % (video)
     
 def bb_youtube_name_ol(hit):
     """
@@ -827,24 +897,24 @@ def bb_gvideo(hit):
     
 @register.filter
 def oneliner_mediaparse(value):
-	"""
-	"""
-	medialinks = [
-		# YouTube auto scraping
-		(r'http://www.youtube.com/watch/v=([\w&;=-]+)', r'[yt]\1[/yt]'),
-		(r'http://youtube.com/watch?v=([\w&;=-]+)', r'[yt]\1[/yt]'),
-		(r'http://www.youtube.com/watch\?v=([\w&;=-]+)', r'[yt]\1[/yt]'),
-		(r'http://www.youtube.com/v/([\w&;=-]+)', r'[yt]\1[/yt]'),
+    """
+    """
+    medialinks = [
+        # YouTube auto scraping
+        (r'http://www.youtube.com/watch/v=([\w&;=-]+)', r'[yt]\1[/yt]'),
+        (r'http://youtube.com/watch?v=([\w&;=-]+)', r'[yt]\1[/yt]'),
+        (r'http://www.youtube.com/watch\?v=([\w&;=-]+)', r'[yt]\1[/yt]'),
+        (r'http://www.youtube.com/v/([\w&;=-]+)', r'[yt]\1[/yt]'),
 
-		# Google Video Scraping
-		(r'http://video.google.com/videoplay\?docid=([\w&;=-]+)', r'[gv]\1[/gv]'),
-	]
+        # Google Video Scraping
+        (r'http://video.google.com/videoplay\?docid=([\w&;=-]+)', r'[gv]\1[/gv]'),
+    ]
 
-	for mset in medialinks:
-		p = re.compile(mset[0], re.DOTALL)
-		value = p.sub(mset[1], value)
+    for mset in medialinks:
+        p = re.compile(mset[0], re.DOTALL)
+        value = p.sub(mset[1], value)
 
-	return value
+    return value
 
 @register.filter
 def bbcode(value):
@@ -852,77 +922,8 @@ def bbcode(value):
     Decodes BBcode and replaces it with HTML
     """
 
-    bbdata = [
-        (r'\[url\](.+?)\[/url\]', r'<a href="\1" target="_new">\1</a>'),
-        (r'\[url=(.+?)\](.+?)\[/url\]', r'<a href="\1" target="_new">\2</a>'),
-        (r'\[email\](.+?)\[/email\]', r'<a href="mailto:\1">\1</a>'),
-        (r'\[email=(.+?)\](.+?)\[/email\]', r'<a href="mailto:\1">\2</a>'),
-        (r'\[img\](.+?)\[/img\]', r'<img src="\1" alt="" />'),
-        (r'\[img=(.+?)\](.+?)\[/img\]', r'<a href="\1" target="_new"><b>\2</b><br /><img src="\1" alt="" /></a>'),
-        
-        (r'\[b\](.+?)\[/b\]', r'<strong>\1</strong>'),
-        (r'\[i\](.+?)\[/i\]', r'<i>\1</i>'),
-        (r'\[u\](.+?)\[/u\]', r'<u>\1</u>'),
-        (r'\[s\](.+?)\[/s\]', r'<s>\1</s>'),
-        (r'\[quote=(.+?)\](.+?)\[/quote\]', r'<div class="bbquote"><b>\1 said:</b> "\2"</div>'),
-        (r'\[quote\](.+?)\[/quote\]', r'<div class="bbquote"><b>Quote:</b> "\1"</div>'),
-        (r'\[center\](.+?)\[/center\]', r'<div align="center">\1</div>'),
-        (r'\[code\](.+?)\[/code\]', r'<tt class="bbcode">\1</tt>'),
-        (r'\[big\](.+?)\[/big\]', r'<big>\1</big>'),
-        (r'\[small\](.+?)\[/small\]', r'<small>\1</small>'),
-        (r'\[size=(.+?)\](.+?)\[/size\]', bb_size),
-        (r'\[pre\](.+?)\[/pre\]', r'<pre class="bbpre">\1</pre>'),
-        
-        (r'\[red\](.+?)\[/red\]', r'<font color="red">\1</font>'),
-        (r'\[green\](.+?)\[/green\]', r'<font color="green">\1</font>'),
-        (r'\[blue\](.+?)\[/blue\]', r'<font color="blue">\1</font>'),
-        (r'\[black\](.+?)\[/black\]', r'<font color="black">\1</font>'),
-        (r'\[brown\](.+?)\[/brown\]', r'<font color="brown">\1</font>'),
-        (r'\[cyan\](.+?)\[/cyan\]', r'<font color="cyan">\1</font>'),
-        (r'\[darkblue\](.+?)\[/darkblue\]', r'<font color="darkblue">\1</font>'),
-        (r'\[gold\](.+?)\[/gold\]', r'<font color="gold">\1</font>'),
-        (r'\[grey\](.+?)\[/grey\]', r'<font color="gray">\1</font>'),
-        (r'\[magenta\](.+?)\[/magenta\]', r'<font color="magenta">\1</font>'),
-        (r'\[orange\](.+?)\[/orange\]', r'<font color="orange">\1</font>'),
-        (r'\[pink\](.+?)\[/pink\]', r'<font color="pink">\1</font>'),
-        (r'\[purple\](.+?)\[/purple\]', r'<font color="purple">\1</font>'),
-        (r'\[white\](.+?)\[/white\]', r'<font color="white">\1</font>'),
-        (r'\[yellow\](.+?)\[/yellow\]', r'<font color="yellow">\1</font>'),
-        (r'\[color=#(.+?)\](.+?)\[/color\]', r'<font color="#\1">\2</font>'),
-        
-        (r'\[table\](.+?)\[/table\]', r'<table class="bbtable">\1</table>'),
-        (r'\[th\](.+?)\[/th\]', r'<th>\1</th>'),
-        (r'\[td\](.+?)\[/td\]', r'<td>\1</td>'),
-        (r'\[tr\](.+?)\[/tr\]', r'<tr>\1</tr>'),
-        
-        # Demovibes specific BB tags
-        (r'\[user\](.+?)\[/user\]', bb_user),
-        (r'\[song\](\d+?)\[/song\]', bb_song),
-        (r'\[artist\](\d+?)\[/artist\]', bb_artist),
-        (r'\[artist\](.+?)\[/artist\]', bb_artistname),
-        (r'\[queue\](\d+?)\[/queue\]', bb_queue),
-        (r'\[flag\](.+?)\[/flag\]', bb_flag),
-        (r'\[thread\](\d+?)\[/thread\]', bb_thread),
-        (r'\[forum\](.+?)\[/forum\]', bb_forum),
-        (r'\[group\](\d+?)\[/group\]', bb_group),
-        (r'\[group\](.+?)\[/group\]', bb_groupname),
-        (r'\[album\](\d+?)\[/album\]', bb_compilation),
-        (r'\[compilation\](\d+?)\[/compilation\]', bb_compilation),
-        (r'\[album\](.+?)\[/album\]', bb_compilation_name),
-        (r'\[compilation\](.+?)\[/compilation\]', bb_compilation_name),
-        (r'\[label\](\d+?)\[/label\]', bb_label),
-        (r'\[label\](.+?)\[/label\]', bb_labelname),
-        (r'\[platform\](\d+?)\[/platform\]', bb_platform),
-        (r'\[platform\](.+?)\[/platform\]', bb_platformname),
-	(r'\[faq\](\d+?)\[/faq\]', bb_faq),
-        
-        # Experimental BBCode tags
-        (r'\[youtube\](.+?)\[/youtube\]', bb_youtube),
-        (r'\[gvideo\](.+?)\[/gvideo\]', bb_gvideo),
-      ]
-
-    for bbset in bbdata:
-        p = re.compile(bbset[0], re.DOTALL)
+    for bbset in bbdata_full:
+        p = bbset[0]
         value = p.sub(bbset[1], value)
 
     #The following two code parts handle the more complex list statements
@@ -954,7 +955,79 @@ def bbcode_oneliner(value):
     For use specifically within the oneliner & it's limitations. AAK.
     """
 
-    bbdata = [
+    for bbset in bbdata_oneliner:
+        p = bbset[0]
+        value = p.sub(bbset[1], value)
+
+    return value
+
+@register.filter
+def wordwrap(value, arg=80):
+    """
+    Wrap a text, breaking long words.
+    """
+    return "\n".join(textwrap.wrap(value, int(arg)))
+
+@register.filter
+def smileys(value):
+    """
+    Replaces smiley text with images. First, do secret smileys so we can replace
+    Smileys pre-converted with others later.
+    """
+    secretsmileys = getattr(settings,'SECRETSMILEYS', [])
+    for smiley in secretsmileys:
+        value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" title="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[2]), value)
+
+    smileys = settings.SMILEYS
+    for smiley in smileys:
+        # Smiley patch provided by Korkut. AAK
+        value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" title="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[0]), value)
+    return value
+
+@register.filter
+def flag(value):
+    """
+    Shows a flag instead of 2 letter country code. If the flag is invalid, a nectaflag is
+    Used. Flag was created for me by sark76 (Mark Huther). AAK
+    """
+    flag = value.lower().encode('ascii', 'ignore')
+    if os.path.isfile(os.path.join(settings.DOCUMENT_ROOT, "flags", "%s.png" % flag)):
+        return "<img src='%sflags/%s.png' class='countryflag' alt='flag' title='%s' />" % (settings.MEDIA_URL, flag, flag)
+        
+    # No flag image found, return the Necta flag hehe
+    return "<img src='%sflags/nectaflag.png' class='countryflag' alt='flag' />" % (settings.MEDIA_URL)
+
+@register.filter
+def dv_urlize(text):
+    """
+    Simplified replacement of the urlize filter in Django, which at present offers no option
+    To allow a link to open in a new tab/window. AAK.
+    """
+    part1 = re.compile(r"(^|[\n ])(((news|telnet|nttp|irc|http|ftp|https)://[\w\#$%&~.\-;:=,?@\[\]+]*)(/[\w\#$%&~/.\-;:=,?@\[\]+]*)?)", re.IGNORECASE | re.DOTALL)
+    part2 = re.compile(r"(^|[\n ])(((www|ftp)\.[\w\#$%&~.\-;:=,?@\[\]+]*)(/[\w\#$%&~/.\-;:=,?@\[\]+]*)?)", re.IGNORECASE | re.DOTALL)
+
+    # Make a quick copy of our variable to work with
+    link = text
+
+    # Depending on your personal preference, you can choose one of two things with the following
+    # Lines of code. If the value of SHORTEN_ONELINER_LINKS is set to 1, links appear in the
+    # Oneliner in a truncated format. Any other value inserts the full link. Default: 0
+
+    link_type = getattr(settings, 'SHORTEN_ONELINER_LINKS', 0)
+
+    if(link_type == 1):
+        # Truncate displayed links to just the starting address.
+        link = part1.sub(r'\1<a href="\2" target="_blank">\3</a>', link)
+        link = part2.sub(r'\1<a href="http://\2" target="_blank">\3</a>', link)
+    else:
+        # Show them as they originally were added.
+        link = part1.sub(r'\1<a href="\2" target="_blank">\2</a>', link)
+        link = part2.sub(r'\1<a href="http://\2" target="_blank">\2</a>', link)
+    
+    # Return the results of the conversion
+    return link
+
+bbdata_oneliner = [
         (r'\[url\](.+?)\[/url\]', r'<a href="\1" target="_new">\1</a>'),
         (r'\[url=(.+?)\](.+?)\[/url\]', r'<a href="\1" target="_new">\2</a>'),
         (r'\[email\](.+?)\[/email\]', r'<a href="mailto:\1">\1</a>'),
@@ -1024,80 +1097,89 @@ def bbcode_oneliner(value):
         (r'\[label\](.+?)\[/label\]', bb_labelname),
         (r'\[platform\](\d+?)\[/platform\]', bb_platform),
         (r'\[platform\](.+?)\[/platform\]', bb_platformname),
-	(r'\[faq\](\d+?)\[/faq\]', bb_faq),
+    (r'\[faq\](\d+?)\[/faq\]', bb_faq),
       ]
 
-    for bbset in bbdata:
-        p = re.compile(bbset[0], re.DOTALL)
-        value = p.sub(bbset[1], value)
-
-    return value
-
-@register.filter
-def wordwrap(value, arg=80):
-	"""
-	Wrap a text, breaking long words.
-	"""
-	return "\n".join(textwrap.wrap(value, int(arg)))
-
-@register.filter
-def smileys(value):
-	"""
-	Replaces smiley text with images. First, do secret smileys so we can replace
-	Smileys pre-converted with others later.
-	"""
-	secretsmileys = getattr(settings,'SECRETSMILEYS', [])
-	for smiley in secretsmileys:
-	    value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" title="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[2]), value)
-
-	smileys = settings.SMILEYS
-	for smiley in smileys:
-	    # Smiley patch provided by Korkut. AAK
-	    value = re.sub(r'(?:^|(?<=\s|<|>|:))%s(?=$|\s|<|>|:)' % re.escape(smiley[0]), r'<img src="%s" title="%s" />' % (settings.MEDIA_URL + smiley[1], smiley[0]), value)
-	return value
-
-@register.filter
-def flag(value):
-    """
-    Shows a flag instead of 2 letter country code. If the flag is invalid, a nectaflag is
-    Used. Flag was created for me by sark76 (Mark Huther). AAK
-    """
-    flag = value.lower().encode('ascii', 'ignore')
-    if os.path.isfile(os.path.join(settings.DOCUMENT_ROOT, "flags", "%s.png" % flag)):
-        return "<img src='%sflags/%s.png' class='countryflag' alt='flag' title='%s' />" % (settings.MEDIA_URL, flag, flag)
+bbdata_full = [
+        (r'\[url\](.+?)\[/url\]', r'<a href="\1" target="_new">\1</a>'),
+        (r'\[url=(.+?)\](.+?)\[/url\]', r'<a href="\1" target="_new">\2</a>'),
+        (r'\[email\](.+?)\[/email\]', r'<a href="mailto:\1">\1</a>'),
+        (r'\[email=(.+?)\](.+?)\[/email\]', r'<a href="mailto:\1">\2</a>'),
+        (r'\[img\](.+?)\[/img\]', r'<img src="\1" alt="" />'),
+        (r'\[img=(.+?)\](.+?)\[/img\]', r'<a href="\1" target="_new"><b>\2</b><br /><img src="\1" alt="" /></a>'),
         
-    # No flag image found, return the Necta flag hehe
-    return "<img src='%sflags/nectaflag.png' class='countryflag' alt='flag' />" % (settings.MEDIA_URL)
+        (r'\[b\](.+?)\[/b\]', r'<strong>\1</strong>'),
+        (r'\[i\](.+?)\[/i\]', r'<i>\1</i>'),
+        (r'\[u\](.+?)\[/u\]', r'<u>\1</u>'),
+        (r'\[s\](.+?)\[/s\]', r'<s>\1</s>'),
+        (r'\[quote=(.+?)\](.+?)\[/quote\]', r'<div class="bbquote"><b>\1 said:</b> "\2"</div>'),
+        (r'\[quote\](.+?)\[/quote\]', r'<div class="bbquote"><b>Quote:</b> "\1"</div>'),
+        (r'\[center\](.+?)\[/center\]', r'<div align="center">\1</div>'),
+        (r'\[code\](.+?)\[/code\]', r'<tt class="bbcode">\1</tt>'),
+        (r'\[big\](.+?)\[/big\]', r'<big>\1</big>'),
+        (r'\[small\](.+?)\[/small\]', r'<small>\1</small>'),
+        (r'\[size=(.+?)\](.+?)\[/size\]', bb_size),
+        (r'\[pre\](.+?)\[/pre\]', r'<pre class="bbpre">\1</pre>'),
+        
+        (r'\[red\](.+?)\[/red\]', r'<font color="red">\1</font>'),
+        (r'\[green\](.+?)\[/green\]', r'<font color="green">\1</font>'),
+        (r'\[blue\](.+?)\[/blue\]', r'<font color="blue">\1</font>'),
+        (r'\[black\](.+?)\[/black\]', r'<font color="black">\1</font>'),
+        (r'\[brown\](.+?)\[/brown\]', r'<font color="brown">\1</font>'),
+        (r'\[cyan\](.+?)\[/cyan\]', r'<font color="cyan">\1</font>'),
+        (r'\[darkblue\](.+?)\[/darkblue\]', r'<font color="darkblue">\1</font>'),
+        (r'\[gold\](.+?)\[/gold\]', r'<font color="gold">\1</font>'),
+        (r'\[grey\](.+?)\[/grey\]', r'<font color="gray">\1</font>'),
+        (r'\[magenta\](.+?)\[/magenta\]', r'<font color="magenta">\1</font>'),
+        (r'\[orange\](.+?)\[/orange\]', r'<font color="orange">\1</font>'),
+        (r'\[pink\](.+?)\[/pink\]', r'<font color="pink">\1</font>'),
+        (r'\[purple\](.+?)\[/purple\]', r'<font color="purple">\1</font>'),
+        (r'\[white\](.+?)\[/white\]', r'<font color="white">\1</font>'),
+        (r'\[yellow\](.+?)\[/yellow\]', r'<font color="yellow">\1</font>'),
+        (r'\[color=#(.+?)\](.+?)\[/color\]', r'<font color="#\1">\2</font>'),
+        
+        (r'\[table\](.+?)\[/table\]', r'<table class="bbtable">\1</table>'),
+        (r'\[th\](.+?)\[/th\]', r'<th>\1</th>'),
+        (r'\[td\](.+?)\[/td\]', r'<td>\1</td>'),
+        (r'\[tr\](.+?)\[/tr\]', r'<tr>\1</tr>'),
+        
+        # Demovibes specific BB tags
+        (r'\[user\](.+?)\[/user\]', bb_user),
+        (r'\[song\](\d+?)\[/song\]', bb_song),
+        (r'\[artist\](\d+?)\[/artist\]', bb_artist),
+        (r'\[artist\](.+?)\[/artist\]', bb_artistname),
+        (r'\[queue\](\d+?)\[/queue\]', bb_queue),
+        (r'\[flag\](.+?)\[/flag\]', bb_flag),
+        (r'\[thread\](\d+?)\[/thread\]', bb_thread),
+        (r'\[forum\](.+?)\[/forum\]', bb_forum),
+        (r'\[group\](\d+?)\[/group\]', bb_group),
+        (r'\[group\](.+?)\[/group\]', bb_groupname),
+        (r'\[album\](\d+?)\[/album\]', bb_compilation),
+        (r'\[compilation\](\d+?)\[/compilation\]', bb_compilation),
+        (r'\[album\](.+?)\[/album\]', bb_compilation_name),
+        (r'\[compilation\](.+?)\[/compilation\]', bb_compilation_name),
+        (r'\[label\](\d+?)\[/label\]', bb_label),
+        (r'\[label\](.+?)\[/label\]', bb_labelname),
+        (r'\[platform\](\d+?)\[/platform\]', bb_platform),
+        (r'\[platform\](.+?)\[/platform\]', bb_platformname),
+    (r'\[faq\](\d+?)\[/faq\]', bb_faq),
+        
+        # Experimental BBCode tags
+        (r'\[youtube\](.+?)\[/youtube\]', bb_youtube),
+        (r'\[gvideo\](.+?)\[/gvideo\]', bb_gvideo),
+    ]
 
-@register.filter
-def dv_urlize(text):
-	"""
-	Simplified replacement of the urlize filter in Django, which at present offers no option
-	To allow a link to open in a new tab/window. AAK.
-	"""
-	part1 = re.compile(r"(^|[\n ])(((news|telnet|nttp|irc|http|ftp|https)://[\w\#$%&~.\-;:=,?@\[\]+]*)(/[\w\#$%&~/.\-;:=,?@\[\]+]*)?)", re.IGNORECASE | re.DOTALL)
-	part2 = re.compile(r"(^|[\n ])(((www|ftp)\.[\w\#$%&~.\-;:=,?@\[\]+]*)(/[\w\#$%&~/.\-;:=,?@\[\]+]*)?)", re.IGNORECASE | re.DOTALL)
+def reify(bblist):
+    templist = []
+    for x in bblist:
+        res = re.compile(x[0], re.DOTALL)
+        templist.append((res, x[1]))
+    return templist
 
-	# Make a quick copy of our variable to work with
-	link = text
-
-	# Depending on your personal preference, you can choose one of two things with the following
-	# Lines of code. If the value of SHORTEN_ONELINER_LINKS is set to 1, links appear in the
-	# Oneliner in a truncated format. Any other value inserts the full link. Default: 0
-
-	link_type = getattr(settings, 'SHORTEN_ONELINER_LINKS', 0)
-
-	if(link_type == 1):
-		# Truncate displayed links to just the starting address.
-		link = part1.sub(r'\1<a href="\2" target="_blank">\3</a>', link)
-		link = part2.sub(r'\1<a href="http://\2" target="_blank">\3</a>', link)
-	else:
-		# Show them as they originally were added.
-		link = part1.sub(r'\1<a href="\2" target="_blank">\2</a>', link)
-		link = part2.sub(r'\1<a href="http://\2" target="_blank">\2</a>', link)
-	
-	# Return the results of the conversion
-	return link
+#Creating list and compiling regex only once should
+#give a small speed boost.
+bbdata_full = reify(bbdata_full)
+bbdata_oneliner = reify(bbdata_oneliner)
 
 smileys.is_safe = True
 bbcode.is_safe = True
