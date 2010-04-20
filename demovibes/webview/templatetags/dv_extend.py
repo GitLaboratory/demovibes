@@ -106,6 +106,8 @@ def current_song(user = None):
     now = common.get_now_playing()
     if user:
         Q = common.get_now_playing_song()
+        if not Q:
+            return ""
         if user.is_authenticated():
             vote = Q.song.get_vote(user) or 0
         else:

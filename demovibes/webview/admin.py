@@ -44,8 +44,8 @@ class ArtistAdmin(admin.ModelAdmin):
     filter_horizontal = ['groups', 'labels']
     list_filter = ['status']
     fieldsets = [
-	    ("General info", {'fields' : ['handle', 'status', 'webpage', 'artist_pic', 'groups'] }),
-	    ("Personalia", {'fields' : ['name', 'dob', 'home_country', 'home_location', 'is_deceased', 'deceased_date', 'info'] }),
+	    ("General info", {'fields' : ['handle', 'status', 'name', 'webpage', 'artist_pic', 'groups'] }),
+	    ("Personalia", {'fields' : ['dob', 'home_country', 'home_location', 'is_deceased', 'deceased_date', 'info'] }),
 	    ("NectaStuff", {'fields' : ['alias_of','created_by', 'link_to_user', 'labels' ] }),
 	    ("Other web pages", {'fields' : ['twitter_id', 'wiki_link', 'hol_id', 'last_fm_id'] }),
 	]

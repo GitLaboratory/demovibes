@@ -58,7 +58,10 @@ def queue_song(song, user, event = True, force = False):
 def get_now_playing_song(create_new=False):
     queueobj = cache.get("nowplaysong")
     if not queueobj or create_new:
-        queueobj = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
+        try:
+            queueobj = models.Queue.objects.select_related(depth=3).filter(played=True).order_by('-time_played')[0]
+        except:
+            return False
         cache.set("nowplaysong", queueobj, 300)
     return queueobj
 
