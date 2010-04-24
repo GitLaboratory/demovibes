@@ -1,7 +1,9 @@
 {% extends "base/base.html" %}
 
+{% block title %}Top {{ numsongs }} {{ title }} Songs{% endblock %}
+
 {% block main %}
-<h2>Top {{ numsongs }} {{ title }} songs</h2>
+<h2><img class="icon_header" src="{{ MEDIA_URL }}music.png" alt="" />Top {{ numsongs }} {{ title }} Songs</h2>
 
 {% include "webview/t/songheader.html" %}
 {% for song in songs %}

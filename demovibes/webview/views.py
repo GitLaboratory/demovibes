@@ -545,11 +545,11 @@ def song_statistics(request, stattype):
     songs = None
     title = "Mu"
     numsongs = 100
-    if stattype == "favorited":
-        title = "most favorited"
+    if stattype == "favored":
+        title = "Most Favored"
         songs = Song.objects.order_by('-num_favorited')[:numsongs]
     if stattype == "queued":
-        title = "most played"
+        title = "Most Played"
         songs = Song.objects.order_by('-times_played')[:numsongs]
     return render_to_response('webview/stat_songs.html', {'songs': songs, 'title': title, 'numsongs': numsongs}, context_instance=RequestContext(request))
     
